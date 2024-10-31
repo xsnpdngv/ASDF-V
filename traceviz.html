@@ -90,6 +90,8 @@
 
                 // Display addinfo of first signal
                 handleSignalClick(0);
+
+                addSeqNumCircles();
             };
 
             reader.readAsText(file); // Read the file as text
@@ -121,6 +123,42 @@
             isResizing = false;
             document.body.style.cursor = 'default';
         });
+
+
+        function addSeqNumCircles(index) {
+            // Select all paths with the "signal" class
+            const signal_paths = document.querySelectorAll('path.signal');
+
+            signal_paths.forEach((path, index) => {
+                // Get the starting point of the path
+                const pathLength = path.getTotalLength();
+                const start = path.getPointAtLength(0);
+
+                // Create a circle element
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", start.x);
+                circle.setAttribute("cy", start.y);
+                circle.setAttribute("r", 10); // Radius of the circle
+                circle.setAttribute("fill", "white"); // Color of the circle
+                circle.setAttribute("stroke", "black"); // Border color
+                circle.setAttribute("stroke-width", 1); // Border width
+
+                // Create a text element
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", start.x);
+                text.setAttribute("y", start.y);
+                text.setAttribute("text-anchor", "middle"); // Center text horizontally
+                text.setAttribute("dy", "0.35em"); // Center text vertically
+                text.setAttribute("fill", "black"); // Color of the text inside the circle
+                text.textContent = index + 1;
+
+                // Append them to the SVG element
+                path.parentNode.appendChild(circle);
+                path.parentNode.appendChild(text);
+            });
+        }
+
+
     </script>
 </body>
 </html>

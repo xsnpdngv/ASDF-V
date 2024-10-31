@@ -7,17 +7,18 @@ information that belongs to the signal is displayed under the diagram.
 ## Input example
 
 ```
-title: Diagram title
-Alice->Bob: Short message description
+title: Dialogue of Alice and Bob
+Alice->Bob: Hey Bob, how you doin'?
 ~~~
 Additional information that belongs
 to the signal above. It is shown if
 the signal text is clicked on the
 rendered SVG.
 ~~~
-Bob-->>Alice: Response
+Note over Bob: Hmm, what does she want?
+Bob-->>Alice: Oh, hi
 ~~~
-Bob is not talkative person on the
+Bob is not a talkative person on the
 surface but might have something to say
 to Alice
 ~~~ 
