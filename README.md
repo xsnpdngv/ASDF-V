@@ -4,7 +4,7 @@ Displays trace logs of a specialized sequence diagram syntax as SVG. The
 signals/messages on the shown diagram are clickable. On click the additional
 information that belongs to the signal is displayed under the diagram.
 
-## Example trace input
+## Input example
 
 ```
 title: Diagram title
@@ -17,10 +17,15 @@ rendered SVG.
 ~~~
 Bob-->>Alice: Response
 ~~~
-Bob is not talkative on the surface
-but might have something to say
+Bob is not talkative person on the
+surface but might have something to say
+to Alice
 ~~~ 
 ```
+
+## Rendered diagram example
+
+![Traceviz example](img/traceviz-example.png)
 
 
 ## Usage
@@ -33,7 +38,7 @@ and explore the visualization.
 
 ### `js/sequence-diagrams-min.js`
 
-and `js/sequence-diagram.js` (for debugginh) are
+and `js/sequence-diagram.js` (for debugging) are
 taken from https://github.com/xsnpdngv/seqdiag-js which is a
 modification of https://github.com/bramp/js-sequence-diagrams to handle
 the extra syntax for additional information between tilde-triplets
