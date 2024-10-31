@@ -86,6 +86,13 @@
                     let addinfoText = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}\n\n`;
                     addinfoText += s.addinfo || "";
                     addinfoContent.textContent = addinfoText;
+
+                    // Set all signal texts to their original color
+                    signal_texts.forEach((txt) => {
+                        txt.setAttribute("fill", "black"); // Reset color
+                    });
+                    // Set the clicked signal text to red
+                    signal_texts[index].setAttribute("fill", "red");
                 }
 
                 // Display addinfo of first signal
