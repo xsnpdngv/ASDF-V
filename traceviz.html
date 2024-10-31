@@ -76,23 +76,36 @@
                 const signal_texts = document.querySelectorAll('text.signal');
                 signal_texts.forEach((txt, index) => {
                     txt.addEventListener("click", () => handleSignalClick(index));
+                    txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
+                    txt.addEventListener("mouseleave", () => showClickedAddinfo());
                 });
 
                 function handleSignalClick(index) {
+                    clickedSignalIndex = index; // Update the clicked signal index
+                    showAddinfoContent(index);   // Display the clicked signal's info
+                                    // Set all signal texts to their original color
+                                    signal_texts.forEach((txt) => {
+                                        txt.setAttribute("fill", "black"); // Reset color
+                                    });
+                                    // Set the clicked signal text to red
+                                    signal_texts[index].setAttribute("fill", "red");
+                }
+
+                function showTemporaryAddinfo(index) {
+                    showAddinfoContent(index); // Temporarily show the info of the hovered signal
+                }
+
+                function showClickedAddinfo() {
+                    showAddinfoContent(clickedSignalIndex); // Revert to the clicked signal's info
+                }
+
+                function showAddinfoContent(index) {
                     const diag_signals = diag.signals.filter(item => item.type === 'Signal');
-                    // console.log("signals: ", diag_signals);
                     const addinfoContent = document.getElementById("addinfoContent");
                     const s = diag_signals[index];
                     let addinfoText = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}\n\n`;
                     addinfoText += s.addinfo || "";
                     addinfoContent.textContent = addinfoText;
-
-                    // Set all signal texts to their original color
-                    signal_texts.forEach((txt) => {
-                        txt.setAttribute("fill", "black"); // Reset color
-                    });
-                    // Set the clicked signal text to red
-                    signal_texts[index].setAttribute("fill", "red");
                 }
 
                 // Display addinfo of first signal
@@ -164,8 +177,6 @@
                 path.parentNode.appendChild(text);
             });
         }
-
-
     </script>
 </body>
 </html>
