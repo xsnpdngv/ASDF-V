@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trace Visualizer</title>
+
+    <link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
+    <script src="js/underscore-min.js"></script>
+    <script src="js/raphael.min.js"></script>
+    <script src="js/sequence-diagram-min.js"></script>
+
+    <style>
+        /* Use the full viewport height with a flex layout */
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrolling on the main page */
+        }
+
+        /* Diagram container at the top */
+        #diagramContainer {
+            height: 75%; /* Start with 3/4 of the viewport height */
+            overflow-y: auto; /* Allow scrolling within the diagram area */
+            border-bottom: 2px solid #ccc;
+        }
+
+        /* Movable divider */
+        #divider {
+            height: 3px;
+            background: #ddd;
+            cursor: row-resize;
+        }
+
+        /* Info display area at the bottom */
+        #addinfoDisplay {
+            height: 25%; /* Start with 1/4 of the viewport height */
+            padding: 10px;
+            background: #f9f9f9;
+            overflow-y: auto; /* Allow scrolling within the info area */
+        }
+    </style>
+</head>
+<body>
+    <div id="diagramContainer">
+        <div id="diagram"></div>
+        <input type="file" id="fileInput" />
+    </div>
+
+    <div id="divider"></div>
+
+    <div id="addinfoDisplay">
+        <pre id="addinfoContent"></pre>
+    </div>
+
+    <script>
+        document.getElementById("fileInput").addEventListener("change", function(event) {
+            const file = event.target.files[0]; // Get the selected file
+            const reader = new FileReader(); // Create a FileReader to read the file
+
+            reader.onload = function(e) {
+                const addinfoContent = document.getElementById("addinfoContent");
+                addinfoContent.innerHTML = "";
+
+                const diagramContainer = document.getElementById("diagram");
+                diagramContainer.innerHTML = "";
+
+                const diagramText = e.target.result; // Get the file content
+                var diag = Diagram.parse(diagramText);
+                diag.drawSVG(diagramContainer, {
+                    theme: 'simple' // Options are 'simple' or 'hand'
+                });
+                // console.log(diag);
+
+                // Attach click handler for all signal texts
+                const signal_texts = document.querySelectorAll('text.signal');
+                signal_texts.forEach((txt, index) => {
+                    txt.addEventListener("click", () => handleSignalClick(index));
+                });
+
+                function handleSignalClick(index) {
+                    const diag_signals = diag.signals.filter(item => item.type === 'Signal');
+                    // console.log("signals: ", diag_signals);
+                    const addinfoContent = document.getElementById("addinfoContent");
+                    const s = diag_signals[index];
+                    let addinfoText = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}\n\n`;
+                    addinfoText += s.addinfo || "";
+                    addinfoContent.textContent = addinfoText;
+                }
+
+                // Display addinfo of first signal
+                handleSignalClick(0);
+            };
+
+            reader.readAsText(file); // Read the file as text
+        });
+
+
+        // Make sections resizable
+        const divider = document.getElementById("divider");
+        let isResizing = false;
+
+        divider.addEventListener("mousedown", (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'row-resize';
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (isResizing) {
+                const totalHeight = document.body.offsetHeight;
+                const diagramHeight = e.clientY / totalHeight * 100;
+                const infoHeight = 100 - diagramHeight;
+
+                // Adjust heights as percentages
+                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
+                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        });
+    </script>
+</body>
+</html>
