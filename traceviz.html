@@ -82,21 +82,20 @@
 
                 function handleSignalClick(index) {
                     clickedSignalIndex = index; // Update the clicked signal index
-                    showAddinfoContent(index);   // Display the clicked signal's info
-                                    // Set all signal texts to their original color
-                                    signal_texts.forEach((txt) => {
-                                        txt.setAttribute("fill", "black"); // Reset color
-                                    });
-                                    // Set the clicked signal text to red
-                                    signal_texts[index].setAttribute("fill", "red");
+                    signal_texts.forEach((txt) => {
+                        txt.setAttribute("fill", "black"); // Reset color
+                    });
+                    showClickedAddinfo();
                 }
 
                 function showTemporaryAddinfo(index) {
                     showAddinfoContent(index); // Temporarily show the info of the hovered signal
+                    signal_texts[clickedSignalIndex].setAttribute("fill", "steelblue");
                 }
 
                 function showClickedAddinfo() {
                     showAddinfoContent(clickedSignalIndex); // Revert to the clicked signal's info
+                    signal_texts[clickedSignalIndex].setAttribute("fill", "red");
                 }
 
                 function showAddinfoContent(index) {
