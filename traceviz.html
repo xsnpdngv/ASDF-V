@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Trace Visualizer</title>
+    <title>traceviz</title>
 
     <link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
     <script src="js/underscore-min.js"></script>
     <script src="js/raphael.min.js"></script>
-    <script src="js/sequence-diagram-min.js"></script>
+    <script src="js/sequence-diagram.js"></script>
 
     <style>
         /* Use the full viewport height with a flex layout */
@@ -39,83 +39,140 @@
             background: #f9f9f9;
             overflow-y: auto; /* Allow scrolling within the info area */
         }
+
+
+        /* Style for the fixed toolbar */
+        .toolbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            /* height: 20px; */
+            /* background-color: #eee; */
+            /* color: white; */
+            padding: 8px;
+            /* display: flex; */
+            /* justify-content: space-around; */
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Keeps toolbar above other elements */
+        }  /* Button Styling with Margin */
+        .toolbar button {
+            border-radius: 14px;
+            margin: 0 5px; /* Adds space between buttons */
+        }
+        /* Additional content to allow scrolling */
+        .content {
+            margin-top: 30px; /* Space for the fixed toolbar */
+            padding: 10px;
+            height: calc(100vh - 70px);
+            /* height: 2000px; Example height to make the page scrollable */
+        }
     </style>
 </head>
 <body>
-    <div id="diagramContainer">
-        <div id="diagram"></div>
+    <div class="toolbar">
         <input type="file" id="fileInput" />
+        <button onclick="">filter actors</button>
+        <button onclick="">filter signals</button>
+        <button onclick="">export self-contained html</button>
     </div>
+    <div class="content">
+        <div id="diagramContainer">
+            <div id="diagram"></div>
+        </div>
 
-    <div id="divider"></div>
+        <div id="divider"></div>
 
-    <div id="addinfoDisplay">
-        <pre id="addinfoContent"></pre>
+        <div id="addinfoDisplay">
+            <pre id="notation"></pre>
+            <pre id="meta"></pre>
+            <pre id="addinfo"></pre>
+        </div>
     </div>
 
     <script>
+        let diag = null; // Store the parsed diagram object
+        let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
+
+        function loadDefaultFile() {
+            fetch('trc/xtrace.xsd')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Default file not found.');
+                    }
+                    return response.text();
+                })
+                .then(diagramText => {
+                    loadDiagram(diagramText);
+                })
+                .catch(error => {
+                    console.log('No default file loaded:', error);
+                });
+        }
+
         document.getElementById("fileInput").addEventListener("change", function(event) {
-            const file = event.target.files[0]; // Get the selected file
-            const reader = new FileReader(); // Create a FileReader to read the file
-
+            const file = event.target.files[0];
+            const reader = new FileReader();
             reader.onload = function(e) {
-                const addinfoContent = document.getElementById("addinfoContent");
-                addinfoContent.innerHTML = "";
-
-                const diagramContainer = document.getElementById("diagram");
-                diagramContainer.innerHTML = "";
-
-                const diagramText = e.target.result; // Get the file content
-                var diag = Diagram.parse(diagramText);
-                diag.drawSVG(diagramContainer, {
-                    theme: 'simple' // Options are 'simple' or 'hand'
-                });
-                // console.log(diag);
-
-                // Attach click handler for all signal texts
-                const signal_texts = document.querySelectorAll('text.signal');
-                signal_texts.forEach((txt, index) => {
-                    txt.addEventListener("click", () => handleSignalClick(index));
-                    txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
-                    txt.addEventListener("mouseleave", () => showClickedAddinfo());
-                });
-
-                function handleSignalClick(index) {
-                    clickedSignalIndex = index; // Update the clicked signal index
-                    signal_texts.forEach((txt) => {
-                        txt.setAttribute("fill", "black"); // Reset color
-                    });
-                    showClickedAddinfo();
-                }
-
-                function showTemporaryAddinfo(index) {
-                    showAddinfoContent(index); // Temporarily show the info of the hovered signal
-                    signal_texts[clickedSignalIndex].setAttribute("fill", "steelblue");
-                }
-
-                function showClickedAddinfo() {
-                    showAddinfoContent(clickedSignalIndex); // Revert to the clicked signal's info
-                    signal_texts[clickedSignalIndex].setAttribute("fill", "red");
-                }
-
-                function showAddinfoContent(index) {
-                    const diag_signals = diag.signals.filter(item => item.type === 'Signal');
-                    const addinfoContent = document.getElementById("addinfoContent");
-                    const s = diag_signals[index];
-                    let addinfoText = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}\n\n`;
-                    addinfoText += s.addinfo || "";
-                    addinfoContent.textContent = addinfoText;
-                }
-
-                // Display addinfo of first signal
-                handleSignalClick(0);
-
-                addSeqNumCircles();
+                loadDiagram(e.target.result);
             };
-
-            reader.readAsText(file); // Read the file as text
+            reader.readAsText(file);
         });
 
+        function loadDiagram(diagramText) {
+            const addinfo = document.getElementById("addinfo");
+            addinfo.innerHTML = "";
+            const diagramContainer = document.getElementById("diagram");
+            diagramContainer.innerHTML = "";
+            diag = Diagram.parse(diagramText);
+
+            // diag.title = "Hello world";
+            // diag.actors.splice(2, 1);
+            // diag.signals.splice(1, 4);
+
+            console.log(diag);
+
+            diag.drawSVG(diagramContainer, { theme: 'simple' });
+
+            const signal_texts = document.querySelectorAll('text.signal');
+            signal_texts.forEach((txt, index) => {
+                txt.addEventListener("click", () => handleSignalClick(index));
+                txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
+                txt.addEventListener("mouseleave", () => showClickedAddinfo());
+            });
+
+            function handleSignalClick(index) {
+                clickedSignalIndex = index;
+                signal_texts.forEach((txt) => txt.setAttribute("fill", "black"));
+                showClickedAddinfo();
+            }
+
+            function showTemporaryAddinfo(index) {
+                showAddinfoContent(index);
+                signal_texts[clickedSignalIndex].setAttribute("fill", "steelblue");
+            }
+
+            function showClickedAddinfo() {
+                showAddinfoContent(clickedSignalIndex);
+                signal_texts[clickedSignalIndex].setAttribute("fill", "red");
+            }
+
+            function showAddinfoContent(index) {
+                const diag_signals = diag.signals.filter(item => item.type === 'Signal');
+                const notation = document.getElementById("notation");
+                const meta = document.getElementById("meta");
+                const addinfo = document.getElementById("addinfo");
+                const s = diag_signals[index];
+                let notationText = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
+                notation.textContent = notationText;
+                let metaText = s.meta || "";
+                meta.textContent = metaText;
+                let addinfoText = s.addinfo || "";
+                addinfo.textContent = addinfoText;
+            }
+
+            handleSignalClick(0);
+            addSeqNumCircles();
+        }
 
         // Make sections resizable
         const divider = document.getElementById("divider");
@@ -157,7 +214,7 @@
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttribute("cx", start.x);
                 circle.setAttribute("cy", start.y);
-                circle.setAttribute("r", 10); // Radius of the circle
+                circle.setAttribute("r", 13); // Radius of the circle
                 circle.setAttribute("fill", "white"); // Color of the circle
                 circle.setAttribute("stroke", "black"); // Border color
                 circle.setAttribute("stroke-width", 1); // Border width
@@ -176,6 +233,9 @@
                 path.parentNode.appendChild(text);
             });
         }
+
+        // Load the default file on page load
+        window.onload = loadDefaultFile;
     </script>
 </body>
 </html>
