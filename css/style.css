@@ -113,9 +113,30 @@ header h2 {
   text-align: center;
 }
 
-path.signal:hover,
-text.signal:hover {
-    fill: red; /* For SVG elements like <path> */
-    color: red; /* For text elements like <text> */
+
+path.filtered-actor.actor-line {
+    stroke: none;
+    /* stroke-width: 1px; */
+}
+path.actor-line:not(.filtered-actor) {
+    stroke: grey;
+    stroke-width: 2px;
+}
+path.signal-arrow {
+    stroke-width: 2px;
+}
+text.signal {
     cursor: pointer;
+}
+text.signal:hover {
+    stroke: black;
+}
+text.error-signal:hover {
+    stroke: orangered;
+}
+text.clicked-signal.error-signal {
+    stroke: orangered;
+}
+text.clicked-signal:not(.error-signal) {
+    stroke: black;
 }

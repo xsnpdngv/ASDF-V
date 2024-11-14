@@ -40,18 +40,23 @@
             overflow-y: auto; /* Allow scrolling within the info area */
         }
 
+        .error-signal {
+            /* stroke: orangered; */
+            color: red;
+            fill: red;
+        }
 
         /* Style for the fixed toolbar */
         .toolbar {
             position: fixed;
             top: 0;
-            width: 100%;
-            /* height: 20px; */
+            width: 100vw;
+            /* height: 30px; */
             /* background-color: #eee; */
             /* color: white; */
+            display: flex;
+            flex-wrap: nowrap;
             padding: 8px;
-            /* display: flex; */
-            /* justify-content: space-around; */
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 1000; /* Keeps toolbar above other elements */
         }  /* Button Styling with Margin */
@@ -66,14 +71,58 @@
             height: calc(100vh - 70px);
             /* height: 2000px; Example height to make the page scrollable */
         }
+
+        #checkbox-panel {
+            margin-top: 30px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            width: 100vh;
+            background-color: #f9f9f9;
+            display: none; /* Initially hidden */
+        }
+        #actorChecks {
+            display: flex;
+            justify-content: space-between; /* Space out checkboxes evenly */
+            flex-wrap: wrap; /* Allow checkboxes to wrap to the next line if necessary */
+            gap: 10px; /* Add spacing between checkboxes */
+        }
+        #actorChecks label {
+            margin: 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .responsive-button {
+            padding: 3px 10px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s, transform 0.3s; /* Smooth transition */
+        }
+
+        /* Style change on hover */
+        .responsive-button:hover {
+            background-color: #0056b3; /* Darken the color */
+            cursor: pointer;          /* Show pointer cursor */
+            transform: scale(1.05);   /* Slightly enlarge the button */
+        }
+
     </style>
 </head>
 <body>
     <div class="toolbar">
         <input type="file" id="fileInput" />
-        <button onclick="">filter actors</button>
-        <button onclick="">filter signals</button>
-        <button onclick="">export self-contained html</button>
+        <button id="filterActors" class="responsive-button">filter participants</button>
+        <button onclick="" class="responsive-button">filter signals</button>
+        <button onclick="" class="responsive-button">export self-contained html</button>
+        <label>
+            <input type="checkbox" id="showIds" /> show ids
+        </label>
+    </div>
+    <div id="checkbox-panel" style="display: none;">
+        <div id="actorChecks"></div> 
     </div>
     <div class="content">
         <div id="diagramContainer">
@@ -90,8 +139,16 @@
     </div>
 
     <script>
+        let diagText = "";
         let diag = null; // Store the parsed diagram object
+        let diag_signals = null;
+        let signal_texts = null;
+        let signal_paths = null;
+        let actor_paths = null;
         let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
+        const filteredActors = new Set();
+        let diagramContainer = document.getElementById("diagram");
+        let addinfo = document.getElementById("addinfo");
 
         function loadDefaultFile() {
             fetch('trc/xtrace.xsd')
@@ -102,7 +159,8 @@
                     return response.text();
                 })
                 .then(diagramText => {
-                    loadDiagram(diagramText);
+                    diagText = diagramText;
+                    loadDiagram(diagText);
                 })
                 .catch(error => {
                     console.log('No default file loaded:', error);
@@ -113,51 +171,78 @@
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                loadDiagram(e.target.result);
+                diagText = e.target.result;
+                loadDiagram(diagText);
             };
             reader.readAsText(file);
         });
 
-        function loadDiagram(diagramText) {
-            const addinfo = document.getElementById("addinfo");
+
+        function loadDiagram(sourceText) {
+
+            diag = Diagram.parse(sourceText);
+            console.log(diag);
+            diag.signals.forEach((s, i) => {
+                s.origIndex = s.index;
+                s.origMessage = s.message;
+            });
+            drawDiagram(diag);
+            clickedSignalIndex = 0;
+            createActorFilterCheckboxes();
+        }
+
+
+        function drawDiagram(diag) {
             addinfo.innerHTML = "";
-            const diagramContainer = document.getElementById("diagram");
             diagramContainer.innerHTML = "";
-            diag = Diagram.parse(diagramText);
+
+            for (let i = diag.signals.length - 1; i >= 0; i--) {
+                signal = diag.signals[i];
+                if(signal.type === 'Signal' &&
+                   (filteredActors.has(signal.actorA.index) ||
+                    filteredActors.has(signal.actorB.index))) {
+                        diag.signals.splice(i, 1);
+                }
+            }
 
             // diag.title = "Hello world";
             // diag.actors.splice(2, 1);
             // diag.signals.splice(1, 4);
-
-            console.log(diag);
-
+            // console.log(diag);
             diag.drawSVG(diagramContainer, { theme: 'simple' });
 
-            const signal_texts = document.querySelectorAll('text.signal');
+            diag_signals = diag.signals.filter(item => item.type === 'Signal');
+            signal_paths = document.querySelectorAll('path.signal-arrow');
+            signal_texts = document.querySelectorAll('text.signal');
+            actor_paths = document.querySelectorAll('path.actor-line');
+
             signal_texts.forEach((txt, index) => {
-                txt.addEventListener("click", () => handleSignalClick(index));
+                txt.addEventListener("click", () => signalTextOnClick(index));
                 txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
                 txt.addEventListener("mouseleave", () => showClickedAddinfo());
             });
 
-            function handleSignalClick(index) {
+            function signalTextOnClick(index) {
                 clickedSignalIndex = index;
-                signal_texts.forEach((txt) => txt.setAttribute("fill", "black"));
                 showClickedAddinfo();
             }
 
             function showTemporaryAddinfo(index) {
                 showAddinfoContent(index);
-                signal_texts[clickedSignalIndex].setAttribute("fill", "steelblue");
             }
 
             function showClickedAddinfo() {
                 showAddinfoContent(clickedSignalIndex);
-                signal_texts[clickedSignalIndex].setAttribute("fill", "red");
+                signal_texts.forEach((text, index) => {
+                    if(index === clickedSignalIndex)
+                        text.classList.add('clicked-signal');
+                    else
+                        text.classList.remove('clicked-signal');
+                });
             }
 
+
             function showAddinfoContent(index) {
-                const diag_signals = diag.signals.filter(item => item.type === 'Signal');
                 const notation = document.getElementById("notation");
                 const meta = document.getElementById("meta");
                 const addinfo = document.getElementById("addinfo");
@@ -170,8 +255,15 @@
                 addinfo.textContent = addinfoText;
             }
 
-            handleSignalClick(0);
-            addSeqNumCircles();
+            actor_paths.forEach((a, i) => {
+                if(filteredActors.has(i))
+                    a.classList.add("filtered-actor");
+            });
+
+            paintSignalTextsByStatus();
+            drawSeqNumCircles();
+            signalTextOnClick(clickedSignalIndex);
+            // colorizeActors();
         }
 
         // Make sections resizable
@@ -189,7 +281,6 @@
                 const diagramHeight = e.clientY / totalHeight * 100;
                 const infoHeight = 100 - diagramHeight;
 
-                // Adjust heights as percentages
                 document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
                 document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
             }
@@ -201,10 +292,32 @@
         });
 
 
-        function addSeqNumCircles(index) {
-            // Select all paths with the "signal" class
-            const signal_paths = document.querySelectorAll('path.signal');
+        function paintSignalTextsByStatus() {
+            signal_texts.forEach((text, index) => {
+                const signal = diag_signals[index];
 
+                if (signal.meta) {
+                    try {
+                        const meta_obj = JSON.parse(signal.meta);
+                        if (meta_obj.status === "error" || meta_obj.size <= 0) {
+                            text.classList.add("error-signal");
+                        }
+                    } catch (e) {
+                        console.error("Invalid JSON in meta:", signal.meta);
+                    }
+                }
+            });
+        }
+
+
+        function paintActors() {
+            actor_paths.forEach((actor, index) => {
+                actor.classList.add("error-signal");
+            });
+        }
+
+
+        function drawSeqNumCircles(index) {
             signal_paths.forEach((path, index) => {
                 // Get the starting point of the path
                 const pathLength = path.getTotalLength();
@@ -232,6 +345,91 @@
                 path.parentNode.appendChild(circle);
                 path.parentNode.appendChild(text);
             });
+        }
+
+
+        const checkbox = document.getElementById("showIds");
+        checkbox.addEventListener("change", function() {
+            showIdsOnChange(this.checked);
+            drawDiagram(diag);
+        });
+
+
+        function showIdsOnChange(isChecked) {
+            if (isChecked) {
+                diag.signals.forEach((signal, index) => {
+                    if(signal.meta) {
+                        id = JSON.parse(signal.meta).id;
+                        if(id)
+                            signal.message += '\n' + id;
+                    }
+                });
+            } else {
+                diag.signals.forEach((signal, index) => {
+                    signal.message = signal.origMessage;
+                });
+            }
+        }
+
+
+        function createActorFilterCheckboxes() {
+            const container = document.getElementById("actorChecks");
+            container.innerHTML = "";
+            diag.actors.forEach((actor, index) => {
+                const checkboxLabel = document.createElement("label");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.id = `actor-${index}`;
+                checkbox.dataset.index = index;
+                checkbox.checked = filteredActors.has(index);
+
+                checkboxLabel.appendChild(checkbox);
+                checkboxLabel.appendChild(document.createTextNode(actor.name));
+                container.appendChild(checkboxLabel);
+
+                checkbox.addEventListener("change", function() {
+                    actorFilterOnChange(this.checked, actor);
+                });
+            });
+        }
+
+
+        function actorFilterOnChange(checked, actor) {
+            // if (checked) {
+            //     for (let i = diag.signals.length - 1; i >= 0; i--) {
+            //         signal = diag.signals[i];
+            //         if(signal.type === 'Signal' &&
+            //            (signal.actorA.index == actor.index ||
+            //             signal.actorB.index == actor.index)) {
+            //             diag.signals.splice(i, 1);
+            //         }
+            //     }
+            // } else {
+            // }
+            console.log(actor_paths);
+            console.log(actor);
+            // actor.filtered = checked;
+            if(checked)
+                filteredActors.add(actor.index);
+            else
+                filteredActors.delete(actor.index);
+
+            console.log(diagText);
+            loadDiagram(diagText);
+        }
+
+
+        // Event listener for the button to toggle the panel visibility
+        document.getElementById("filterActors").addEventListener("click", toggleActorFilterPanel);
+
+        // Function to toggle the checkbox panel visibility
+        function toggleActorFilterPanel() {
+            const panel = document.getElementById("checkbox-panel");
+            if (panel.style.display === "none") {
+                panel.style.display = "block"; // Show the panel
+            } else {
+                panel.style.display = "none"; // Hide the panel
+            }
         }
 
         // Load the default file on page load
