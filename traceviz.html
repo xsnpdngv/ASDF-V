@@ -72,26 +72,6 @@
             /* height: 2000px; Example height to make the page scrollable */
         }
 
-        #checkbox-panel {
-            margin-top: 30px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            width: 100vh;
-            background-color: #f9f9f9;
-            display: none; /* Initially hidden */
-        }
-        #actorChecks {
-            display: flex;
-            justify-content: space-between; /* Space out checkboxes evenly */
-            flex-wrap: wrap; /* Allow checkboxes to wrap to the next line if necessary */
-            gap: 10px; /* Add spacing between checkboxes */
-        }
-        #actorChecks label {
-            margin: 0;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
         .responsive-button {
             padding: 3px 10px;
             font-size: 16px;
@@ -114,9 +94,8 @@
 <body>
     <div class="toolbar">
         <input type="file" id="fileInput" />
-        <button id="filterActors" class="responsive-button">filter participants</button>
-        <button onclick="" class="responsive-button">filter signals</button>
-        <button onclick="" class="responsive-button">export self-contained html</button>
+        <!-- <button onclick="" class="responsive-button">filter signals</button> -->
+        <!-- <button onclick="" class="responsive-button">export self-contained html</button> -->
         <label>
             <input type="checkbox" id="showIds" /> show ids
         </label>
@@ -145,6 +124,8 @@
         let signal_texts = null;
         let signal_paths = null;
         let actor_paths = null;
+        let actor_boxes = null;
+        let actor_texts = null;
         let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
         const filteredActors = new Set();
         let diagramContainer = document.getElementById("diagram");
@@ -171,6 +152,8 @@
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
+                filteredActors.clear();
+                clickedSignalIndex = 0;
                 diagText = e.target.result;
                 loadDiagram(diagText);
             };
@@ -219,7 +202,10 @@
             signal_paths = document.querySelectorAll('path.signal-arrow');
             signal_texts = document.querySelectorAll('text.signal');
             actor_paths = document.querySelectorAll('path.actor-line');
+            actor_boxes = document.querySelectorAll('rect.actor-box');
+            actor_texts = document.querySelectorAll('text.actor-text');
 
+            // add signal event listeners
             signal_texts.forEach((txt, index) => {
                 txt.addEventListener("click", () => signalTextOnClick(index));
                 txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
@@ -229,6 +215,30 @@
             function signalTextOnClick(index) {
                 clickedSignalIndex = index;
                 showClickedAddinfo();
+            }
+
+            // add event listeners to actors
+            diag.actors.forEach((actor, i) => {
+                if(filteredActors.has(i) || actor.hasSignal) {
+                    actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
+                    actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
+                    actor_texts[2*i].addEventListener("mouseenter", () => actorTextOnMouseEnter(i));
+                    actor_texts[2*i+1].addEventListener("mouseenter", () => actorTextOnMouseEnter(i));
+                    actor_texts[2*i].addEventListener("mouseleave", () => actorTextOnMouseLeave(i));
+                    actor_texts[2*i+1].addEventListener("mouseleave", () => actorTextOnMouseLeave(i));
+                }
+            });
+
+            function actorTextOnClick(index) {
+                if(filteredActors.has(index))
+                    filteredActors.delete(index);
+                else
+                    filteredActors.add(index);
+                loadDiagram(diagText);
+            }
+            function actorTextOnMouseEnter(index) {
+            }
+            function actorTextOnMouseLeave(index) {
             }
 
             function showTemporaryAddinfo(index) {
@@ -269,7 +279,7 @@
             paintSignalTextsByStatus();
             drawSeqNumCircles();
             signalTextOnClick(clickedSignalIndex);
-            // colorizeActors();
+            paintActors();
         }
 
         // Make sections resizable
@@ -317,8 +327,19 @@
 
 
         function paintActors() {
-            actor_paths.forEach((actor, index) => {
-                actor.classList.add("error-signal");
+            diag.actors.forEach((a, i) => {
+                if(filteredActors.has(i)) {
+                    actor_boxes[2*i].classList.add("filtered-actor");
+                    actor_boxes[2*i+1].classList.add("filtered-actor");
+                    actor_texts[2*i].classList.add("filtered-actor");
+                    actor_texts[2*i+1].classList.add("filtered-actor");
+                }
+                if(! a.hasSignal) {
+                    actor_boxes[2*i].classList.add("orphan-actor");
+                    actor_boxes[2*i+1].classList.add("orphan-actor");
+                    actor_texts[2*i].classList.add("orphan-actor");
+                    actor_texts[2*i+1].classList.add("orphan-actor");
+                }
             });
         }
 
@@ -374,53 +395,6 @@
                 diag.signals.forEach((signal, index) => {
                     signal.message = signal.origMessage;
                 });
-            }
-        }
-
-
-        function createActorFilterCheckboxes() {
-            const container = document.getElementById("actorChecks");
-            container.innerHTML = "";
-            diag.actors.forEach((actor, index) => {
-                const checkboxLabel = document.createElement("label");
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.id = `actor-${index}`;
-                checkbox.dataset.index = index;
-                checkbox.checked = filteredActors.has(index);
-
-                checkboxLabel.appendChild(checkbox);
-                checkboxLabel.appendChild(document.createTextNode(actor.name));
-                container.appendChild(checkboxLabel);
-
-                checkbox.addEventListener("change", function() {
-                    actorFilterOnChange(this.checked, actor);
-                });
-            });
-        }
-
-
-        function actorFilterOnChange(checked, actor) {
-            console.log(actor_paths);
-            console.log(actor);
-            if(checked)
-                filteredActors.add(actor.index);
-            else
-                filteredActors.delete(actor.index);
-            loadDiagram(diagText);
-        }
-
-
-        // Event listener for the button to toggle the panel visibility
-        document.getElementById("filterActors").addEventListener("click", toggleActorFilterPanel);
-
-        // Function to toggle the checkbox panel visibility
-        function toggleActorFilterPanel() {
-            const panel = document.getElementById("checkbox-panel");
-            if (panel.style.display === "none") {
-                panel.style.display = "block"; // Show the panel
-            } else {
-                panel.style.display = "none"; // Hide the panel
             }
         }
 

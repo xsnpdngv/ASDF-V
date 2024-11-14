@@ -114,6 +114,42 @@ header h2 {
 }
 
 
+text.actor-text {
+    cursor: pointer;
+}
+text.actor-text:hover {
+    /* stroke: lightgrey; */
+    text-decoration: line-through;
+    cursor: pointer;
+}
+text.actor-text.orphan-actor {
+    fill: lightgrey;
+    text-decoration: none;
+}
+text.actor-text.orphan-actor:hover {
+    stroke: none;
+    cursor: default;
+    text-decoration: none;
+}
+text.actor-text.filtered-actor {
+    fill: lightgrey;
+    text-decoration: none;
+}
+text.actor-text.filtered-actor:hover {
+    stroke: black;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+rect.actor-box.orphan-actor {
+    stroke: none;
+    /* fill: lightgrey; */
+}
+rect.actor-box.filtered-actor {
+    stroke: none;
+    /* fill: lightgrey; */
+}
+
 path.filtered-actor.actor-line {
     stroke: none;
     /* stroke-width: 1px; */
