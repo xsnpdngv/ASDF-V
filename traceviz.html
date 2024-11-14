@@ -129,7 +129,6 @@
         let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
         const filteredActors = new Set();
         let diagramContainer = document.getElementById("diagram");
-        let addinfo = document.getElementById("addinfo");
 
         function loadDefaultFile() {
             fetch('trc/xtrace.xsd')
@@ -170,29 +169,27 @@
                 s.origMessage = s.message;
             });
             drawDiagram(diag);
-            clickedSignalIndex = 0;
-            createActorFilterCheckboxes();
         }
 
 
         function drawDiagram(diag) {
-            addinfo.innerHTML = "";
             diagramContainer.innerHTML = "";
 
             // remove signals of filtered actors
             for (let i = diag.signals.length - 1; i >= 0; i--) {
                 signal = diag.signals[i];
-                if(signal.type !== 'Signal') {
-                    continue;
-                }
-                if(filteredActors.has(signal.actorA.index) ||
-                   filteredActors.has(signal.actorB.index)) {
+                if((signal.type === 'Signal' && (filteredActors.has(signal.actorA.index) ||
+                                                 filteredActors.has(signal.actorB.index))) ||
+                   (signal.type === 'Note' && filteredActors.has(signal.actor.index))) {
                     diag.signals.splice(i, 1);
                 }
-                else
-                {   // mark actor having signal
+                // mark actor having signal
+                else if(signal.type === 'Signal') {
                     signal.actorA.hasSignal = true;
                     signal.actorB.hasSignal = true;
+                }
+                else {
+                    signal.actor.hasSignal = true;
                 }
             }
 
@@ -260,13 +257,15 @@
                 const notation = document.getElementById("notation");
                 const meta = document.getElementById("meta");
                 const addinfo = document.getElementById("addinfo");
-                const s = diag_signals[index];
-                let notationText = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
-                notation.textContent = notationText;
-                let metaText = s.meta || "";
-                meta.textContent = metaText;
-                let addinfoText = s.addinfo || "";
-                addinfo.textContent = addinfoText;
+                notation.textContent = "";
+                meta.textContent = "";
+                addinfo.textContent = "";
+                if(index < diag_signals.length) {
+                    const s = diag_signals[index];
+                    notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
+                    meta.textContent = s.meta;
+                    addinfo.textContent = s.addinfo;
+                }
             }
 
             // mark filtered actors for styling
