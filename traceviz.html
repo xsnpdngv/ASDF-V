@@ -196,19 +196,23 @@
             addinfo.innerHTML = "";
             diagramContainer.innerHTML = "";
 
+            // remove signals of filtered actors
             for (let i = diag.signals.length - 1; i >= 0; i--) {
                 signal = diag.signals[i];
-                if(signal.type === 'Signal' &&
-                   (filteredActors.has(signal.actorA.index) ||
-                    filteredActors.has(signal.actorB.index))) {
-                        diag.signals.splice(i, 1);
+                if(signal.type !== 'Signal') {
+                    continue;
+                }
+                if(filteredActors.has(signal.actorA.index) ||
+                   filteredActors.has(signal.actorB.index)) {
+                    diag.signals.splice(i, 1);
+                }
+                else
+                {   // mark actor having signal
+                    signal.actorA.hasSignal = true;
+                    signal.actorB.hasSignal = true;
                 }
             }
 
-            // diag.title = "Hello world";
-            // diag.actors.splice(2, 1);
-            // diag.signals.splice(1, 4);
-            // console.log(diag);
             diag.drawSVG(diagramContainer, { theme: 'simple' });
 
             diag_signals = diag.signals.filter(item => item.type === 'Signal');
@@ -255,8 +259,10 @@
                 addinfo.textContent = addinfoText;
             }
 
+            // mark filtered actors for styling
             actor_paths.forEach((a, i) => {
-                if(filteredActors.has(i))
+                if(filteredActors.has(i) ||
+                    ! diag.actors[i].hasSignal)
                     a.classList.add("filtered-actor");
             });
 
@@ -395,26 +401,12 @@
 
 
         function actorFilterOnChange(checked, actor) {
-            // if (checked) {
-            //     for (let i = diag.signals.length - 1; i >= 0; i--) {
-            //         signal = diag.signals[i];
-            //         if(signal.type === 'Signal' &&
-            //            (signal.actorA.index == actor.index ||
-            //             signal.actorB.index == actor.index)) {
-            //             diag.signals.splice(i, 1);
-            //         }
-            //     }
-            // } else {
-            // }
             console.log(actor_paths);
             console.log(actor);
-            // actor.filtered = checked;
             if(checked)
                 filteredActors.add(actor.index);
             else
                 filteredActors.delete(actor.index);
-
-            console.log(diagText);
             loadDiagram(diagText);
         }
 
