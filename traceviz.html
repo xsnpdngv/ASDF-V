@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>traceviz</title>
 
     <link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
+    <script src="js/bootstrap.min.js"></script>
     <script src="js/underscore-min.js"></script>
     <script src="js/raphael.min.js"></script>
     <script src="js/sequence-diagram.js"></script>
@@ -21,6 +24,7 @@
         /* Diagram container at the top */
         #diagramContainer {
             height: 75%; /* Start with 3/4 of the viewport height */
+            padding: 20px;
             overflow-y: auto; /* Allow scrolling within the diagram area */
             border-bottom: 2px solid #ccc;
         }
@@ -35,7 +39,7 @@
         /* Info display area at the bottom */
         #addinfoDisplay {
             height: 25%; /* Start with 1/4 of the viewport height */
-            padding: 10px;
+            padding: 20px;
             background: #f9f9f9;
             overflow-y: auto; /* Allow scrolling within the info area */
         }
@@ -46,63 +50,30 @@
             fill: red;
         }
 
-        /* Style for the fixed toolbar */
-        .toolbar {
-            position: fixed;
-            top: 0;
-            width: 100vw;
-            /* height: 30px; */
-            /* background-color: #eee; */
-            /* color: white; */
-            display: flex;
-            flex-wrap: nowrap;
-            padding: 8px;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000; /* Keeps toolbar above other elements */
-        }  /* Button Styling with Margin */
-        .toolbar button {
-            border-radius: 14px;
-            margin: 0 5px; /* Adds space between buttons */
-        }
         /* Additional content to allow scrolling */
         .content {
-            margin-top: 30px; /* Space for the fixed toolbar */
-            padding: 10px;
-            height: calc(100vh - 70px);
+            margin-top: 50px; /* Space for the fixed toolbar */
+            height: calc(100vh - 50px);
             /* height: 2000px; Example height to make the page scrollable */
         }
-
-        .responsive-button {
-            padding: 3px 10px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            transition: background-color 0.3s, transform 0.3s; /* Smooth transition */
-        }
-
-        /* Style change on hover */
-        .responsive-button:hover {
-            background-color: #0056b3; /* Darken the color */
-            cursor: pointer;          /* Show pointer cursor */
-            transform: scale(1.05);   /* Slightly enlarge the button */
-        }
-
     </style>
 </head>
 <body>
-    <div class="toolbar">
-        <input type="file" id="fileInput" />
-        <!-- <button onclick="" class="responsive-button">filter signals</button> -->
-        <!-- <button onclick="" class="responsive-button">export self-contained html</button> -->
-        <label>
-            <input type="checkbox" id="showIds" /> show ids
-        </label>
+    <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
+    <div class="container-fluid justify-content-start">
+        <a class="navbar-brand" href="#">traceviz</a>
+        <div>
+            <label class="btn btn-sm btn-outline-primary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
+            <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;">
+        </div>
+
+        <div class="form-check form-switch me-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="showIds">
+            <label class="form-check-label" for="showIds">show ids</label>
+        </div>
     </div>
-    <div id="checkbox-panel" style="display: none;">
-        <div id="actorChecks"></div> 
-    </div>
+    </nav>
+
     <div class="content">
         <div id="diagramContainer">
             <div id="diagram"></div>
@@ -128,6 +99,7 @@
         let actor_texts = null;
         let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
         const filteredActors = new Set();
+        let isIdToggleButtonOn = false;
         let diagramContainer = document.getElementById("diagram");
 
         function loadDefaultFile() {
@@ -148,7 +120,10 @@
         }
 
         document.getElementById("fileInput").addEventListener("change", function(event) {
+
+            const fileLabel = document.getElementById("fileInputLabel");
             const file = event.target.files[0];
+            fileLabel.textContent = file.name;
             const reader = new FileReader();
             reader.onload = function(e) {
                 filteredActors.clear();
@@ -365,6 +340,7 @@
                 text.setAttribute("text-anchor", "middle"); // Center text horizontally
                 text.setAttribute("dy", "0.35em"); // Center text vertically
                 text.setAttribute("fill", "black"); // Color of the text inside the circle
+                text.setAttribute("font-size", "13px"); // Border width
                 text.textContent = index + 1;
 
                 // Append them to the SVG element
