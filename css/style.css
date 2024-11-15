@@ -1,8 +1,13 @@
+:root {
+  --body-bg-color: #fafafa;
+  --highlight-color: rgb(255, 255, 132);
+  --special-color: orangered;
+}
 
 body {
   font-size: 12px;
   line-height: 1.5; 
-  background: #fafafa;
+  background: var(--body-bg-color);
   font-family: 'Helvetica Neue', Helvetica, Arial, serif;
   font-weight: 400;
   color: #666;
@@ -161,18 +166,60 @@ path.actor-line:not(.filtered-actor) {
 path.signal-arrow {
     stroke-width: 2px;
 }
+
 text.signal {
+    /* fill:grey; */
     cursor: pointer;
+    stroke: var(--body-bg-color); stroke-width: 8px; paint-order: stroke fill;
+}
+text.signal.same-id-signal {
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: black;
+}
+text.signal.same-id-signal.error-signal {
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--special-color);
+}
+text.signal.related-signal {
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: black;
+}
+text.signal.related-signal.error-signal {
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--special-color);
 }
 text.signal:hover {
-    stroke: black;
+    /* stroke: black; */
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: black;
 }
 text.error-signal:hover {
-    stroke: orangered;
+    /* stroke: orangered; */
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--special-color);
 }
 text.clicked-signal.error-signal {
-    stroke: orangered;
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--special-color);
 }
 text.clicked-signal:not(.error-signal) {
-    stroke: black;
+    /* stroke: black; */
+    font-weight: 900;
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: black;
+}
+
+circle.seq-num.same-id-signal {
+    /* fill: gold; */
+    /* fill: darkkhaki; */
+    /* fill: darkgrey; */
+    /* fill: yellow; */
+    fill: var(--highlight-color);
+    /* fill: gainsboro; */
+}
+text.seq-num.same-id-signal {
+    /* fill: white; */
+    /* fill: darkkhaki; */
+    /* fill: darkgrey; */
+    /* fill: gainsboro; */
 }

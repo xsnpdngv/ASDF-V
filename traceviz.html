@@ -10,11 +10,13 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/underscore-min.js"></script>
     <script src="js/raphael.min.js"></script>
-    <script src="js/sequence-diagram.js"></script>
+    <!-- <script src="js/sequence-diagram.js"></script> -->
+    <script src="seqdiag.js"></script>
 
     <style>
         /* Use the full viewport height with a flex layout */
         body {
+            background: #f9f9f9;
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -61,15 +63,22 @@
 <body>
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
-        <a class="navbar-brand" href="#">traceviz</a>
+
+        <a class="navbar-brand" href="#">traceviz
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-record-circle" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+            <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+            </svg>
+         </a>
+
         <div>
-            <label class="btn btn-sm btn-outline-primary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
+            <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;">
         </div>
 
         <div class="form-check form-switch me-3">
+            <label class="form-check-label text-secondary fs-xs" for="showIds">show ids</label>
             <input class="form-check-input" type="checkbox" role="switch" id="showIds">
-            <label class="form-check-label" for="showIds">show ids</label>
         </div>
     </div>
     </nav>
@@ -97,6 +106,8 @@
         let actor_paths = null;
         let actor_boxes = null;
         let actor_texts = null;
+        let seqNum_circles = null;
+        let seqNum_texts = null;
         let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
         const filteredActors = new Set();
         let isIdToggleButtonOn = false;
@@ -142,6 +153,12 @@
             diag.signals.forEach((s, i) => {
                 s.origIndex = s.index;
                 s.origMessage = s.message;
+                s.metaObj = {};
+                try {
+                    s.metaObj = JSON.parse(s.meta);
+                } catch (e) {
+                    console.error("Invalid JSON in meta:", s.meta);
+                }
             });
             drawDiagram(diag);
         }
@@ -181,12 +198,13 @@
             signal_texts.forEach((txt, index) => {
                 txt.addEventListener("click", () => signalTextOnClick(index));
                 txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
-                txt.addEventListener("mouseleave", () => showClickedAddinfo());
+                txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex));
             });
 
             function signalTextOnClick(index) {
                 clickedSignalIndex = index;
-                showClickedAddinfo();
+                showAddinfoContent(index);
+                annotateSignals(index);
             }
 
             // add event listeners to actors
@@ -217,16 +235,48 @@
                 showAddinfoContent(index);
             }
 
-            function showClickedAddinfo() {
-                showAddinfoContent(clickedSignalIndex);
+            function annotateSignals(refIndex) {
                 signal_texts.forEach((text, index) => {
-                    if(index === clickedSignalIndex)
+
+                    sig = diag.signals[index];
+                    refSig = diag.signals[refIndex];
+                    circle = seqNum_circles[index];
+                    seqNum = seqNum_texts[index];
+                    console.log(seqNum);
+
+                    if(sig.metaObj.id) {
+
+                        sig.isSameId = refSig.metaObj.id && sig.metaObj.id === refSig.metaObj.id;
+                        cl = 'same-id-signal';
+                        if(sig.isSameId) {
+                            text.classList.add(cl);
+                            circle.classList.add(cl);
+                            seqNum.classList.add(cl);
+                        } else {
+                            text.classList.remove(cl);
+                            circle.classList.remove(cl);
+                            seqNum.classList.remove(cl);
+                        }
+
+                        sig.isRelated = refSig.metaObj.id && sig.metaObj.corrId === refSig.metaObj.id;
+                        cl = 'related-signal';
+                        if(sig.isRelated) {
+                            text.classList.add(cl);
+                            circle.classList.add(cl);
+                            seqNum.classList.add(cl);
+                        } else {
+                            text.classList.remove(cl);
+                            circle.classList.remove(cl);
+                            seqNum.classList.remove(cl);
+                        }
+                    }
+
+                    if(index === refIndex)
                         text.classList.add('clicked-signal');
                     else
                         text.classList.remove('clicked-signal');
                 });
             }
-
 
             function showAddinfoContent(index) {
                 const notation = document.getElementById("notation");
@@ -285,15 +335,9 @@
         function paintSignalTextsByStatus() {
             signal_texts.forEach((text, index) => {
                 const signal = diag_signals[index];
-
-                if (signal.meta) {
-                    try {
-                        const meta_obj = JSON.parse(signal.meta);
-                        if (meta_obj.status === "error" || meta_obj.size <= 0) {
-                            text.classList.add("error-signal");
-                        }
-                    } catch (e) {
-                        console.error("Invalid JSON in meta:", signal.meta);
+                if (signal.metaObj) {
+                    if (signal.metaObj.special || signal.metaObj.size <= 0) {
+                        text.classList.add("error-signal");
                     }
                 }
             });
@@ -332,6 +376,8 @@
                 circle.setAttribute("fill", "white"); // Color of the circle
                 circle.setAttribute("stroke", "black"); // Border color
                 circle.setAttribute("stroke-width", 1); // Border width
+                circle.setAttribute("class", "seq-num"); // Border width
+
 
                 // Create a text element
                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -341,12 +387,16 @@
                 text.setAttribute("dy", "0.35em"); // Center text vertically
                 text.setAttribute("fill", "black"); // Color of the text inside the circle
                 text.setAttribute("font-size", "13px"); // Border width
+                text.setAttribute("class", "seq-num"); // Border width
                 text.textContent = index + 1;
 
                 // Append them to the SVG element
                 path.parentNode.appendChild(circle);
                 path.parentNode.appendChild(text);
             });
+
+            seqNum_circles = document.querySelectorAll('circle.seq-num');
+            seqNum_texts = document.querySelectorAll('text.seq-num');
         }
 
 
