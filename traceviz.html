@@ -10,8 +10,8 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/underscore-min.js"></script>
     <script src="js/raphael.min.js"></script>
-    <!-- <script src="js/sequence-diagram.js"></script> -->
-    <script src="seqdiag.js"></script>
+    <script src="js/sequence-diagram.js"></script>
+    <!-- <script src="seqdiag.js"></script> -->
 
     <style>
         /* Use the full viewport height with a flex layout */
@@ -44,12 +44,6 @@
             padding: 20px;
             background: #f9f9f9;
             overflow-y: auto; /* Allow scrolling within the info area */
-        }
-
-        .error-signal {
-            /* stroke: orangered; */
-            color: red;
-            fill: red;
         }
 
         /* Additional content to allow scrolling */
@@ -99,7 +93,7 @@
 
     <script>
         let diagText = "";
-        let diag = null; // Store the parsed diagram object
+        let diag = null;
         let diag_signals = null;
         let signal_texts = null;
         let signal_paths = null;
@@ -108,7 +102,7 @@
         let actor_texts = null;
         let seqNum_circles = null;
         let seqNum_texts = null;
-        let clickedSignalIndex = 0; // Track the clicked signal for addinfo display
+        let clickedSignalIndex = -1;
         const filteredActors = new Set();
         let isIdToggleButtonOn = false;
         let diagramContainer = document.getElementById("diagram");
@@ -202,9 +196,9 @@
             });
 
             function signalTextOnClick(index) {
-                clickedSignalIndex = index;
-                showAddinfoContent(index);
-                annotateSignals(index);
+                clickedSignalIndex = index == clickedSignalIndex ? -1 : index;
+                showAddinfoContent(clickedSignalIndex);
+                annotateSignals(clickedSignalIndex);
             }
 
             // add event listeners to actors
@@ -239,10 +233,9 @@
                 signal_texts.forEach((text, index) => {
 
                     sig = diag.signals[index];
-                    refSig = diag.signals[refIndex];
+                    refSig = refIndex >= 0 ? diag.signals[refIndex] : { "metaObj": { "id": null, "corrId": null } };
                     circle = seqNum_circles[index];
                     seqNum = seqNum_texts[index];
-                    console.log(seqNum);
 
                     if(sig.metaObj.id) {
 
@@ -271,10 +264,15 @@
                         }
                     }
 
-                    if(index === refIndex)
+                    if(index === refIndex) {
                         text.classList.add('clicked-signal');
-                    else
+                        circle.classList.add('clicked-signal-circle');
+                        seqNum.classList.add('clicked-signal-seq-num');
+                    } else {
                         text.classList.remove('clicked-signal');
+                        circle.classList.remove('clicked-signal-circle');
+                        seqNum.classList.remove('clicked-signal-seq-num');
+                    }
                 });
             }
 
@@ -285,6 +283,8 @@
                 notation.textContent = "";
                 meta.textContent = "";
                 addinfo.textContent = "";
+                if(index < 0)
+                    return;
                 if(index < diag_signals.length) {
                     const s = diag_signals[index];
                     notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
@@ -300,9 +300,9 @@
                     a.classList.add("filtered-actor");
             });
 
-            paintSignalTextsByStatus();
+            paintSpecialSignalTexts();
             drawSeqNumCircles();
-            signalTextOnClick(clickedSignalIndex);
+            signalTextOnClick(0);
             paintActors();
         }
 
@@ -332,12 +332,12 @@
         });
 
 
-        function paintSignalTextsByStatus() {
+        function paintSpecialSignalTexts() {
             signal_texts.forEach((text, index) => {
                 const signal = diag_signals[index];
                 if (signal.metaObj) {
                     if (signal.metaObj.special || signal.metaObj.size <= 0) {
-                        text.classList.add("error-signal");
+                        text.classList.add("special-signal");
                     }
                 }
             });

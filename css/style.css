@@ -169,14 +169,14 @@ path.signal-arrow {
 
 text.signal {
     /* fill:grey; */
-    cursor: pointer;
     stroke: var(--body-bg-color); stroke-width: 8px; paint-order: stroke fill;
+    cursor: pointer;
 }
 text.signal.same-id-signal {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.signal.same-id-signal.error-signal {
+text.signal.same-id-signal.special-signal {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
 }
@@ -184,31 +184,45 @@ text.signal.related-signal {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.signal.related-signal.error-signal {
+text.signal.related-signal.special-signal {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
 }
 text.signal:hover {
     /* stroke: black; */
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    /* stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill; */
     fill: black;
+    font-style: italic;
 }
-text.error-signal:hover {
+text.special-signal {
+    fill: var(--special-color);
+    color: var(--special-color);
+}
+text.special-signal:hover {
     /* stroke: orangered; */
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
 }
-text.clicked-signal.error-signal {
+text.clicked-signal.special-signal {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
+    font-style: italic;
 }
-text.clicked-signal:not(.error-signal) {
+text.clicked-signal:not(.special-signal) {
     /* stroke: black; */
     font-weight: 900;
+    font-style: italic;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
+text.seq-num.clicked-signal-seq-num {
+    font-style: italic;
+    /* stroke: black; */
+}
 
+circle.seq-num.clicked-signal-circle {
+    /* stroke-width: 2; */
+}
 circle.seq-num.same-id-signal {
     /* fill: gold; */
     /* fill: darkkhaki; */
