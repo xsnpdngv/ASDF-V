@@ -237,3 +237,15 @@ text.seq-num.same-id-signal {
     /* fill: darkgrey; */
     /* fill: gainsboro; */
 }
+
+.move-left {
+    visibility: hidden;
+    cursor: pointer;
+}
+.move-right {
+    visibility: hidden;
+    cursor: pointer;
+    pointer-events: all;  /* Ensure that the entire SVG is clickable */
+    width: 32px;           /* Set width */
+    height: 32px;          /* Set height */
+}

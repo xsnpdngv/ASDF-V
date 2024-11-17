@@ -405,6 +405,8 @@
                     actor_texts[2*i+1].classList.add("orphan-actor");
                 }
             });
+
+            showChevrons();
         }
 
 
@@ -471,6 +473,82 @@
 
         // Load the default file on page load
         window.onload = loadDefaultFile;
+
+
+        function showChevrons() {
+            // Select the rects you want to add chevrons to
+            const selectedRects = document.querySelectorAll('.actor-box');
+
+            selectedRects.forEach((rect, index) => {
+                // Calculate the center of each rect
+                const rectX = parseFloat(rect.getAttribute('x'));
+                const rectY = parseFloat(rect.getAttribute('y'));
+                const rectWidth = parseFloat(rect.getAttribute('width'));
+                const rectHeight = parseFloat(rect.getAttribute('height'));
+
+                const rectCenterX = rectX + rectWidth / 2;
+                const rectCenterY = rectY + rectHeight / 2;
+
+                // Create the chevron icon
+                const chevronLeft = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                chevronLeft.setAttribute("width", "16");
+                chevronLeft.setAttribute("height", "16");
+                chevronLeft.setAttribute("fill", "currentColor");
+                chevronLeft.setAttribute("class", "chevron-left move-left");
+                chevronLeft.setAttribute("viewBox", "0 0 16 16");
+                chevronLeft.innerHTML = ` <rect x="0" y="0" width="100%" height="100%" fill="transparent"/><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>`;
+
+                // Position the chevron
+                chevronLeft.setAttribute("x", rectCenterX - 20);
+                chevronLeft.setAttribute("y", rectCenterY - 40);
+
+                // Store the index as the data-id on the chevron
+                chevronLeft.dataset.id = index;
+
+                // Add the click event to the left chevron
+                chevronLeft.addEventListener("click", (event) => {
+                    const chevronIndex = event.target.dataset.id;
+                    handleChevronClick(chevronIndex, 'left');
+                });
+
+                // Create the right chevron (Chevron Right)
+                const chevronRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                chevronRight.setAttribute("width", "16");
+                chevronRight.setAttribute("height", "16");
+                chevronRight.setAttribute("fill", "currentColor");
+                chevronRight.setAttribute("class", "chevron-right move-right");
+                chevronRight.setAttribute("viewBox", "0 0 16 16");
+                chevronRight.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="transparent"/><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>`;
+
+                // Position the right chevron
+                chevronRight.setAttribute("x", rectCenterX + 4);
+                chevronRight.setAttribute("y", rectCenterY - 40);
+
+                // Store the index as the data-id on the chevron
+                chevronRight.dataset.id = index;
+
+                // Add the click event to the right chevron
+                chevronRight.addEventListener("click", (event) => {
+                    const chevronIndex = event.target.dataset.id;
+                    handleChevronClick(chevronIndex, 'right');
+                });
+
+                // Add the chevrons to the SVG
+                if(index % 2 !== 0)
+                {
+                    return;
+                }
+                if(index > 1)
+                {
+                    rect.parentNode.appendChild(chevronLeft);
+                }
+                if(index < 2 * diag.actors.length - 2)
+                {
+                    rect.parentNode.appendChild(chevronRight);
+                }
+            });
+        }
+
     </script>
 </body>
 </html>
