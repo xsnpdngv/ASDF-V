@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>traceviz</title>
+    <title>ASDF Viewport</title>
 
     <link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
@@ -25,7 +25,7 @@
 
         /* Diagram container at the top */
         #diagramContainer {
-            height: 75%; /* Start with 3/4 of the viewport height */
+            height: 85%; /* Start with 3/4 of the viewport height */
             padding: 20px;
             overflow-y: auto; /* Allow scrolling within the diagram area */
             border-bottom: 2px solid #ccc;
@@ -40,7 +40,7 @@
 
         /* Info display area at the bottom */
         #addinfoDisplay {
-            height: 25%; /* Start with 1/4 of the viewport height */
+            height: 15%; /* Start with 1/4 of the viewport height */
             padding: 20px;
             background: #f9f9f9;
             overflow-y: auto; /* Allow scrolling within the info area */
@@ -58,12 +58,12 @@
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
 
-        <a class="navbar-brand" href="#">traceviz
+        <a class="navbar-brand" href="#">asdf viewport
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-record-circle" viewBox="0 0 16 16">
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
             <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
             </svg>
-         </a>
+        </a>
 
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
@@ -92,6 +92,51 @@
     </div>
 
     <script>
+
+        class PersistentSet {
+            constructor(key) {
+                this.key = key;
+                this.set = this.#loadSetFromLocalStorage(key);
+            }
+
+            add(value) {
+                this.set.add(value);
+                this.#saveSetToLocalStorage(this.key, this.set);
+            }
+
+            delete(value) {
+                this.set.delete(value);
+                this.#saveSetToLocalStorage(this.key, this.set);
+            }
+
+            has(value) {
+                return this.set.has(value);
+            }
+
+            clear() {
+                this.set.clear();
+                this.#saveSetToLocalStorage(this.key, this.set);
+            }
+
+            values() {
+                return [...this.set];
+            }
+
+            forEach(callback, thisArg = undefined) {
+                // Call the callback for each element in the set
+                this.set.forEach(callback, thisArg);
+            }
+
+            #saveSetToLocalStorage(key, set) {
+                localStorage.setItem(key, JSON.stringify([...set]));
+            }
+
+            #loadSetFromLocalStorage(key) {
+                const data = localStorage.getItem(key);
+                return data ? new Set(JSON.parse(data)) : new Set();
+            }
+        }
+
         let diagText = "";
         let diag = null;
         let diag_signals = null;
@@ -103,12 +148,12 @@
         let seqNum_circles = null;
         let seqNum_texts = null;
         let clickedSignalIndex = -1;
-        const filteredActors = new Set();
+        const filteredActors = new PersistentSet("filteredActors");
         let isIdToggleButtonOn = false;
         let diagramContainer = document.getElementById("diagram");
 
         function loadDefaultFile() {
-            fetch('trc/xtrace.xsd')
+            fetch('trc/xtrace.asdf')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Default file not found.');
@@ -131,7 +176,7 @@
             fileLabel.textContent = file.name;
             const reader = new FileReader();
             reader.onload = function(e) {
-                filteredActors.clear();
+                // filteredActors.clear();
                 clickedSignalIndex = 0;
                 diagText = e.target.result;
                 loadDiagram(diagText);
@@ -164,9 +209,9 @@
             // remove signals of filtered actors
             for (let i = diag.signals.length - 1; i >= 0; i--) {
                 signal = diag.signals[i];
-                if((signal.type === 'Signal' && (filteredActors.has(signal.actorA.index) ||
-                                                 filteredActors.has(signal.actorB.index))) ||
-                   (signal.type === 'Note' && filteredActors.has(signal.actor.index))) {
+                if((signal.type === 'Signal' && (filteredActors.has(signal.actorA.name) ||
+                                                 filteredActors.has(signal.actorB.name))) ||
+                   (signal.type === 'Note' && filteredActors.has(signal.actor.name))) {
                     diag.signals.splice(i, 1);
                 }
                 // mark actor having signal
@@ -203,7 +248,7 @@
 
             // add event listeners to actors
             diag.actors.forEach((actor, i) => {
-                if(filteredActors.has(i) || actor.hasSignal) {
+                if(filteredActors.has(actor.name) || actor.hasSignal) {
                     actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
                     actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
                     actor_texts[2*i].addEventListener("mouseenter", () => actorTextOnMouseEnter(i));
@@ -214,10 +259,11 @@
             });
 
             function actorTextOnClick(index) {
-                if(filteredActors.has(index))
-                    filteredActors.delete(index);
+                name = diag.actors[index].name;
+                if(filteredActors.has(name))
+                    filteredActors.delete(name);
                 else
-                    filteredActors.add(index);
+                    filteredActors.add(name);
                 loadDiagram(diagText);
             }
             function actorTextOnMouseEnter(index) {
@@ -295,7 +341,7 @@
 
             // mark filtered actors for styling
             actor_paths.forEach((a, i) => {
-                if(filteredActors.has(i) ||
+                if(filteredActors.has(diag.actors[i].name) ||
                     ! diag.actors[i].hasSignal)
                     a.classList.add("filtered-actor");
             });
@@ -346,7 +392,7 @@
 
         function paintActors() {
             diag.actors.forEach((a, i) => {
-                if(filteredActors.has(i)) {
+                if(filteredActors.has(diag.actors[i].name)) {
                     actor_boxes[2*i].classList.add("filtered-actor");
                     actor_boxes[2*i+1].classList.add("filtered-actor");
                     actor_texts[2*i].classList.add("filtered-actor");
