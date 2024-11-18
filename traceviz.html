@@ -68,6 +68,7 @@
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;">
+            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="resetBtnOnClick()">Reset</button>
         </div>
 
         <div class="form-check form-switch me-3">
@@ -466,7 +467,14 @@
             drawSeqNumCircles();
             signalTextOnClick(0);
             paintActors();
+
+        function resetBtnOnClick() {
+            actorOrder.clear();
+            filteredActors.clear();
+            clickedSignalIndex = 0;
+            loadDiagram(diagText);
         }
+
 
         // Make sections resizable
         const divider = document.getElementById("divider");
