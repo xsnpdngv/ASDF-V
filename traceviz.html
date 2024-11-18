@@ -68,18 +68,19 @@
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;">
-            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="resetBtnOnClick()">Reset</button>
 
             <div class="btn-group me-3" role="group" aria-label="Basic checkbox toggle button group">
                 <input type="checkbox" class="btn-check" id="showIdsToggle" autocomplete="off" onchange="showIdsOnChange(checked)">
-                <label class="btn btn-outline-secondary btn-sm" for="showIdsToggle">IDs</label>
+                <label class="btn btn-asdf btn-sm" for="showIdsToggle">IDs</label>
 
                 <input type="checkbox" class="btn-check" id="showInstanceToggle" autocomplete="off" onchange="showInstanceOnChange(checked)">
-                <label class="btn btn-outline-secondary btn-sm" for="showInstanceToggle">Instance</label>
+                <label class="btn btn-sm btn-asdf" for="showInstanceToggle">Instance</label>
 
                 <input type="checkbox" class="btn-check" id="showRelatedToggle" autocomplete="off" onchange="showRelatedOnChange(checked)">
-                <label class="btn btn-outline-secondary btn-sm" for="showRelatedToggle">Related</label>
+                <label class="btn btn-asdf btn-sm" for="showRelatedToggle">Related</label>
             </div>
+
+            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="resetBtnOnClick()">Reset</button>
         </div>
 
     </div>
@@ -349,6 +350,7 @@
 
             parseMeta(diag);
             drawDiagram(diag);
+
             applyShowIds(showIds.get());
             applyShowInstance(showInstance.get());
             applyShowRelated(showRelated.get());
@@ -531,6 +533,8 @@
             drawSeqNumCircles();
             markActors();
             applySignalClick(clickedSignalIndex);
+            applyShowInstance(showInstance.get());
+            applyShowRelated(showRelated.get());
         }
 
 

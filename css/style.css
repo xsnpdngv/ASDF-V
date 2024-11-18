@@ -129,7 +129,7 @@ circle.seq-num.same-id-signal:not(.instance-highlight-off) {
     fill: var(--highlight-color);
 }
 circle.seq-num.related-signal:not(.related-highlight-off) {
-    fill: var(--highlight-color2);
+    /* fill: var(--highlight-color2); */
 }
 text.seq-num.same-id-signal {
     /* fill: white; */
@@ -149,4 +149,24 @@ text.seq-num.same-id-signal {
     opacity: 1;
     fill: black;
     transition: opacity 0s ease;
+}
+
+.btn.btn-asdf {
+    border-color: var(--bs-secondary);
+    color: var(--bs-secondary);
+    border-radius: 10px;
+}
+.btn.btn-asdf:hover {
+    border-color: var(--bs-secondary);
+}
+.btn-check:checked + .btn.btn-asdf {
+    background-color: var(--highlight-color);
+}
+.btn-check:checked + .btn.btn-asdf:hover {
+    text-decoration: line-through;
+}
+.btn-check:not(:checked) + .btn.btn-asdf:hover {
+    border-color: var(--bs-secondary);
+    /* color: var(--bs-secondary); */
+    text-decoration: underline;
 }
