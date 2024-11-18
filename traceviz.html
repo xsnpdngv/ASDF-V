@@ -368,13 +368,9 @@
                 if(filteredActors.has(actor.name) || actor.hasSignal) {
                     actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
                     actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
-                    actor_texts[2*i].addEventListener("mouseenter", () => actorTextOnMouseEnter(i));
-                    actor_texts[2*i+1].addEventListener("mouseenter", () => actorTextOnMouseEnter(i));
-                    actor_texts[2*i].addEventListener("mouseleave", () => actorTextOnMouseLeave(i));
-                    actor_texts[2*i+1].addEventListener("mouseleave", () => actorTextOnMouseLeave(i));
                 }
             });
-            // console.log(actorOrder);
+
 
             function actorTextOnClick(index) {
                 name = diag.actors[index].name;
@@ -384,10 +380,7 @@
                     filteredActors.add(name);
                 loadDiagram(diagText);
             }
-            function actorTextOnMouseEnter(index) {
-            }
-            function actorTextOnMouseLeave(index) {
-            }
+
 
             function showTemporaryAddinfo(index) {
                 showAddinfoContent(index);
