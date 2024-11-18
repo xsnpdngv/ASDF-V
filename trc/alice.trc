@@ -7,7 +7,7 @@ rendered SVG.
 	~~~
 Note over Bob: Hmm, what does she want?
 Bob-->>Alice: Oh, hi
-	~~~ {"ts": "2024-11-11T15:34:22.460", "status": "ok", "size": 85}
+	~~~ {"ts": "2024-11-11T15:34:22.460", "special": true, "size": 85}
 Bob is not a talkative person on the
 surface but might have something to say
 to Alice
