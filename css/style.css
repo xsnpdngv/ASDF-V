@@ -1,8 +1,8 @@
 :root {
     --body-bg-color: #fafafa;
     --highlight-color: rgb(255, 255, 132);
-    --highlight-color2: #fafafa;
     --highlight-color2: rgb(241, 255, 210);
+    --highlight-color2: rgb(255, 255, 132);
     --special-color: orangered;
 }
 
@@ -74,19 +74,19 @@ text.signal {
     stroke: var(--body-bg-color); stroke-width: 8px; paint-order: stroke fill;
     cursor: pointer;
 }
-text.signal.same-id-signal {
+text.signal.same-id-signal:not(.instance-highlight-off) {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.signal.same-id-signal.special-signal {
+text.signal.same-id-signal.special-signal:not(.instance-highlight-off) {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
 }
-text.signal.related-signal {
+text.signal.related-signal:not(.related-highlight-off) {
     stroke: var(--highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.signal.related-signal.special-signal {
+text.signal.related-signal.special-signal:not(.related-highlight-off) {
     stroke: var(--highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
 }
@@ -125,10 +125,10 @@ text.seq-num.clicked-signal-seq-num {
 circle.seq-num.clicked-signal-circle {
     /* stroke-width: 2; */
 }
-circle.seq-num.same-id-signal {
+circle.seq-num.same-id-signal:not(.instance-highlight-off) {
     fill: var(--highlight-color);
 }
-circle.seq-num.related-signal {
+circle.seq-num.related-signal:not(.related-highlight-off) {
     fill: var(--highlight-color2);
 }
 text.seq-num.same-id-signal {

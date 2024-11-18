@@ -289,8 +289,8 @@
         const filteredActors = new PersistentSet("filteredActors");
         const actorOrder = new PersistentArray("actorOrder");
         const showIds = new PersistentBool("showIds", false);
-        const showInstance = new PersistentBool("showInstance", true);
-        const showRelated = new PersistentBool("showRelated", true);
+        const showInstance = new PersistentBool("showInstance", false);
+        const showRelated = new PersistentBool("showRelated", false);
         let diagramContainer = document.getElementById("diagram");
 
         window.onload = loadDefaultFile;
@@ -343,14 +343,15 @@
                 clickedSignalIndex = 0;
             }
 
+            document.getElementById("showIdsToggle").checked = showIds.get();
+            document.getElementById("showInstanceToggle").checked = showInstance.get();
+            document.getElementById("showRelatedToggle").checked = showRelated.get();
+
             parseMeta(diag);
             drawDiagram(diag);
             applyShowIds(showIds.get());
             applyShowInstance(showInstance.get());
             applyShowRelated(showRelated.get());
-            document.getElementById("showIdsToggle").checked = showIds.get();
-            document.getElementById("showInstanceToggle").checked = showInstance.get();
-            document.getElementById("showRelatedToggle").checked = showRelated.get();
         }
 
 
@@ -537,7 +538,7 @@
             actorOrder.clear();
             filteredActors.clear();
             showIds.set(false);
-            showInstance.set(true);
+            showInstance.set(false);
             showRelated.set(false);
             clickedSignalIndex = 0;
             loadDiagram(diagText);
@@ -667,7 +668,17 @@
         }
 
         function applyShowInstance(isChecked) {
-            // TODO:
+            cl = 'instance-highlight-off';
+            signal_texts.forEach((s, i) => {
+                c = seqNum_circles[i];
+                if(isChecked) {
+                    s.classList.remove(cl);
+                    c.classList.remove(cl);
+                } else {
+                    s.classList.add(cl);
+                    c.classList.add(cl);
+                }
+            });
         }
 
 
@@ -677,7 +688,17 @@
         }
 
         function applyShowRelated(isChecked) {
-            // TODO:
+            cl = 'related-highlight-off';
+            signal_texts.forEach((s, i) => {
+                c = seqNum_circles[i];
+                if(isChecked) {
+                    s.classList.remove(cl);
+                    c.classList.remove(cl);
+                } else {
+                    s.classList.add(cl);
+                    c.classList.add(cl);
+                }
+            });
         }
 
 
