@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ASDF Viewport</title>
+    <title>ASDF Viewer</title>
 
     <link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
@@ -58,7 +58,7 @@
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
 
-        <a class="navbar-brand" href="#">asdf viewport
+        <a class="navbar-brand" href="#">asdf viewer
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-record-circle" viewBox="0 0 16 16">
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
             <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
@@ -137,6 +137,101 @@
             }
         }
 
+
+        class PersistentArray {
+            // Constructor accepts a key for storing/retrieving data from localStorage
+            constructor(key) {
+                this.key = key;
+                this.array = this.#loadArrayFromLocalStorage();
+            }
+
+            // Private method to load array from localStorage
+            #loadArrayFromLocalStorage() {
+                const data = localStorage.getItem(this.key);
+                return data ? JSON.parse(data) : [];
+            }
+
+            // Private method to save array to localStorage
+            #saveArrayToLocalStorage() {
+                localStorage.setItem(this.key, JSON.stringify(this.array));
+            }
+
+            // Add a new element to the array
+            add(value) {
+                this.array.push(value);
+                this.#saveArrayToLocalStorage();
+            }
+
+            // Remove an element by index
+            remove(index) {
+                if (index >= 0 && index < this.array.length) {
+                    this.array.splice(index, 1);
+                    this.#saveArrayToLocalStorage();
+                }
+            }
+            // Get the array (this will allow you to pass it to printParticipants)
+            getArray() {
+                return this.array;
+            }
+
+            // Get element at specific index
+            get(index) {
+                return this.array[index];
+            }
+
+            // Get the length of the array
+            length() {
+                return this.array.length;
+            }
+
+            // Move an element from one index to another
+            move(fromIndex, toIndex) {
+                if (fromIndex >= 0 && fromIndex < this.array.length && toIndex >= 0 && toIndex < this.array.length) {
+                    const [item] = this.array.splice(fromIndex, 1); // Remove item from original position
+                    this.array.splice(toIndex, 0, item); // Insert item at the new position
+                    this.#saveArrayToLocalStorage();
+                }
+            }
+
+            // Move item to the start of the array
+            moveToStart(index) {
+                if (index >= 0 && index < this.array.length) {
+                    const [item] = this.array.splice(index, 1); // Remove item
+                    this.array.unshift(item); // Insert at the start
+                    this.#saveArrayToLocalStorage();
+                }
+            }
+
+            // Move item to the end of the array
+            moveToEnd(index) {
+                if (index >= 0 && index < this.array.length) {
+                    const [item] = this.array.splice(index, 1); // Remove item
+                    this.array.push(item); // Insert at the end
+                    this.#saveArrayToLocalStorage();
+                }
+            }
+
+            // Get all elements in the array
+            getAll() {
+                return this.array;
+            }
+
+            // Set a new value to a specific index
+            set(index, value) {
+                if (index >= 0 && index < this.array.length) {
+                    this.array[index] = value;
+                    this.#saveArrayToLocalStorage();
+                }
+            }
+
+            // Clear the array
+            clear() {
+                this.array = [];
+                this.#saveArrayToLocalStorage();
+            }
+        }
+
+
         let diagText = "";
         let diag = null;
         let diag_signals = null;
@@ -149,8 +244,11 @@
         let seqNum_texts = null;
         let clickedSignalIndex = -1;
         const filteredActors = new PersistentSet("filteredActors");
-        let isIdToggleButtonOn = false;
+        const actorOrder = new PersistentArray("actorOrder");
+        let isIdToggleOn = false;
         let diagramContainer = document.getElementById("diagram");
+
+        window.onload = loadDefaultFile;
 
         function loadDefaultFile() {
             fetch('trc/xtrace.asdf')
@@ -169,6 +267,7 @@
                 });
         }
 
+
         document.getElementById("fileInput").addEventListener("change", function(event) {
 
             const fileLabel = document.getElementById("fileInputLabel");
@@ -176,7 +275,6 @@
             fileLabel.textContent = file.name;
             const reader = new FileReader();
             reader.onload = function(e) {
-                // filteredActors.clear();
                 clickedSignalIndex = 0;
                 diagText = e.target.result;
                 loadDiagram(diagText);
@@ -185,23 +283,38 @@
         });
 
 
-        function loadDiagram(sourceText) {
+        function loadDiagram(asdf) {
+            diag = Diagram.parse(asdf);
 
-            diag = Diagram.parse(sourceText);
-            console.log(diag);
+            if(haveSameElements(actorOrder.getArray(), diag.actors.map(element => element.name))) {
+                const participantOrder = printParticipants(actorOrder.getArray());
+                orderedAsdf = participantOrder + "\n\n" + asdf;
+                diag = Diagram.parse(orderedAsdf);
+            } else {
+                actorOrder.clear();
+                filteredActors.clear();
+            }
+
+            parseMeta(diag);
+            drawDiagram(diag);
+        }
+
+        function parseMeta(diag)
+        {
+            // parse meta
             diag.signals.forEach((s, i) => {
                 s.origIndex = s.index;
                 s.origMessage = s.message;
                 s.metaObj = {};
-                try {
-                    s.metaObj = JSON.parse(s.meta);
-                } catch (e) {
-                    console.error("Invalid JSON in meta:", s.meta);
+                if(s.meta) {
+                    try {
+                        s.metaObj = JSON.parse(s.meta);
+                    } catch (e) {
+                        console.error("Invalid JSON in meta:", s.meta);
+                    }
                 }
             });
-            drawDiagram(diag);
         }
-
 
         function drawDiagram(diag) {
             diagramContainer.innerHTML = "";
@@ -247,7 +360,9 @@
             }
 
             // add event listeners to actors
+            actorOrder.clear();
             diag.actors.forEach((actor, i) => {
+                actorOrder.add(actor.name);
                 if(filteredActors.has(actor.name) || actor.hasSignal) {
                     actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
                     actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
@@ -257,6 +372,7 @@
                     actor_texts[2*i+1].addEventListener("mouseleave", () => actorTextOnMouseLeave(i));
                 }
             });
+            // console.log(actorOrder);
 
             function actorTextOnClick(index) {
                 name = diag.actors[index].name;
@@ -451,7 +567,6 @@
         const checkbox = document.getElementById("showIds");
         checkbox.addEventListener("change", function() {
             showIdsOnChange(this.checked);
-            drawDiagram(diag);
         });
 
 
@@ -471,13 +586,9 @@
             }
         }
 
-        // Load the default file on page load
-        window.onload = loadDefaultFile;
-
-
         function showChevrons() {
             // Select the rects you want to add chevrons to
-            const selectedRects = document.querySelectorAll('.actor-box');
+            const selectedRects = document.querySelectorAll('.actor-top-box');
 
             selectedRects.forEach((rect, index) => {
                 // Calculate the center of each rect
@@ -507,8 +618,7 @@
 
                 // Add the click event to the left chevron
                 chevronLeft.addEventListener("click", (event) => {
-                    const chevronIndex = event.target.dataset.id;
-                    handleChevronClick(chevronIndex, 'left');
+                    chevronOnClick(index, 'left');
                 });
 
                 // Create the right chevron (Chevron Right)
@@ -529,26 +639,55 @@
 
                 // Add the click event to the right chevron
                 chevronRight.addEventListener("click", (event) => {
-                    const chevronIndex = event.target.dataset.id;
-                    handleChevronClick(chevronIndex, 'right');
+                    chevronOnClick(index, 'right');
                 });
 
                 // Add the chevrons to the SVG
-                if(index % 2 !== 0)
-                {
-                    return;
-                }
-                if(index > 1)
+                if(index > 0)
                 {
                     rect.parentNode.appendChild(chevronLeft);
                 }
-                if(index < 2 * diag.actors.length - 2)
+                if(index < diag.actors.length - 1)
                 {
                     rect.parentNode.appendChild(chevronRight);
                 }
             });
         }
 
+
+        function chevronOnClick(index, dir) {
+            if(dir == 'left') {
+                actorOrder.move(index, index - 1);
+                console.log(index + " balra");
+            } else if (dir == 'right') {
+                actorOrder.move(index, index + 1);
+                console.log(index + " jobbra");
+            }
+            console.log(actorOrder);
+
+            loadDiagram(diagText);
+        }
+
+
+        function printParticipants(array) {
+            return array.map(item => `participant ${item}`).join('\n');
+        }
+
+
+        function haveSameElements(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+
+            const set1 = new Set(arr1);
+            const set2 = new Set(arr2);
+
+            if (set1.size !== set2.size) return false;
+
+            for (let elem of set1) {
+                if (!set2.has(elem)) return false;
+            }
+
+            return true;
+        }
     </script>
 </body>
 </html>
