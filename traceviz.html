@@ -574,10 +574,8 @@
         function showIdsOnChange(isChecked) {
             if (isChecked) {
                 diag.signals.forEach((signal, index) => {
-                    if(signal.meta) {
-                        id = JSON.parse(signal.meta).id;
-                        if(id)
-                            signal.message += '\n' + id;
+                    if(signal.metaObj.id) {
+                        signal.message += '\n' + signal.metaObj.id;
                     }
                 });
             } else {
@@ -585,6 +583,7 @@
                     signal.message = signal.origMessage;
                 });
             }
+            drawDiagram(diag);
         }
 
 
