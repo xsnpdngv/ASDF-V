@@ -261,6 +261,7 @@
                 })
                 .then(diagramText => {
                     diagText = diagramText;
+                    clickedSignalIndex = 0;
                     loadDiagram(diagText);
                 })
                 .catch(error => {
@@ -276,8 +277,8 @@
             fileLabel.textContent = file.name;
             const reader = new FileReader();
             reader.onload = function(e) {
-                clickedSignalIndex = 0;
                 diagText = e.target.result;
+                clickedSignalIndex = 0;
                 loadDiagram(diagText);
             };
             reader.readAsText(file);
@@ -294,6 +295,7 @@
             } else {
                 actorOrder.clear();
                 filteredActors.clear();
+                clickedSignalIndex = 0;
             }
 
             parseMeta(diag);
@@ -355,7 +357,21 @@
             });
 
             function signalTextOnClick(index) {
-                clickedSignalIndex = index == clickedSignalIndex ? -1 : index;
+                if(diag.signals[index].clicked) {
+                   index = -1;
+                }
+                applySignalClick(index);
+            }
+
+
+            function applySignalClick(index) {
+                if(clickedSignalIndex >= 0) {
+                    diag.signals[clickedSignalIndex].clicked = false;
+                }
+                if(index >= 0) {
+                    diag.signals[index].clicked = true;
+                }
+                clickedSignalIndex = index;
                 showAddinfoContent(clickedSignalIndex);
                 markSignals(clickedSignalIndex);
             }
@@ -460,6 +476,9 @@
             markSpecialSignalTexts();
             drawSeqNumCircles();
             markActors();
+            applySignalClick(clickedSignalIndex);
+        }
+
 
         function resetBtnOnClick() {
             actorOrder.clear();
