@@ -235,14 +235,14 @@
 
         let diagText = "";
         let diag = null;
-        let diag_signals = null;
-        let signal_texts = null;
-        let signal_paths = null;
-        let actor_paths = null;
-        let actor_boxes = null;
-        let actor_texts = null;
-        let seqNum_circles = null;
-        let seqNum_texts = null;
+        let diag_signals = [];
+        let signal_texts = [];
+        let signal_paths = [];
+        let actor_paths = [];
+        let actor_boxes = [];
+        let actor_texts = [];
+        let seqNum_circles = [];
+        let seqNum_texts = [];
         let clickedSignalIndex = -1;
         const filteredActors = new PersistentSet("filteredActors");
         const actorOrder = new PersistentArray("actorOrder");
@@ -357,8 +357,9 @@
             function signalTextOnClick(index) {
                 clickedSignalIndex = index == clickedSignalIndex ? -1 : index;
                 showAddinfoContent(clickedSignalIndex);
-                annotateSignals(clickedSignalIndex);
+                markSignals(clickedSignalIndex);
             }
+
 
             // add event listeners to actors
             actorOrder.clear();
@@ -392,7 +393,7 @@
                 showAddinfoContent(index);
             }
 
-            function annotateSignals(refIndex) {
+            function markSignals(refIndex) {
                 signal_texts.forEach((text, index) => {
 
                     sig = diag.signals[index];
@@ -463,10 +464,9 @@
                     a.classList.add("filtered-actor");
             });
 
-            paintSpecialSignalTexts();
+            markSpecialSignalTexts();
             drawSeqNumCircles();
-            signalTextOnClick(0);
-            paintActors();
+            markActors();
 
         function resetBtnOnClick() {
             actorOrder.clear();
@@ -502,7 +502,7 @@
         });
 
 
-        function paintSpecialSignalTexts() {
+        function markSpecialSignalTexts() {
             signal_texts.forEach((text, index) => {
                 const signal = diag_signals[index];
                 if (signal.metaObj) {
@@ -514,7 +514,7 @@
         }
 
 
-        function paintActors() {
+        function markActors() {
             diag.actors.forEach((a, i) => {
                 if(filteredActors.has(diag.actors[i].name)) {
                     actor_boxes[2*i].classList.add("filtered-actor");
@@ -530,7 +530,7 @@
                 }
             });
 
-            showChevrons();
+            addMoveBtns();
         }
 
 
@@ -594,7 +594,8 @@
             }
         }
 
-        function showChevrons() {
+
+        function addMoveBtns() {
             // Select the rects you want to add chevrons to
             const selectedRects = document.querySelectorAll('.actor-top-box');
 
@@ -678,6 +679,7 @@
 
             return true;
         }
+
     </script>
 </body>
 </html>
