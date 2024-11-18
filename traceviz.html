@@ -424,7 +424,8 @@
                             seqNum.classList.remove(cl);
                         }
 
-                        sig.isRelated = refSig.metaObj.id && sig.metaObj.corrId === refSig.metaObj.id;
+                        sig.isRelated = refSig.metaObj.id && (sig.metaObj.corrId === refSig.metaObj.id ||
+                                                              sig.metaObj.id === refSig.metaObj.corrId);
                         cl = 'related-signal';
                         if(sig.isRelated) {
                             text.classList.add(cl);
