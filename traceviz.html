@@ -69,12 +69,19 @@
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;">
             <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="resetBtnOnClick()">Reset</button>
+
+            <div class="btn-group me-3" role="group" aria-label="Basic checkbox toggle button group">
+                <input type="checkbox" class="btn-check" id="showIdsToggle" autocomplete="off" onchange="showIdsOnChange(checked)">
+                <label class="btn btn-outline-secondary btn-sm" for="showIdsToggle">IDs</label>
+
+                <input type="checkbox" class="btn-check" id="showInstanceToggle" autocomplete="off" onchange="showInstanceOnChange(checked)">
+                <label class="btn btn-outline-secondary btn-sm" for="showInstanceToggle">Instance</label>
+
+                <input type="checkbox" class="btn-check" id="showRelatedToggle" autocomplete="off" onchange="showRelatedOnChange(checked)">
+                <label class="btn btn-outline-secondary btn-sm" for="showRelatedToggle">Related</label>
+            </div>
         </div>
 
-        <div class="form-check form-switch me-3">
-            <label class="form-check-label text-secondary fs-xs" for="showIds">show ids</label>
-            <input class="form-check-input" type="checkbox" role="switch" id="showIds">
-        </div>
     </div>
     </nav>
 
@@ -233,6 +240,41 @@
         }
 
 
+        class PersistentBool {
+            constructor(key, defaultValue = false) {
+                this.key = key;
+                if (localStorage.getItem(this.key) === null) {
+                    this.value = defaultValue;
+                    this.#save();
+                }
+            }
+
+            #save() {
+                localStorage.setItem(this.key, JSON.stringify(this.value));
+            }
+
+            get() {
+                return JSON.parse(localStorage.getItem(this.key));
+            }
+
+            set(value) {
+                if (typeof value !== "boolean") {
+                    throw new Error("PersistentBool can only store boolean values.");
+                }
+                this.value = value;
+                this.#save();
+            }
+
+            toggle() {
+                this.set(!this.get());
+            }
+
+            clear() {
+                localStorage.removeItem(this.key);
+            }
+        }
+
+
         let diagText = "";
         let diag = null;
         let diag_signals = [];
@@ -246,12 +288,15 @@
         let clickedSignalIndex = -1;
         const filteredActors = new PersistentSet("filteredActors");
         const actorOrder = new PersistentArray("actorOrder");
-        let isIdToggleOn = false;
+        const showIds = new PersistentBool("showIds", false);
+        const showInstance = new PersistentBool("showInstance", true);
+        const showRelated = new PersistentBool("showRelated", true);
         let diagramContainer = document.getElementById("diagram");
 
         window.onload = loadDefaultFile;
 
         function loadDefaultFile() {
+
             fetch('trc/xtrace.asdf')
                 .then(response => {
                     if (!response.ok) {
@@ -300,7 +345,14 @@
 
             parseMeta(diag);
             drawDiagram(diag);
+            applyShowIds(showIds.get());
+            applyShowInstance(showInstance.get());
+            applyShowRelated(showRelated.get());
+            document.getElementById("showIdsToggle").checked = showIds.get();
+            document.getElementById("showInstanceToggle").checked = showInstance.get();
+            document.getElementById("showRelatedToggle").checked = showRelated.get();
         }
+
 
         function parseMeta(diag)
         {
@@ -484,6 +536,9 @@
         function resetBtnOnClick() {
             actorOrder.clear();
             filteredActors.clear();
+            showIds.set(false);
+            showInstance.set(true);
+            showRelated.set(false);
             clickedSignalIndex = 0;
             loadDiagram(diagText);
         }
@@ -585,13 +640,12 @@
         }
 
 
-        const checkbox = document.getElementById("showIds");
-        checkbox.addEventListener("change", function() {
-            showIdsOnChange(this.checked);
-        });
-
-
         function showIdsOnChange(isChecked) {
+            showIds.set(isChecked);
+            applyShowIds(isChecked);
+        }
+
+        function applyShowIds(isChecked) {
             if (isChecked) {
                 diag.signals.forEach((signal, index) => {
                     if(signal.metaObj.id) {
@@ -604,6 +658,26 @@
                 });
             }
             drawDiagram(diag);
+        }
+
+
+        function showInstanceOnChange(isChecked) {
+            showInstance.set(isChecked);
+            applyShowInstance(isChecked);
+        }
+
+        function applyShowInstance(isChecked) {
+            // TODO:
+        }
+
+
+        function showRelatedOnChange(isChecked) {
+            showRelated.set(isChecked);
+            applyShowRelated(isChecked);
+        }
+
+        function applyShowRelated(isChecked) {
+            // TODO:
         }
 
 
