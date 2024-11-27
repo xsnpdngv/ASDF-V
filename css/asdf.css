@@ -8,17 +8,48 @@
 }
 
 body {
-    font-size: 10px;
+    font-size: 15px;
     line-height: 1.5; 
     background: var(--body-bg-color);
     font-family: 'Helvetica Neue', Helvetica, Arial, serif;
-    font-weight: 100;
+    font-weight: 300;
 }
-
 
 #main {
     padding: 10px;
 }
+
+/* Diagram container at the top */
+#diagramContainer {
+    height: 85%; /* Start with 3/4 of the viewport height */
+    padding: 20px;
+    overflow-y: auto; /* Allow scrolling within the diagram area */
+    border-bottom: 2px solid #ccc;
+}
+
+/* Movable divider */
+#divider {
+    height: 3px;
+    background: #ddd;
+    cursor: row-resize;
+}
+
+/* Info display area at the bottom */
+#addinfoDisplay {
+    height: 15%; /* Start with 1/4 of the viewport height */
+    padding: 20px;
+    background: #f9f9f9;
+    overflow-y: auto; /* Allow scrolling within the info area */
+}
+
+/* Additional content to allow scrolling */
+.content {
+    margin-top: 50px; /* Space for the fixed toolbar */
+    height: calc(100vh - 50px);
+    /* height: 2000px; Example height to make the page scrollable */
+}
+
+
 text.actor-text {
     cursor: pointer;
     font-weight: 100;
@@ -133,6 +164,9 @@ circle.seq-num.same-id-signal:not(.instance-highlight-off) {
 }
 circle.seq-num.related-signal:not(.related-highlight-off) {
     /* fill: var(--highlight-color2); */
+}
+text.seq-num {
+    font-weight: 400;
 }
 text.seq-num.same-id-signal {
     /* fill: white; */
