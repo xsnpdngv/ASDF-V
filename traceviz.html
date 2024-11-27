@@ -11,7 +11,8 @@
     <script src="js/underscore-min.js"></script>
     <script src="js/raphael.min.js"></script>
     <script src="js/sequence-diagram.js"></script>
-    <!-- <script src="seqdiag.js"></script> -->
+
+    <link rel="icon" href="record-circle.svg">
 
     <style>
         /* Use the full viewport height with a flex layout */
@@ -58,7 +59,7 @@
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
 
-        <a class="navbar-brand" href="#">asdf viewer
+        <a class="navbar-brand" href="#">ASDF Viewer
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-record-circle" viewBox="0 0 16 16">
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
             <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
@@ -363,10 +364,10 @@
             diag.signals.forEach((s, i) => {
                 s.origIndex = s.index;
                 s.origMessage = s.message;
-                s.metaObj = {};
+                s.addinfoHead = {};
                 if(s.meta) {
                     try {
-                        s.metaObj = JSON.parse(s.meta);
+                        s.addinfoHead = JSON.parse(s.meta);
                     } catch (e) {
                         console.error("Invalid JSON in meta:", s.meta);
                     }
@@ -420,7 +421,7 @@
 
 
             function applySignalClick(index) {
-                if(clickedSignalIndex >= 0) {
+                if(clickedSignalIndex >= 0 && clickedSignalIndex < diag.signals.length) {
                     diag.signals[clickedSignalIndex].clicked = false;
                 }
                 if(index >= 0) {
@@ -461,15 +462,16 @@
                 signal_texts.forEach((text, index) => {
 
                     sig = diag.signals[index];
-                    refSig = refIndex >= 0 ? diag.signals[refIndex] : { "metaObj": { "id": null, "corrId": null } };
+                    refSig = refIndex >= 0 ? diag.signals[refIndex] : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
                     circle = seqNum_circles[index];
                     seqNum = seqNum_texts[index];
 
-                    if(sig.metaObj.id) {
+                    if(sig.addinfoHead.srcInstanceId) {
 
-                        sig.isSameId = refSig.metaObj.id && sig.metaObj.id === refSig.metaObj.id;
+                        sig.isSameSrcInstance = refSig.addinfoHead.srcInstanceId &&
+                                                sig.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
                         cl = 'same-id-signal';
-                        if(sig.isSameId) {
+                        if(sig.isSameSrcInstance) {
                             text.classList.add(cl);
                             circle.classList.add(cl);
                             seqNum.classList.add(cl);
@@ -479,8 +481,9 @@
                             seqNum.classList.remove(cl);
                         }
 
-                        sig.isRelated = refSig.metaObj.id && (sig.metaObj.corrId === refSig.metaObj.id ||
-                                                              sig.metaObj.id === refSig.metaObj.corrId);
+                        sig.isRelated = refSig.addinfoHead.srcInstanceId &&
+                                        (sig.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
+                                         sig.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
                         cl = 'related-signal';
                         if(sig.isRelated) {
                             text.classList.add(cl);
@@ -558,6 +561,7 @@
             document.body.style.cursor = 'row-resize';
         });
 
+        // TODO: persist divider position and recall on page load
         document.addEventListener("mousemove", (e) => {
             if (isResizing) {
                 const totalHeight = document.body.offsetHeight;
@@ -578,8 +582,8 @@
         function markSpecialSignalTexts() {
             signal_texts.forEach((text, index) => {
                 const signal = diag_signals[index];
-                if (signal.metaObj) {
-                    if (signal.metaObj.special || signal.metaObj.size <= 0) {
+                if (signal.addinfoHead) {
+                    if (signal.addinfoHead.isSpecial || signal.addinfoHead.size <= 0) {
                         text.classList.add("special-signal");
                     }
                 }
@@ -653,8 +657,8 @@
         function applyShowIds(isChecked) {
             if (isChecked) {
                 diag.signals.forEach((signal, index) => {
-                    if(signal.metaObj.id) {
-                        signal.message += '\n' + signal.metaObj.id;
+                    if(signal.addinfoHead.srcInstanceId) {
+                        signal.message += '\n' + signal.addinfoHead.srcInstanceId;
                     }
                 });
             } else {

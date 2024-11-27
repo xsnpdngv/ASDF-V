@@ -3,6 +3,7 @@
     --highlight-color: rgb(255, 255, 132);
     --highlight-color2: rgb(241, 255, 210);
     --highlight-color2: rgb(255, 255, 132);
+    --highlight-color3: greenyellow;
     --special-color: orangered;
 }
 
@@ -11,7 +12,7 @@ body {
     line-height: 1.5; 
     background: var(--body-bg-color);
     font-family: 'Helvetica Neue', Helvetica, Arial, serif;
-  font-weight: 100;
+    font-weight: 100;
 }
 
 
@@ -93,6 +94,7 @@ text.signal.related-signal.special-signal:not(.related-highlight-off) {
 text.signal:hover {
     /* stroke: black; */
     /* stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill; */
+    stroke: var(--highlight-color); stroke-width: 3px; paint-order: stroke fill;
     fill: black;
     font-style: italic;
 }
@@ -106,6 +108,7 @@ text.special-signal:hover {
     fill: var(--special-color);
 }
 text.clicked-signal.special-signal {
+    font-weight: 900;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
     font-style: italic;
