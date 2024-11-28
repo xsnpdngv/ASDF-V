@@ -190,27 +190,6 @@ const showInstance = new PersistentBool("showInstance", false);
 const showRelated = new PersistentBool("showRelated", false);
 let diagramContainer = document.getElementById("diagram");
 
-window.onload = loadDefaultFile;
-
-function loadDefaultFile() {
-
-    fetch('trc/xtrace.asdf')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Default file not found.');
-            }
-            return response.text();
-        })
-        .then(diagramText => {
-            diagText = diagramText;
-            clickedSignalIndex = 0;
-            loadDiagram(diagText);
-        })
-        .catch(error => {
-            console.log('No default file loaded:', error);
-        });
-}
-
 
 document.getElementById("fileInput").addEventListener("change", function(event) {
 
@@ -453,24 +432,31 @@ let isResizing = false;
 
 divider.addEventListener("mousedown", (e) => {
     isResizing = true;
+    startY = e.clientY; 
+    startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
+    document.body.style.userSelect = "none";
     document.body.style.cursor = 'row-resize';
 });
 
 // TODO: persist divider position and recall on page load
 document.addEventListener("mousemove", (e) => {
     if (isResizing) {
+        const deltaY = e.clientY - startY;
         const totalHeight = document.body.offsetHeight;
-        const diagramHeight = e.clientY / totalHeight * 100;
+        const diagramHeight = (startDiagramHeight + deltaY) / totalHeight * 100;
         const infoHeight = 100 - diagramHeight;
 
-        document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
-        document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+        if (diagramHeight > 10 && infoHeight > 10) {
+            document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
+            document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+        }
     }
 });
 
 document.addEventListener("mouseup", () => {
     isResizing = false;
     document.body.style.cursor = 'default';
+    document.body.style.userSelect = "";
 });
 
 

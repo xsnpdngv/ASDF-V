@@ -13,6 +13,13 @@ body {
     background: var(--body-bg-color);
     font-family: 'Helvetica Neue', Helvetica, Arial, serif;
     font-weight: 300;
+    color: var(--bs-secondary)
+}
+
+pre {
+  font-family: monospace;  /* Font style */
+  border-radius: 5px;                     /* Rounded corners for the background */
+  overflow-x: auto;                       /* Enable horizontal scrolling for long lines */
 }
 
 #main {
@@ -25,6 +32,7 @@ body {
     padding: 20px;
     overflow-y: auto; /* Allow scrolling within the diagram area */
     border-bottom: 2px solid #ccc;
+    font-weight: 300;
 }
 
 /* Movable divider */
