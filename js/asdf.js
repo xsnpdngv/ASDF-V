@@ -331,18 +331,8 @@ window.onload = windowOnLoad;
 fileInput.addEventListener("change", function(event) {
 
     const file = event.target.files[0];
-    console.log(file);
-
     const lastMod = new Date(file.lastModified);
-    const shortDate = lastMod.toLocaleDateString();
-    const shortTime = lastMod.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const month = months[lastMod.getMonth()];
-
+    const shortTime = lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     fileLabelTxt.set(file.name + ' | ' + lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime + ' | ' + file.size + ' bytes');
 
     fileLabel.textContent = fileLabelTxt.get();
