@@ -413,8 +413,9 @@ function drawDiagram(diag) {
         txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex.get()));
     });
 
+
     function signalTextOnClick(index) {
-        if(diag.signals[index].clicked) {
+        if(diag_signals[index].clicked) {
            index = -1;
         }
         applySignalClick(index);
@@ -422,11 +423,11 @@ function drawDiagram(diag) {
 
 
     function applySignalClick(index) {
-        if(clickedSignalIndex.get() >= 0 && clickedSignalIndex.get() < diag.signals.length) {
-            diag.signals[clickedSignalIndex.get()].clicked = false;
+        if(clickedSignalIndex.get() >= 0 && clickedSignalIndex.get() < diag_signals.length) {
+            diag_signals[clickedSignalIndex.get()].clicked = false;
         }
-        if(index >= 0 && index < diag.signals.lengt) {
-            diag.signals[index].clicked = true;
+        if(index >= 0 && index < diag_signals.length) {
+            diag_signals[index].clicked = true;
         }
         clickedSignalIndex.set(index);
         showAddinfoContent(clickedSignalIndex.get());
@@ -460,14 +461,9 @@ function drawDiagram(diag) {
     }
 
     function markSignals(refIndex) {
-        index = 0;
-        refSig = refIndex >= 0 && refIndex < diag.signals.length ? diag.signals[refIndex]
-                                                                 : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
-        diag.signals.forEach(sig => {
-
-            if(sig.type !== 'Signal') {
-                return
-            }
+        refSig = refIndex >= 0 && refIndex < diag_signals.length
+                 ? diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
+        diag_signals.forEach((sig, index) => {
 
             text = signal_texts[index];
             circle = seqNum_circles[index];
@@ -512,8 +508,6 @@ function drawDiagram(diag) {
                 circle.classList.remove('clicked-signal-circle');
                 seqNum.classList.remove('clicked-signal-seq-num');
             }
-
-            ++index;
         });
     }
 
