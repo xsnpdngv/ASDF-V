@@ -263,7 +263,21 @@ class PersistentInt {
 }
 
 
-let diagText = new PersistentString("diagText");
+const diagText = new PersistentString("diagText");
+const clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
+const filteredActors = new PersistentSet("filteredActors");
+const actorOrder = new PersistentArray("actorOrder");
+const showIds = new PersistentBool("showIds", false);
+const showInstance = new PersistentBool("showInstance", false);
+const showRelated = new PersistentBool("showRelated", false);
+const origDiagContent = new PersistentString("origDiagContent");
+const fileLabelTxt = new PersistentString("fileLabelText");
+
+let diagramContainer = document.getElementById("diagram");
+let fileInput = document.getElementById("fileInput");
+let diagram = document.getElementById("diagram");
+let fileLabel = document.getElementById("fileInputLabel");
+
 let diag = null;
 let diag_signals = [];
 let signal_texts = [];
@@ -273,20 +287,14 @@ let actor_boxes = [];
 let actor_texts = [];
 let seqNum_circles = [];
 let seqNum_texts = [];
-let clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
-const filteredActors = new PersistentSet("filteredActors");
-const actorOrder = new PersistentArray("actorOrder");
-const showIds = new PersistentBool("showIds", false);
-const showInstance = new PersistentBool("showInstance", false);
-const showRelated = new PersistentBool("showRelated", false);
-let diagramContainer = document.getElementById("diagram");
-let fileInput = document.getElementById("fileInput");
+
 
 function windowOnLoad()
 {
     document.getElementById("showIdsToggle").checked = showIds.get();
     document.getElementById("showInstanceToggle").checked = showInstance.get();
     document.getElementById("showRelatedToggle").checked = showRelated.get();
+    fileLabel.textContent = fileLabelTxt.get();
     if (diagText.length() > 0) {
         loadDiagram(diagText.get());
     }
@@ -298,9 +306,22 @@ window.onload = windowOnLoad;
 
 fileInput.addEventListener("change", function(event) {
 
-    const fileLabel = document.getElementById("fileInputLabel");
     const file = event.target.files[0];
-    fileLabel.textContent = file.name;
+    console.log(file);
+
+    const lastMod = new Date(file.lastModified);
+    const shortDate = lastMod.toLocaleDateString();
+    const shortTime = lastMod.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[lastMod.getMonth()];
+
+    fileLabelTxt.set(file.name + ' | ' + lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime + ' | ' + file.size + ' bytes');
+
+    fileLabel.textContent = fileLabelTxt.get();
     const reader = new FileReader();
     reader.onload = function(e) {
         diagText.set(e.target.result);
@@ -531,6 +552,13 @@ function resetBtnOnClick() {
     clickedSignalIndex.set(0);
     windowOnLoad();
 }
+
+
+document.getElementById('navbarBrand').addEventListener('click', function() {
+    diagText.set("");
+    fileLabelTxt.set("Choose file");
+    location.reload();  // Reload the page
+});
 
 
 // Make sections resizable
