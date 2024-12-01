@@ -295,7 +295,7 @@ const showIds = new PersistentBool("showIds", false);
 const showInstance = new PersistentBool("showInstance", false);
 const showRelated = new PersistentBool("showRelated", false);
 const origDiagContent = new PersistentString("origDiagContent");
-const fileLabelTxt = new PersistentString("fileLabelText");
+const fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
 
 let diagramContainer = document.getElementById("diagram");
 let fileInput = document.getElementById("fileInput");
