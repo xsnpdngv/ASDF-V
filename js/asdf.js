@@ -460,11 +460,16 @@ function drawDiagram(diag) {
     }
 
     function markSignals(refIndex) {
+        index = 0;
         refSig = refIndex >= 0 && refIndex < diag.signals.length ? diag.signals[refIndex]
                                                                  : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
-        signal_texts.forEach((text, index) => {
+        diag.signals.forEach(sig => {
 
-            sig = diag.signals[index];
+            if(sig.type !== 'Signal') {
+                return
+            }
+
+            text = signal_texts[index];
             circle = seqNum_circles[index];
             seqNum = seqNum_texts[index];
 
@@ -507,6 +512,8 @@ function drawDiagram(diag) {
                 circle.classList.remove('clicked-signal-circle');
                 seqNum.classList.remove('clicked-signal-seq-num');
             }
+
+            ++index;
         });
     }
 
