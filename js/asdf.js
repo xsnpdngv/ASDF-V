@@ -44,52 +44,43 @@ class PersistentSet {
 
 
 class PersistentArray {
-    // Constructor accepts a key for storing/retrieving data from localStorage
     constructor(key) {
         this.key = key;
         this.array = this.#loadArrayFromLocalStorage();
     }
 
-    // Private method to load array from localStorage
     #loadArrayFromLocalStorage() {
         const data = localStorage.getItem(this.key);
         return data ? JSON.parse(data) : [];
     }
 
-    // Private method to save array to localStorage
     #saveArrayToLocalStorage() {
         localStorage.setItem(this.key, JSON.stringify(this.array));
     }
 
-    // Add a new element to the array
     add(value) {
         this.array.push(value);
         this.#saveArrayToLocalStorage();
     }
 
-    // Remove an element by index
     remove(index) {
         if (index >= 0 && index < this.array.length) {
             this.array.splice(index, 1);
             this.#saveArrayToLocalStorage();
         }
     }
-    // Get the array (this will allow you to pass it to printParticipants)
     getArray() {
         return this.array;
     }
 
-    // Get element at specific index
     get(index) {
         return this.array[index];
     }
 
-    // Get the length of the array
     length() {
         return this.array.length;
     }
 
-    // Move an element from one index to another
     move(fromIndex, toIndex) {
         if (fromIndex >= 0 && fromIndex < this.array.length && toIndex >= 0 && toIndex < this.array.length) {
             const [item] = this.array.splice(fromIndex, 1); // Remove item from original position
@@ -98,7 +89,6 @@ class PersistentArray {
         }
     }
 
-    // Move item to the start of the array
     moveToStart(index) {
         if (index >= 0 && index < this.array.length) {
             const [item] = this.array.splice(index, 1); // Remove item
@@ -107,7 +97,6 @@ class PersistentArray {
         }
     }
 
-    // Move item to the end of the array
     moveToEnd(index) {
         if (index >= 0 && index < this.array.length) {
             const [item] = this.array.splice(index, 1); // Remove item
@@ -116,12 +105,10 @@ class PersistentArray {
         }
     }
 
-    // Get all elements in the array
     getAll() {
         return this.array;
     }
 
-    // Set a new value to a specific index
     set(index, value) {
         if (index >= 0 && index < this.array.length) {
             this.array[index] = value;
@@ -129,7 +116,6 @@ class PersistentArray {
         }
     }
 
-    // Clear the array
     clear() {
         this.array = [];
         this.#saveArrayToLocalStorage();
@@ -172,7 +158,112 @@ class PersistentBool {
 }
 
 
-let diagText = "";
+class PersistentString {
+    constructor(key, defaultValue = "") {
+        this.key = key;
+        if (localStorage.getItem(this.key) === null) {
+            this.value = defaultValue;
+            this.#save();
+        } else {
+            this.value = localStorage.getItem(this.key);
+        }
+    }
+
+    #save() {
+        localStorage.setItem(this.key, this.value);
+    }
+
+    get() {
+        return localStorage.getItem(this.key);
+    }
+
+    set(newValue) {
+        if (typeof newValue !== "string") {
+            throw new Error("PersistentString can only store string values.");
+        }
+        this.value = newValue;
+        this.#save();
+    }
+
+    append(extraString) {
+        if (typeof extraString !== "string") {
+            throw new Error("Can only append string values.");
+        }
+        this.value += extraString;
+        this.#save();
+    }
+
+    clear() {
+        this.value = "";
+        this.#save();
+    }
+
+    length() {
+        return this.value.length;
+    }
+}
+
+class PersistentInt {
+    constructor(key, defaultValue = 0) {
+        this.key = key;
+        // Initialize with default value if not present in localStorage
+        if (localStorage.getItem(this.key) === null) {
+            this.value = defaultValue;
+            this.#save();
+        } else {
+            this.value = this.#load();
+        }
+    }
+
+    #save() {
+        localStorage.setItem(this.key, JSON.stringify(this.value));
+    }
+
+    #load() {
+        return parseInt(localStorage.getItem(this.key), 10);
+    }
+
+    get() {
+        return this.#load();
+    }
+
+    set(newValue) {
+        if (!Number.isInteger(newValue)) {
+            throw new Error("PersistentInt can only store integer values.");
+        }
+        this.value = newValue;
+        this.#save();
+    }
+
+    increment(amount = 1) {
+        this.set(this.get() + amount);
+    }
+
+    decrement(amount = 1) {
+        this.set(this.get() - amount);
+    }
+
+    clear(defaultValue = 0) {
+        this.set
+    }
+
+    add(value) {
+        if (!Number.isInteger(value)) {
+            throw new Error("Can only add integer values.");
+        }
+        this.set(this.get() + value);
+    }
+
+    subtract(value) {
+        if (!Number.isInteger(value)) {
+            throw new Error("Can only subtract integer values.");
+        }
+        this.set(this.get() - value);
+    }
+}
+
+
+let diagText = new PersistentString("diagText");
 let diag = null;
 let diag_signals = [];
 let signal_texts = [];
@@ -182,27 +273,46 @@ let actor_boxes = [];
 let actor_texts = [];
 let seqNum_circles = [];
 let seqNum_texts = [];
-let clickedSignalIndex = -1;
+let clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
 const filteredActors = new PersistentSet("filteredActors");
 const actorOrder = new PersistentArray("actorOrder");
 const showIds = new PersistentBool("showIds", false);
 const showInstance = new PersistentBool("showInstance", false);
 const showRelated = new PersistentBool("showRelated", false);
 let diagramContainer = document.getElementById("diagram");
+let fileInput = document.getElementById("fileInput");
+
+function windowOnLoad()
+{
+    document.getElementById("showIdsToggle").checked = showIds.get();
+    document.getElementById("showInstanceToggle").checked = showInstance.get();
+    document.getElementById("showRelatedToggle").checked = showRelated.get();
+    if (diagText.length() > 0) {
+        loadDiagram(diagText.get());
+    }
+}
 
 
-document.getElementById("fileInput").addEventListener("change", function(event) {
+window.onload = windowOnLoad;
+
+
+fileInput.addEventListener("change", function(event) {
 
     const fileLabel = document.getElementById("fileInputLabel");
     const file = event.target.files[0];
     fileLabel.textContent = file.name;
     const reader = new FileReader();
     reader.onload = function(e) {
-        diagText = e.target.result;
-        clickedSignalIndex = 0;
-        loadDiagram(diagText);
+        diagText.set(e.target.result);
+        clickedSignalIndex.set(0);
+        loadDiagram(diagText.get());
     };
     reader.readAsText(file);
+});
+
+
+fileInput.addEventListener("click", () => {
+    fileInput.value = "";  // ensure that the same file can be selected again
 });
 
 
@@ -216,19 +326,15 @@ function loadDiagram(asdf) {
     } else {
         actorOrder.clear();
         filteredActors.clear();
-        clickedSignalIndex = 0;
+        clickedSignalIndex.set(0);
     }
 
-    document.getElementById("showIdsToggle").checked = showIds.get();
-    document.getElementById("showInstanceToggle").checked = showInstance.get();
-    document.getElementById("showRelatedToggle").checked = showRelated.get();
-
     parseMeta(diag);
-    drawDiagram(diag);
-
     applyShowIds(showIds.get());
     applyShowInstance(showInstance.get());
     applyShowRelated(showRelated.get());
+
+    drawDiagram(diag);
 }
 
 
@@ -243,7 +349,7 @@ function parseMeta(diag)
             try {
                 s.addinfoHead = JSON.parse(s.meta);
             } catch (e) {
-                console.error("Invalid JSON in meta:", s.meta);
+                console.error("Invalid JSON in additional info head:", s.meta);
             }
         }
     });
@@ -283,7 +389,7 @@ function drawDiagram(diag) {
     signal_texts.forEach((txt, index) => {
         txt.addEventListener("click", () => signalTextOnClick(index));
         txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
-        txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex));
+        txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex.get()));
     });
 
     function signalTextOnClick(index) {
@@ -295,15 +401,15 @@ function drawDiagram(diag) {
 
 
     function applySignalClick(index) {
-        if(clickedSignalIndex >= 0 && clickedSignalIndex < diag.signals.length) {
-            diag.signals[clickedSignalIndex].clicked = false;
+        if(clickedSignalIndex.get() >= 0 && clickedSignalIndex.get() < diag.signals.length) {
+            diag.signals[clickedSignalIndex.get()].clicked = false;
         }
-        if(index >= 0) {
+        if(index >= 0 && index < diag.signals.lengt) {
             diag.signals[index].clicked = true;
         }
-        clickedSignalIndex = index;
-        showAddinfoContent(clickedSignalIndex);
-        markSignals(clickedSignalIndex);
+        clickedSignalIndex.set(index);
+        showAddinfoContent(clickedSignalIndex.get());
+        markSignals(clickedSignalIndex.get());
     }
 
 
@@ -324,7 +430,7 @@ function drawDiagram(diag) {
             filteredActors.delete(name);
         else
             filteredActors.add(name);
-        loadDiagram(diagText);
+        loadDiagram(diagText.get());
     }
 
 
@@ -333,10 +439,11 @@ function drawDiagram(diag) {
     }
 
     function markSignals(refIndex) {
+        refSig = refIndex >= 0 && refIndex < diag.signals.length ? diag.signals[refIndex]
+                                                                 : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
         signal_texts.forEach((text, index) => {
 
             sig = diag.signals[index];
-            refSig = refIndex >= 0 ? diag.signals[refIndex] : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
             circle = seqNum_circles[index];
             seqNum = seqNum_texts[index];
 
@@ -409,7 +516,7 @@ function drawDiagram(diag) {
     markSpecialSignalTexts();
     drawSeqNumCircles();
     markActors();
-    applySignalClick(clickedSignalIndex);
+    applySignalClick(clickedSignalIndex.get());
     applyShowInstance(showInstance.get());
     applyShowRelated(showRelated.get());
 }
@@ -421,8 +528,8 @@ function resetBtnOnClick() {
     showIds.set(false);
     showInstance.set(false);
     showRelated.set(false);
-    clickedSignalIndex = 0;
-    loadDiagram(diagText);
+    clickedSignalIndex.set(0);
+    windowOnLoad();
 }
 
 
@@ -446,7 +553,7 @@ document.addEventListener("mousemove", (e) => {
         const diagramHeight = (startDiagramHeight + deltaY) / totalHeight * 100;
         const infoHeight = 100 - diagramHeight;
 
-        if (diagramHeight > 10 && infoHeight > 10) {
+        if (diagramHeight > 5 && infoHeight > 5) {
             document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
             document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
         }
@@ -533,6 +640,7 @@ function drawSeqNumCircles(index) {
 function showIdsOnChange(isChecked) {
     showIds.set(isChecked);
     applyShowIds(isChecked);
+    drawDiagram(diag);
 }
 
 function applyShowIds(isChecked) {
@@ -547,7 +655,6 @@ function applyShowIds(isChecked) {
             signal.message = signal.origMessage;
         });
     }
-    drawDiagram(diag);
 }
 
 
@@ -645,14 +752,11 @@ function addMoveBtns() {
 function chevronOnClick(index, dir) {
     if(dir == 'left') {
         actorOrder.move(index, index - 1);
-        console.log(index + " balra");
     } else if (dir == 'right') {
         actorOrder.move(index, index + 1);
-        console.log(index + " jobbra");
     }
-    console.log(actorOrder);
 
-    loadDiagram(diagText);
+    loadDiagram(diagText.get());
 }
 
 

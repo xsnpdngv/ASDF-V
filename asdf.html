@@ -2,24 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ASDF Viewer</title>
-
+    <title>ASDF Vector</title>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" type="text/css" href="css/asdf.css"/>
-    <link rel="icon" href="img/logo.svg">
+    <link rel="icon" href="img/chevron-double-right.svg">
 </head>
 
 <body>
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
 
-        <a class="navbar-brand">ASDF Viewer
-            <img src="img/logo.svg">
+        <a class="navbar-brand">ASDF Vector
+            <img src="img/chevron-double-right.svg">
         </a>
 
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
-            <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;">
+            <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf">
 
             <div class="btn-group me-3" role="group" aria-label="Basic checkbox toggle button group">
                 <input type="checkbox" class="btn-check" id="showIdsToggle" autocomplete="off" onchange="showIdsOnChange(checked)">
@@ -40,7 +39,45 @@
 
     <div class="content">
         <div id="diagramContainer">
-            <div id="diagram"></div>
+            <div id="diagram">
+                <pre>
+
+    ASDF Vector is a tool for visualizing sequence diagrams in the
+    Augmented Sequence Diagram Format (ASDF). Upload an ASDF file to
+    view and interact with it.
+
+    Release Notes - v1.0 (November 28, 2024)
+    ----------------------------------------
+    • Parse and visualize ASDF input.
+    • View/peek additional signal information on click/hover, accordingly.
+    • Hide, unhide and reorder participants as preferred.
+    • Filter signals by hiding participants.
+    • Highlight clicked signal and relations by coloring when needed.
+    • Show/hide instance identifiers on signal arrows.
+    • Colorize special signals in red.
+    • Keep participant order and visibility over reloads, if reasonable.
+    • Preserve toolbar settings in browser over page reloads.
+    • Assign sequence numbers to signals.
+    • Dynamically align window heights for diagram and additional info.
+
+    Feature Requests
+    ----------------
+    • Show participants even if diagram's top is scrolled out of view.
+    • Filter signals by time (interval) and additional info content.
+    • Show signal list view on demand.
+    • Step over subsequent signals (first, prev, next, last).
+    • Resolve signal relations beyond neighbours.
+    • Fold indentation blocks in additional info.
+    • Show timestamps/deltas beside signal sequence numbers.
+    • Render additional info header.
+    • Preserve divider position over page reloads.
+    • Maintain asdf input over refresh.
+    • Clear display on brand logo click.
+    • Color participant if sending message(s) to that fails.
+
+                </pre>
+
+            </div>
         </div>
 
         <div id="divider"></div>
@@ -55,6 +92,6 @@
     <script src="js/underscore-min.js"></script>
     <script src="js/raphael.min.js"></script>
     <script src="js/sequence-diagram.js"></script>
-    <script src="js/asdf-min.js"></script>
+    <script src="js/asdf.js"></script>
 </body>
 </html>

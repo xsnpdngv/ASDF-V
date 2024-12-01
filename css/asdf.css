@@ -31,13 +31,13 @@ pre {
     height: 85%; /* Start with 3/4 of the viewport height */
     padding: 20px;
     overflow-y: auto; /* Allow scrolling within the diagram area */
-    border-bottom: 2px solid #ccc;
+    /* border-bottom: 2px solid #ccc; */
     font-weight: 300;
 }
 
 /* Movable divider */
 #divider {
-    height: 3px;
+    height: 2px;
     background: #ddd;
     cursor: row-resize;
 }
@@ -46,7 +46,7 @@ pre {
 #addinfoDisplay {
     height: 15%; /* Start with 1/4 of the viewport height */
     padding: 20px;
-    background: #f9f9f9;
+    background: var(--body-bg-color);
     overflow-y: auto; /* Allow scrolling within the info area */
 }
 
@@ -188,7 +188,7 @@ text.seq-num.same-id-signal {
     opacity: 0.0;
     fill: black;
     transition: opacity 0.3s ease;
-    transition-delay: 1s;
+    transition-delay: 0.1s;
 }
 .move:hover {
     opacity: 1;
