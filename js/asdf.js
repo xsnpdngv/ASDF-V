@@ -23,9 +23,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 (function() { // Immediately Invoked Function Expression (IIFE)
+              // so global namespace is not polluted
 
-class Asdf {
-}
 
 class PersistentSet {
     constructor(key) {
@@ -292,6 +291,9 @@ class PersistentInt {
 }
 
 
+class Asdf {
+}
+
 const diagText = new PersistentString("diagText");
 const clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
 const filteredActors = new PersistentSet("filteredActors");
@@ -299,14 +301,11 @@ const actorOrder = new PersistentArray("actorOrder");
 const showIds = new PersistentBool("showIds", false);
 const showInstance = new PersistentBool("showInstance", false);
 const showRelated = new PersistentBool("showRelated", false);
-const origDiagContent = new PersistentString("origDiagContent");
 const fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
 
 const diagramContainer = document.getElementById("diagram");
 const fileInput = document.getElementById("fileInput");
-const diagram = document.getElementById("diagram");
 const fileLabel = document.getElementById("fileInputLabel");
-const divider = document.getElementById("divider");
 
 let diag = null;
 let diag_signals = [];
@@ -330,10 +329,8 @@ function windowOnLoad()
     if (diagText.length() > 0) {
         loadDiagram(diagText.get());
     }
+    addDocumentEventListeners();
 }
-
-
-window.onload = windowOnLoad;
 
 
 Asdf.prototype.fileInputOnChange = function(event) {
@@ -356,23 +353,26 @@ Asdf.prototype.fileInputOnChange = function(event) {
 
 
 Asdf.prototype.fileInputOnClick = function() {
-    fileInput.value = "";  // ensure that the same file can be selected again
+    fileInput.value = "";  // so same file can be selected again
 }
 
 
 function loadDiagram(asdf) {
     diag = Diagram.parse(asdf);
 
-    if(haveSameElements(actorOrder.getArray(), diag.actors.map(element => element.name))) {
-        const participantOrder = printParticipants(actorOrder.getArray());
-        orderedAsdf = participantOrder + "\n\n" + asdf;
-        diag = Diagram.parse(orderedAsdf);
-    } else {
-        actorOrder.clear();
-        filteredActors.clear();
-        clickedSignalIndex.set(0);
+    function applyActorOrder() {
+        if (arraysHaveSameElements(actorOrder.getArray(), diag.actors.map(element => element.name))) {
+            const participantOrder = printArrayElementsAsParticipants(actorOrder.getArray());
+            orderedAsdf = participantOrder + "\n\n" + asdf;
+            diag = Diagram.parse(orderedAsdf);
+        } else {
+            actorOrder.clear();
+            filteredActors.clear();
+            clickedSignalIndex.set(0);
+        }
     }
 
+    applyActorOrder();
     parseMeta(diag);
     applyShowIds(showIds.get());
     applyShowInstance(showInstance.get());
@@ -400,8 +400,6 @@ function parseMeta(diag)
 
 
 function drawDiagram(diag) {
-    diagramContainer.innerHTML = "";
-
     function removeSignalsOfFilteredActors() {
         for (let i = diag.signals.length - 1; i >= 0; i--) {
             signal = diag.signals[i];
@@ -421,9 +419,6 @@ function drawDiagram(diag) {
         }
     }
 
-    removeSignalsOfFilteredActors();
-
-    diag.drawSVG(diagramContainer, { theme: 'simple' });
 
     function populateElementLists() {
         diag_signals = diag.signals.filter(item => item.type === 'Signal');
@@ -434,8 +429,6 @@ function drawDiagram(diag) {
         actor_texts = document.querySelectorAll('text.actor-text');
     }
 
-    populateElementLists();
-
 
     function addSignalEventListeners() {
         signal_texts.forEach((txt, index) => {
@@ -444,8 +437,6 @@ function drawDiagram(diag) {
             txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex.get()));
         });
     }
-
-    addSignalEventListeners();
 
 
     function signalTextOnClick(index) {
@@ -494,6 +485,7 @@ function drawDiagram(diag) {
     function showTemporaryAddinfo(index) {
         showAddinfoContent(index);
     }
+
 
     function markSignals(refIndex) {
         refSig = refIndex >= 0 && refIndex < diag_signals.length
@@ -546,6 +538,7 @@ function drawDiagram(diag) {
         });
     }
 
+
     function showAddinfoContent(index) {
         const notation = document.getElementById("notation");
         const meta = document.getElementById("meta");
@@ -563,6 +556,7 @@ function drawDiagram(diag) {
         }
     }
 
+
     function markFilteredActors() {
         actor_paths.forEach((a, i) => {
             if(filteredActors.has(diag.actors[i].name) ||
@@ -571,12 +565,21 @@ function drawDiagram(diag) {
         });
     }
 
+
+    diagramContainer.innerHTML = "";
+
+    removeSignalsOfFilteredActors();
+    diag.drawSVG(diagramContainer, { theme: 'simple' });
+
+    populateElementLists();
+    addSignalEventListeners();
     addActorEventListeners();
     markFilteredActors();
     markSpecialSignalTexts();
     drawSeqNumCircles();
     markActors();
     applySignalClick(clickedSignalIndex.get());
+    // applyShowIds(showIds.get());
     applyShowInstance(showInstance.get());
     applyShowRelated(showRelated.get());
 }
@@ -634,8 +637,6 @@ function addDocumentEventListeners() {
     document.addEventListener("mouseup", documentOnMouseUp);
 }
 
-addDocumentEventListeners();
-
 
 function markSpecialSignalTexts() {
     signal_texts.forEach((text, index) => {
@@ -672,7 +673,6 @@ function markActors() {
 function drawSeqNumCircles(index) {
     signal_paths.forEach((path, index) => {
         // Get the starting point of the path
-        const pathLength = path.getTotalLength();
         const start = path.getPointAtLength(0);
 
         // Create a circle element
@@ -684,7 +684,6 @@ function drawSeqNumCircles(index) {
         circle.setAttribute("stroke", "black"); // Border color
         circle.setAttribute("stroke-width", 1); // Border width
         circle.setAttribute("class", "seq-num"); // Border width
-
 
         // Create a text element
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -769,20 +768,13 @@ function applyShowRelated(isChecked) {
 
 
 function addActorMoveBtns() {
-    // Select the rects you want to add chevrons to
     const selectedRects = document.querySelectorAll('.actor-top-box');
 
     selectedRects.forEach((rect, index) => {
-        // Calculate the center of each rect
         const rectX = parseFloat(rect.getAttribute('x'));
         const rectY = parseFloat(rect.getAttribute('y'));
         const rectWidth = parseFloat(rect.getAttribute('width'));
-        const rectHeight = parseFloat(rect.getAttribute('height'));
 
-        const rectCenterX = rectX + rectWidth / 2;
-        const rectCenterY = rectY + rectHeight / 2;
-
-        // Create the chevron icon
         const moveLeft = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         moveLeft.setAttribute("width", "16");
         moveLeft.setAttribute("height", "16");
@@ -792,11 +784,10 @@ function addActorMoveBtns() {
         moveLeft.setAttribute("x", rectX - 8);
         moveLeft.setAttribute("y", rectY + 11);
 
-        moveLeft.addEventListener("click", (event) => {
+        moveLeft.addEventListener("click", () => {
             chevronOnClick(index, 'left');
         });
 
-        // Create the right chevron (Chevron Right)
         const moveRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         moveRight.setAttribute("width", "16");
         moveRight.setAttribute("height", "16");
@@ -805,7 +796,7 @@ function addActorMoveBtns() {
         moveRight.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>`;
         moveRight.setAttribute("x", rectX + rectWidth - 8);
         moveRight.setAttribute("y", rectY + 11);
-        moveRight.addEventListener("click", (event) => {
+        moveRight.addEventListener("click", () => {
             chevronOnClick(index, 'right');
         });
 
@@ -830,12 +821,12 @@ function chevronOnClick(index, dir) {
 }
 
 
-function printParticipants(array) {
+function printArrayElementsAsParticipants(array) {
     return array.map(item => `participant ${item}`).join('\n');
 }
 
 
-function haveSameElements(arr1, arr2) {
+function arraysHaveSameElements(arr1, arr2) {
     if (arr1.length !== arr2.length) return false;
 
     const set1 = new Set(arr1);
@@ -851,5 +842,7 @@ function haveSameElements(arr1, arr2) {
 }
 
 
+
+window.onload = windowOnLoad;
 window.ASDF = new Asdf();
 }());

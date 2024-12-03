@@ -12,26 +12,27 @@
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
 
-        <a class="navbar-brand" id="navbarBrand" href="">ASDF Vector
+        <a class="navbar-brand" id="navbarBrand" href="" onclick="ASDF.navbarBrandOnClick()">ASDF Vector Graphics
             <img src="img/chevron-double-right.svg">
         </a>
 
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
-            <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf">
+            <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf"
+             onchange="ASDF.fileInputOnChange(event)" onclick="ASDF.fileInputOnClick()">
 
             <div class="btn-group me-3" role="group" aria-label="Basic checkbox toggle button group">
-                <input type="checkbox" class="btn-check" id="showIdsToggle" autocomplete="off" onchange="showIdsOnChange(checked)">
+                <input type="checkbox" class="btn-check" id="showIdsToggle" autocomplete="off" onchange="ASDF.showIdsOnChange(checked)">
                 <label class="btn btn-asdf btn-sm" for="showIdsToggle">IDs</label>
 
-                <input type="checkbox" class="btn-check" id="showInstanceToggle" autocomplete="off" onchange="showInstanceOnChange(checked)">
+                <input type="checkbox" class="btn-check" id="showInstanceToggle" autocomplete="off" onchange="ASDF.showInstanceOnChange(checked)">
                 <label class="btn btn-sm btn-asdf" for="showInstanceToggle">Instance</label>
 
-                <input type="checkbox" class="btn-check" id="showRelatedToggle" autocomplete="off" onchange="showRelatedOnChange(checked)">
+                <input type="checkbox" class="btn-check" id="showRelatedToggle" autocomplete="off" onchange="ASDF.showRelatedOnChange(checked)">
                 <label class="btn btn-asdf btn-sm" for="showRelatedToggle">Related</label>
             </div>
 
-            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="resetBtnOnClick()">Reset</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="ASDF.resetToolbarOnClick()">Reset</button>
         </div>
 
     </div>
@@ -78,7 +79,7 @@
             </div>
         </div>
 
-        <div id="divider"></div>
+        <div id="divider" onmousedown="ASDF.dividerOnMouseDown(event)"></div>
 
         <div id="addinfoDisplay">
             <pre id="notation"></pre>
