@@ -22,6 +22,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
+(function() { // Immediately Invoked Function Expression (IIFE)
+
+class Asdf {
+}
+
 class PersistentSet {
     constructor(key) {
         this.key = key;
@@ -297,10 +302,11 @@ const showRelated = new PersistentBool("showRelated", false);
 const origDiagContent = new PersistentString("origDiagContent");
 const fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
 
-let diagramContainer = document.getElementById("diagram");
-let fileInput = document.getElementById("fileInput");
-let diagram = document.getElementById("diagram");
-let fileLabel = document.getElementById("fileInputLabel");
+const diagramContainer = document.getElementById("diagram");
+const fileInput = document.getElementById("fileInput");
+const diagram = document.getElementById("diagram");
+const fileLabel = document.getElementById("fileInputLabel");
+const divider = document.getElementById("divider");
 
 let diag = null;
 let diag_signals = [];
@@ -311,6 +317,8 @@ let actor_boxes = [];
 let actor_texts = [];
 let seqNum_circles = [];
 let seqNum_texts = [];
+
+let isResizing = false;
 
 
 function windowOnLoad()
@@ -328,12 +336,13 @@ function windowOnLoad()
 window.onload = windowOnLoad;
 
 
-fileInput.addEventListener("change", function(event) {
-
+Asdf.prototype.fileInputOnChange = function(event) {
     const file = event.target.files[0];
     const lastMod = new Date(file.lastModified);
     const shortTime = lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    fileLabelTxt.set(file.name + ' | ' + lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime + ' | ' + file.size + ' bytes');
+    fileLabelTxt.set(file.name +
+                     ' | ' + lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime +
+                     ' | ' + file.size + ' bytes');
 
     fileLabel.textContent = fileLabelTxt.get();
     const reader = new FileReader();
@@ -343,12 +352,12 @@ fileInput.addEventListener("change", function(event) {
         loadDiagram(diagText.get());
     };
     reader.readAsText(file);
-});
+}
 
 
-fileInput.addEventListener("click", () => {
+Asdf.prototype.fileInputOnClick = function() {
     fileInput.value = "";  // ensure that the same file can be selected again
-});
+}
 
 
 function loadDiagram(asdf) {
@@ -375,7 +384,6 @@ function loadDiagram(asdf) {
 
 function parseMeta(diag)
 {
-    // parse meta
     diag.signals.forEach((s, i) => {
         s.origIndex = s.index;
         s.origMessage = s.message;
@@ -390,42 +398,54 @@ function parseMeta(diag)
     });
 }
 
+
 function drawDiagram(diag) {
     diagramContainer.innerHTML = "";
 
-    // remove signals of filtered actors
-    for (let i = diag.signals.length - 1; i >= 0; i--) {
-        signal = diag.signals[i];
-        if((signal.type === 'Signal' && (filteredActors.has(signal.actorA.name) ||
-                                         filteredActors.has(signal.actorB.name))) ||
-           (signal.type === 'Note' && filteredActors.has(signal.actor.name))) {
-            diag.signals.splice(i, 1);
-        }
-        // mark actor having signal
-        else if(signal.type === 'Signal') {
-            signal.actorA.hasSignal = true;
-            signal.actorB.hasSignal = true;
-        }
-        else {
-            signal.actor.hasSignal = true;
+    function removeSignalsOfFilteredActors() {
+        for (let i = diag.signals.length - 1; i >= 0; i--) {
+            signal = diag.signals[i];
+            if((signal.type === 'Signal' && (filteredActors.has(signal.actorA.name) ||
+                                            filteredActors.has(signal.actorB.name))) ||
+            (signal.type === 'Note' && filteredActors.has(signal.actor.name))) {
+                diag.signals.splice(i, 1);
+            }
+            // mark actor having signal
+            else if(signal.type === 'Signal') {
+                signal.actorA.hasSignal = true;
+                signal.actorB.hasSignal = true;
+            }
+            else {
+                signal.actor.hasSignal = true;
+            }
         }
     }
 
+    removeSignalsOfFilteredActors();
+
     diag.drawSVG(diagramContainer, { theme: 'simple' });
 
-    diag_signals = diag.signals.filter(item => item.type === 'Signal');
-    signal_paths = document.querySelectorAll('path.signal-arrow');
-    signal_texts = document.querySelectorAll('text.signal');
-    actor_paths = document.querySelectorAll('path.actor-line');
-    actor_boxes = document.querySelectorAll('rect.actor-box');
-    actor_texts = document.querySelectorAll('text.actor-text');
+    function populateElementLists() {
+        diag_signals = diag.signals.filter(item => item.type === 'Signal');
+        signal_paths = document.querySelectorAll('path.signal-arrow');
+        signal_texts = document.querySelectorAll('text.signal');
+        actor_paths = document.querySelectorAll('path.actor-line');
+        actor_boxes = document.querySelectorAll('rect.actor-box');
+        actor_texts = document.querySelectorAll('text.actor-text');
+    }
 
-    // add signal event listeners
-    signal_texts.forEach((txt, index) => {
-        txt.addEventListener("click", () => signalTextOnClick(index));
-        txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
-        txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex.get()));
-    });
+    populateElementLists();
+
+
+    function addSignalEventListeners() {
+        signal_texts.forEach((txt, index) => {
+            txt.addEventListener("click", () => signalTextOnClick(index));
+            txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
+            txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex.get()));
+        });
+    }
+
+    addSignalEventListeners();
 
 
     function signalTextOnClick(index) {
@@ -449,15 +469,16 @@ function drawDiagram(diag) {
     }
 
 
-    // add event listeners to actors
-    actorOrder.clear();
-    diag.actors.forEach((actor, i) => {
-        actorOrder.add(actor.name);
-        if(filteredActors.has(actor.name) || actor.hasSignal) {
-            actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
-            actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
-        }
-    });
+    function addActorEventListeners() {
+        actorOrder.clear();
+        diag.actors.forEach((actor, i) => {
+            actorOrder.add(actor.name);
+            if(filteredActors.has(actor.name) || actor.hasSignal) {
+                actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
+                actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
+            }
+        });
+    }
 
 
     function actorTextOnClick(index) {
@@ -542,13 +563,16 @@ function drawDiagram(diag) {
         }
     }
 
-    // mark filtered actors for styling
-    actor_paths.forEach((a, i) => {
-        if(filteredActors.has(diag.actors[i].name) ||
-            ! diag.actors[i].hasSignal)
-            a.classList.add("filtered-actor");
-    });
+    function markFilteredActors() {
+        actor_paths.forEach((a, i) => {
+            if(filteredActors.has(diag.actors[i].name) ||
+                ! diag.actors[i].hasSignal)
+                a.classList.add("filtered-actor");
+        });
+    }
 
+    addActorEventListeners();
+    markFilteredActors();
     markSpecialSignalTexts();
     drawSeqNumCircles();
     markActors();
@@ -558,7 +582,7 @@ function drawDiagram(diag) {
 }
 
 
-function resetBtnOnClick() {
+Asdf.prototype.resetToolbarOnClick = function() {
     actorOrder.clear();
     filteredActors.clear();
     showIds.set(false);
@@ -569,45 +593,48 @@ function resetBtnOnClick() {
 }
 
 
-document.getElementById('navbarBrand').addEventListener('click', function() {
+Asdf.prototype.navbarBrandOnClick = function() {
     diagText.set("");
     fileLabelTxt.set("Choose file");
     location.reload();  // Reload the page
-});
+}
 
 
-// Make sections resizable
-const divider = document.getElementById("divider");
-let isResizing = false;
-
-divider.addEventListener("mousedown", (e) => {
+Asdf.prototype.dividerOnMouseDown = function(e) {
     isResizing = true;
     startY = e.clientY; 
     startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
     document.body.style.userSelect = "none";
     document.body.style.cursor = 'row-resize';
-});
+}
 
-// TODO: persist divider position and recall on page load
-document.addEventListener("mousemove", (e) => {
-    if (isResizing) {
-        const deltaY = e.clientY - startY;
-        const totalHeight = document.body.offsetHeight;
-        const diagramHeight = (startDiagramHeight + deltaY) / totalHeight * 100;
-        const infoHeight = 100 - diagramHeight;
 
-        if (diagramHeight > 5 && infoHeight > 5) {
-            document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
-            document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+function addDocumentEventListeners() {
+    function documentOnMouseMove(e) {
+        if (isResizing) {
+            const deltaY = e.clientY - startY;
+            const totalHeight = document.body.offsetHeight;
+            const diagramHeight = (startDiagramHeight + deltaY) / totalHeight * 100;
+            const infoHeight = 100 - diagramHeight;
+
+            if (diagramHeight > 5 && infoHeight > 5) {
+                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
+                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+            }
         }
     }
-});
 
-document.addEventListener("mouseup", () => {
-    isResizing = false;
-    document.body.style.cursor = 'default';
-    document.body.style.userSelect = "";
-});
+    function documentOnMouseUp() {
+        isResizing = false;
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = "";
+    }
+
+    document.addEventListener("mousemove", documentOnMouseMove);
+    document.addEventListener("mouseup", documentOnMouseUp);
+}
+
+addDocumentEventListeners();
 
 
 function markSpecialSignalTexts() {
@@ -638,7 +665,7 @@ function markActors() {
         }
     });
 
-    addMoveBtns();
+    addActorMoveBtns();
 }
 
 
@@ -680,7 +707,7 @@ function drawSeqNumCircles(index) {
 }
 
 
-function showIdsOnChange(isChecked) {
+Asdf.prototype.showIdsOnChange = function(isChecked) {
     showIds.set(isChecked);
     applyShowIds(isChecked);
     drawDiagram(diag);
@@ -701,7 +728,7 @@ function applyShowIds(isChecked) {
 }
 
 
-function showInstanceOnChange(isChecked) {
+Asdf.prototype.showInstanceOnChange = function(isChecked) {
     showInstance.set(isChecked);
     applyShowInstance(isChecked);
 }
@@ -721,7 +748,7 @@ function applyShowInstance(isChecked) {
 }
 
 
-function showRelatedOnChange(isChecked) {
+Asdf.prototype.showRelatedOnChange = function(isChecked) {
     showRelated.set(isChecked);
     applyShowRelated(isChecked);
 }
@@ -741,7 +768,7 @@ function applyShowRelated(isChecked) {
 }
 
 
-function addMoveBtns() {
+function addActorMoveBtns() {
     // Select the rects you want to add chevrons to
     const selectedRects = document.querySelectorAll('.actor-top-box');
 
@@ -822,3 +849,7 @@ function haveSameElements(arr1, arr2) {
 
     return true;
 }
+
+
+window.ASDF = new Asdf();
+}());
