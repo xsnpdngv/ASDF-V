@@ -346,7 +346,9 @@ function arraysHaveSameElements(arr1, arr2) {
  * ================================ */
 class AsdfModel {
     constructor() {
-        this.file = null;
+        this.fileName = new PersistentString("fileName", "");
+        this.fileSize = new PersistentInt("fileSize", 0);
+        this.fileLastMod = new PersistentString("fileLastMod", "");
         this.diagSrcPreamble = new PersistentString("diagSrcPreamble", "");
         this.diagSrc = new PersistentString("diagTxt");
         this.diag = null;
@@ -399,7 +401,13 @@ class AsdfModel {
 
     loadDiagramFromFile(file) {
         let model = this;
-        model.file = file;
+
+        model.fileName.set(file.name);
+        model.fileSize.set(file.size);
+        const lastMod = new Date(file.lastModified);
+        const shortTime = lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        model.fileLastMod.set(lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime);
+
         const reader = new FileReader();
         reader.onload = function(e) {
             model.diagSrc.set(e.target.result);
@@ -582,6 +590,7 @@ class AsdfViewModel  {
         if( ! this.model.diag) { return; }
         diagramContainer.innerHTML = "";
         this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
+        this.updateFileLabel();
         this.updateSvgElemLists();
         this.drawSeqNumCircles();
         this.applySignalClick(this.clickedSignalIndex.get());
@@ -591,13 +600,10 @@ class AsdfViewModel  {
         this.addDocumentEventListeners();
     }
 
-    windowOnLoad() {
-        this.fileLabel.textContent = this.fileLabelTxt.get();
-        addDocumentEventListeners();
-    }
-
-    updateFileLabel(labelText) {
-        this.fileLabel.textContent = labelText;
+    updateFileLabel() {
+        this.fileLabel.textContent = this.model.fileName.get() + ' | ' +
+                                     this.model.fileLastMod.get() + ' | ' +
+                                     this.model.fileSize.get() + ' bytes';
     }
 
     documentOnMouseMove(e) {
