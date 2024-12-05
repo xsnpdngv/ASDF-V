@@ -324,23 +324,6 @@ class PersistentToggle {
 }
 
 
-function arraysHaveSameElements(arr1, arr2) {
-    if (arr1.length !== arr2.length) return false;
-
-    const set1 = new Set(arr1);
-    const set2 = new Set(arr2);
-
-    if (set1.size !== set2.size) return false;
-
-    for (let elem of set1) {
-        if (!set2.has(elem)) return false;
-    }
-
-    return true;
-}
-
-
-
 /* ================================
  * Model: Data and Business Logic
  * ================================ */
@@ -385,20 +368,6 @@ class AsdfModel {
         this.loadDiagramFromSrc();
     }
 
-    setActorOrder(actorOrder) {
-        this.actorOrder.setArray(actorOrder);
-        this.setPreamble( this.#printArrayElementsAsParticipants(this.actorOrder.getArray()) );
-    }
-
-    #printArrayElementsAsParticipants(array) {
-        return array.map(item => `participant ${item}`).join('\n');
-    }
-
-    setPreamble(preamble) {
-        this.diagSrcPreamble.set(preamble);
-        this.loadDiagramFromSrc();
-    }
-
     loadDiagramFromFile(file) {
         let model = this;
 
@@ -421,35 +390,18 @@ class AsdfModel {
 
             this.diag = Diagram.parse(this.diagSrc.get());
 
-            if (arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
+            if (this.#arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
                 let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
 
             this.#removeSignalsOfFilteredActors();
-            this.parseAddInfo();
+            this.#parseAddInfo();
             if (this.isShowIds) {
                 this.includeIdsInSignalMsgs(this.isShowIds, false);
             }
         }
         this.notify();
-    }
-
-    parseAddInfo() {
-        this.diag.signals.forEach(s => {
-            if (s.type === 'Signal') {
-                s.actorA.hasSignal = true;
-                s.actorB.hasSignal = true;
-            }
-            s.origIndex = s.index;
-            s.origMessage = s.message;
-            s.addinfoHead = {};
-            if (s.meta) {
-                try {
-                    s.addinfoHead = JSON.parse(s.meta);
-                } catch (e) { }
-            }
-        });
     }
 
     includeIdsInSignalMsgs(isOn, isToNotify = true) {
@@ -481,6 +433,37 @@ class AsdfModel {
         this.loadDiagramFromSrc();
     }
 
+    setActorOrder(actorOrder) {
+        this.actorOrder.setArray(actorOrder);
+        this.#setPreamble( this.#printArrayElementsAsParticipants(this.actorOrder.getArray()) );
+    }
+
+    #parseAddInfo() {
+        this.diag.signals.forEach(s => {
+            if (s.type === 'Signal') {
+                s.actorA.hasSignal = true;
+                s.actorB.hasSignal = true;
+            }
+            s.origIndex = s.index;
+            s.origMessage = s.message;
+            s.addinfoHead = {};
+            if (s.meta) {
+                try {
+                    s.addinfoHead = JSON.parse(s.meta);
+                } catch (e) { }
+            }
+        });
+    }
+
+    #printArrayElementsAsParticipants(array) {
+        return array.map(item => `participant ${item}`).join('\n');
+    }
+
+    #setPreamble(preamble) {
+        this.diagSrcPreamble.set(preamble);
+        this.loadDiagramFromSrc();
+    }
+
     #removeSignalsOfFilteredActors() {
         let s;
         for (let i = this.diag.signals.length - 1; i >= 0; i--) {
@@ -501,6 +484,21 @@ class AsdfModel {
             }
         }
     }
+
+    #arraysHaveSameElements(arr1, arr2) {
+        if (arr1.length !== arr2.length) return false;
+
+        const set1 = new Set(arr1);
+        const set2 = new Set(arr2);
+
+        if (set1.size !== set2.size) return false;
+
+        for (let elem of set1) {
+            if (!set2.has(elem)) return false;
+        }
+
+        return true;
+    }
 }
 
 
@@ -520,9 +518,9 @@ class AsdfViewModel  {
         this.fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
 
         this.toggles = {
-            "showIds": new PersistentToggle("showIdsToggle", false, this.showIdsOnChange, this),
-            "showInstance": new PersistentToggle("showInstanceToggle", false, this.markSignalsHandler, this),
-            "showRelated": new PersistentToggle("showRelatedToggle", false, this.markSignalsHandler, this)
+            "showIds": new PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
+            "showInstance": new PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
+            "showRelated": new PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
         }
 
         // placeholders
@@ -539,39 +537,32 @@ class AsdfViewModel  {
         this.model.init(this.toggles["showIds"].uiElem.checked);
     }
 
-    fileInputOnChange(event) {
-        this.model.loadDiagramFromFile(event.target.files[0]);
+    clear() {
+        this.model.clear();
+        location.reload();
     }
 
-    fileInputOnClick() {
-        fileInput.value = "";  // so same file can be selected again
+    update() {
+        if( ! this.model.diag) { return; }
+        diagramContainer.innerHTML = "";
+        this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
+        this.#updateFileLabel();
+        this.#updateSvgElemLists();
+        this.#drawSeqNumCircles();
+        this.#applySignalClick(this.clickedSignalIndex.get());
+        this.#markActors();
+        this.#addSignalEventListeners();
+        this.#addActorEventListeners();
+        this.#addDocumentEventListeners();
     }
 
-    navbarBrandOnClick() {
-        this.reset();
+    #updateFileLabel() {
+        this.fileLabel.textContent = this.model.fileName.get() + ' | ' +
+                                     this.model.fileLastMod.get() + ' | ' +
+                                     this.model.fileSize.get() + ' bytes';
     }
 
-    dividerOnMouseDown(e) {
-        this.isResizing = true;
-        this.startY = e.clientY; 
-        this.startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
-        document.body.style.userSelect = "none";
-        document.body.style.cursor = 'row-resize';
-    }
-
-    showIdsOnChange(vm, isOn) {
-        vm.model.includeIdsInSignalMsgs(isOn);
-    }
-
-    markSignalsHandler(vm) {
-        vm.markSignals(vm.clickedSignalIndex.get());
-    }
-
-    actorTextOnClick(index) {
-        this.model.toggleActor(index);
-    }
-
-    updateSvgElemLists() {
+    #updateSvgElemLists() {
         this.signal_paths = document.querySelectorAll('path.signal-arrow');
         this.signal_texts = document.querySelectorAll('text.signal');
         this.actor_paths = document.querySelectorAll('path.actor-line');
@@ -580,96 +571,12 @@ class AsdfViewModel  {
         this.seqNum_circles = document.querySelectorAll('circle.seq-num');
         this.seqNum_texts = document.querySelectorAll('text.seq-num');
 
-        // auxiliary info to handle signal elements of SVG
         if (this.model.diag) {
             this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
         }
     }
 
-    update() {
-        if( ! this.model.diag) { return; }
-        diagramContainer.innerHTML = "";
-        this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
-        this.updateFileLabel();
-        this.updateSvgElemLists();
-        this.drawSeqNumCircles();
-        this.applySignalClick(this.clickedSignalIndex.get());
-        this.markActors();
-        this.addSignalEventListeners();
-        this.addActorEventListeners();
-        this.addDocumentEventListeners();
-    }
-
-    updateFileLabel() {
-        this.fileLabel.textContent = this.model.fileName.get() + ' | ' +
-                                     this.model.fileLastMod.get() + ' | ' +
-                                     this.model.fileSize.get() + ' bytes';
-    }
-
-    documentOnMouseMove(e) {
-        if (this.isResizing) {
-            const deltaY = e.clientY - this.startY;
-            const totalHeight = document.body.offsetHeight;
-            const diagramHeight = (this.startDiagramHeight + deltaY) / totalHeight * 100;
-            const infoHeight = 100 - diagramHeight;
-
-            if (diagramHeight > 5 && infoHeight > 5) {
-                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
-                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
-            }
-        }
-    }
-
-    documentOnMouseUp() {
-        this.isResizing = false;
-        document.body.style.cursor = 'default';
-        document.body.style.userSelect = "";
-    }
-
-    addDocumentEventListeners() {
-        document.addEventListener("mousemove", (e) => this.documentOnMouseMove(e));
-        document.addEventListener("mouseup", () => this.documentOnMouseUp());
-    }
-
-    showAddinfoContent(index) {
-        const notation = document.getElementById("notation");
-        const meta = document.getElementById("meta");
-        const addinfo = document.getElementById("addinfo");
-        notation.textContent = "";
-        meta.textContent = "";
-        addinfo.textContent = "";
-        if(index < 0)
-            return;
-        if(index < this.diag_signals.length) {
-            const s = this.diag_signals[index];
-            notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
-            meta.textContent = s.meta;
-            addinfo.textContent = s.addinfo;
-        }
-    }
-
-    signalTextOnClick(index) {
-        if(this.clickedSignalIndex.get() == index) {
-           index = -1;
-        }
-        this.applySignalClick(index);
-    }
-
-    applySignalClick(index) {
-        this.clickedSignalIndex.set(index);
-        this.showAddinfoContent(this.clickedSignalIndex.get());
-        this.markSignals(this.clickedSignalIndex.get());
-    }
-
-    addSignalEventListeners() {
-        this.signal_texts.forEach((txt, index) => {
-            txt.addEventListener("click", () => this.signalTextOnClick(index));
-            txt.addEventListener("mouseenter", () => this.showAddinfoContent(index));
-            txt.addEventListener("mouseleave", () => this.showAddinfoContent(this.clickedSignalIndex.get()));
-        });
-    }
-
-    drawSeqNumCircles() {
+    #drawSeqNumCircles() {
         this.signal_paths.forEach((path, index) => {
             // Get the starting point of the path
             const start = path.getPointAtLength(0);
@@ -704,7 +611,7 @@ class AsdfViewModel  {
         this.seqNum_texts = document.querySelectorAll('text.seq-num');
     }
 
-    markSignals(refIndex) {
+    #markSignals(refIndex) {
         let refSig = 0 <= refIndex && refIndex < this.diag_signals.length
                      ? this.diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null,
                                                                         "dstInstanceId": null } };
@@ -766,18 +673,7 @@ class AsdfViewModel  {
         });
     }
 
-    addActorEventListeners() {
-        this.actorOrder.clear();
-        this.model.diag.actors.forEach((a, i) => {
-            this.actorOrder.add(a.name);
-            if(a.hasSignal || this.model.filteredActors.has(a.name)) {
-                this.actor_texts[2*i].addEventListener("click", () => this.actorTextOnClick(i));
-                this.actor_texts[2*i+1].addEventListener("click", () => this.actorTextOnClick(i));
-            }
-        });
-    }
-
-    markActors() {
+    #markActors() {
         this.model.diag.actors.forEach((a, i) => {
             if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
                 this.actor_boxes[2*i].classList.add("filtered-actor");
@@ -794,11 +690,10 @@ class AsdfViewModel  {
                 this.actor_paths[i].classList.add("orphan-actor");
             }
         });
-
-        this.addActorMoveBtns();
+        this.#addActorMoveBtns();
     }
 
-    addActorMoveBtns() {
+    #addActorMoveBtns() {
         const selectedRects = document.querySelectorAll('.actor-top-box');
 
         selectedRects.forEach((rect, index) => {
@@ -816,7 +711,7 @@ class AsdfViewModel  {
             moveLeft.setAttribute("y", rectY + 11);
 
             moveLeft.addEventListener("click", () => {
-                this.chevronOnClick(index, 'left');
+                this.#actorMoveBtnOnClick(index, 'left');
             });
 
             const moveRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -828,7 +723,7 @@ class AsdfViewModel  {
             moveRight.setAttribute("x", rectX + rectWidth - 8);
             moveRight.setAttribute("y", rectY + 11);
             moveRight.addEventListener("click", () => {
-                this.chevronOnClick(index, 'right');
+                this.#actorMoveBtnOnClick(index, 'right');
             });
 
             if(index > 0) {
@@ -840,19 +735,90 @@ class AsdfViewModel  {
         });
     }
 
+
+    // ---- toolbar ----
+    navbarBrandOnClick() {
+        this.clear();
+    }
+
+    fileInputOnChange(event) {
+        this.model.loadDiagramFromFile(event.target.files[0]);
+    }
+
+    fileInputOnClick() {
+        fileInput.value = "";  // so same file can be selected again
+    }
+
     resetToolbarOnClick() {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
         this.clickedSignalIndex.set(0);
         this.model.reset();
     }
 
-
-    reset() {
-        this.model.clear();
-        location.reload();
+    #showIdsOnChange(vm, isOn) {
+        vm.model.includeIdsInSignalMsgs(isOn);
     }
 
-    chevronOnClick(index, dir) {
+    #markSignalsHandler(vm) {
+        vm.#markSignals(vm.clickedSignalIndex.get());
+    }
+
+    // ---- signal ----
+    #addSignalEventListeners() {
+        this.signal_texts.forEach((txt, index) => {
+            txt.addEventListener("click", () => this.#signalTextOnClick(index));
+            txt.addEventListener("mouseenter", () => this.#showAddinfoContent(index));
+            txt.addEventListener("mouseleave", () => this.#showAddinfoContent(this.clickedSignalIndex.get()));
+        });
+    }
+
+    #signalTextOnClick(index) {
+        if(this.clickedSignalIndex.get() == index) {
+           index = -1;
+        }
+        this.#applySignalClick(index);
+    }
+
+    #applySignalClick(index) {
+        this.clickedSignalIndex.set(index);
+        this.#showAddinfoContent(this.clickedSignalIndex.get());
+        this.#markSignals(this.clickedSignalIndex.get());
+    }
+
+    #showAddinfoContent(index) {
+        const notation = document.getElementById("notation");
+        const meta = document.getElementById("meta");
+        const addinfo = document.getElementById("addinfo");
+        notation.textContent = "";
+        meta.textContent = "";
+        addinfo.textContent = "";
+        if(index < 0)
+            return;
+        if(index < this.diag_signals.length) {
+            const s = this.diag_signals[index];
+            notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
+            meta.textContent = s.meta;
+            addinfo.textContent = s.addinfo;
+        }
+    }
+
+    // ---- actor ----
+    #addActorEventListeners() {
+        this.actorOrder.clear();
+        this.model.diag.actors.forEach((a, i) => {
+            this.actorOrder.add(a.name);
+            if(a.hasSignal || this.model.filteredActors.has(a.name)) {
+                this.actor_texts[2*i].addEventListener("click", () => this.#actorTextOnClick(i));
+                this.actor_texts[2*i+1].addEventListener("click", () => this.#actorTextOnClick(i));
+            }
+        });
+    }
+
+    #actorTextOnClick(index) {
+        this.model.toggleActor(index);
+    }
+
+    #actorMoveBtnOnClick(index, dir) {
         if(dir == 'left') {
             this.actorOrder.move(index, index - 1);
         } else if (dir == 'right') {
@@ -860,12 +826,46 @@ class AsdfViewModel  {
         }
         this.model.setActorOrder(this.actorOrder.getArray());
     }
+
+    // ---- divider -----
+    #addDocumentEventListeners() {
+        document.addEventListener("mousemove", (e) => this.#documentOnMouseMove(e));
+        document.addEventListener("mouseup", () => this.#documentOnMouseUp());
+    }
+
+    dividerOnMouseDown(e) {
+        this.isResizing = true;
+        this.startY = e.clientY; 
+        this.startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = 'row-resize';
+    }
+
+    #documentOnMouseMove(e) {
+        if (this.isResizing) {
+            const deltaY = e.clientY - this.startY;
+            const totalHeight = document.body.offsetHeight;
+            const diagramHeight = (this.startDiagramHeight + deltaY) / totalHeight * 100;
+            const infoHeight = 100 - diagramHeight;
+
+            if (diagramHeight > 5 && infoHeight > 5) {
+                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
+                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+            }
+        }
+    }
+
+    #documentOnMouseUp() {
+        this.isResizing = false;
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = "";
+    }
 }
 
 
-/* ================================
+/* ============================
  * Application Initialization
- * ================================ */
+ * ============================ */
 const asdfM = new AsdfModel();
 const asdfVM = new AsdfViewModel(asdfM);
 window.onload = () => asdfVM.init();
