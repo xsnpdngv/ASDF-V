@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ASDF Vector</title>
+    <title>ASDF Graphics</title>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" type="text/css" href="css/asdf.css"/>
     <link rel="icon" href="img/chevron-double-right.svg">
@@ -12,27 +12,27 @@
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start">
 
-        <a class="navbar-brand" id="navbarBrand" href="" onclick="ASDF.navbarBrandOnClick()">ASDF Vector Graphics
+        <a class="navbar-brand" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF Graphics
             <img src="img/chevron-double-right.svg">
         </a>
 
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf"
-             onchange="ASDF.fileInputOnChange(event)" onclick="ASDF.fileInputOnClick()">
+             onchange="asdfVM.fileInputOnChange(event)" onclick="asdfVM.fileInputOnClick()">
 
             <div class="btn-group me-3" role="group" aria-label="Basic checkbox toggle button group">
-                <input type="checkbox" class="btn-check" id="showIdsToggle" autocomplete="off" onchange="ASDF.showIdsOnChange(checked)">
+                <input type="checkbox" class="btn-check" id="showIdsToggle">
                 <label class="btn btn-asdf btn-sm" for="showIdsToggle">IDs</label>
 
-                <input type="checkbox" class="btn-check" id="showInstanceToggle" autocomplete="off" onchange="ASDF.showInstanceOnChange(checked)">
+                <input type="checkbox" class="btn-check" id="showInstanceToggle">
                 <label class="btn btn-sm btn-asdf" for="showInstanceToggle">Instance</label>
 
-                <input type="checkbox" class="btn-check" id="showRelatedToggle" autocomplete="off" onchange="ASDF.showRelatedOnChange(checked)">
+                <input type="checkbox" class="btn-check" id="showRelatedToggle">
                 <label class="btn btn-asdf btn-sm" for="showRelatedToggle">Related</label>
             </div>
 
-            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="ASDF.resetToolbarOnClick()">Reset</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="asdfVM.resetToolbarOnClick()">Reset</button>
         </div>
 
     </div>
@@ -43,9 +43,9 @@
             <div id="diagram">
                 <pre>
 
-    ASDF Vector is a tool for visualizing sequence diagrams in the
-    Augmented Sequence Diagram Format (ASDF).  Upload an ASDF file
-    to view and interact with it.
+    ASDF Interactive Vector Graphics is a tool for visualizing sequence
+    diagrams in the Augmented Sequence Diagram Format (ASDF). Upload an
+    ASDF file to view and interact with it.
 
     Release Notes - v1.0 (December 1, 2024)
     ---------------------------------------
@@ -79,7 +79,7 @@
             </div>
         </div>
 
-        <div id="divider" onmousedown="ASDF.dividerOnMouseDown(event)"></div>
+        <div id="divider" onmousedown="asdfVM.dividerOnMouseDown(event)"></div>
 
         <div id="addinfoDisplay">
             <pre id="notation"></pre>

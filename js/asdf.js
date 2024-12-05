@@ -97,6 +97,14 @@ class PersistentArray {
             this.#saveArrayToLocalStorage();
         }
     }
+
+    setArray(newArray) {
+        if (Array.isArray(newArray)) {
+            this.array = newArray;
+            this.#saveArrayToLocalStorage();
+        }
+    }
+
     getArray() {
         return this.array;
     }
@@ -231,6 +239,7 @@ class PersistentString {
     }
 }
 
+
 class PersistentInt {
     constructor(key, defaultValue = 0) {
         this.key = key;
@@ -291,538 +300,27 @@ class PersistentInt {
 }
 
 
-class Asdf {
-}
+class PersistentToggle {
+    constructor(uiElemId, defaultValue, onChangeHandler, onChangeArg) {
+        this.uiElemId = uiElemId;
+        this.value = new PersistentBool(this.uiElemId, defaultValue);
+        this.onChangeHandler = onChangeHandler;
+        this.onChangeArg = onChangeArg;
 
-const diagText = new PersistentString("diagText");
-const clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
-const filteredActors = new PersistentSet("filteredActors");
-const actorOrder = new PersistentArray("actorOrder");
-const showIds = new PersistentBool("showIds", false);
-const showInstance = new PersistentBool("showInstance", false);
-const showRelated = new PersistentBool("showRelated", false);
-const fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
-
-const diagramContainer = document.getElementById("diagram");
-const fileInput = document.getElementById("fileInput");
-const fileLabel = document.getElementById("fileInputLabel");
-
-let diag = null;
-let diag_signals = [];
-let signal_texts = [];
-let signal_paths = [];
-let actor_paths = [];
-let actor_boxes = [];
-let actor_texts = [];
-let seqNum_circles = [];
-let seqNum_texts = [];
-
-let isResizing = false;
-
-
-function windowOnLoad()
-{
-    document.getElementById("showIdsToggle").checked = showIds.get();
-    document.getElementById("showInstanceToggle").checked = showInstance.get();
-    document.getElementById("showRelatedToggle").checked = showRelated.get();
-    fileLabel.textContent = fileLabelTxt.get();
-    if (diagText.length() > 0) {
-        loadDiagram(diagText.get());
-    }
-    addDocumentEventListeners();
-}
-
-
-Asdf.prototype.fileInputOnChange = function(event) {
-    const file = event.target.files[0];
-    const lastMod = new Date(file.lastModified);
-    const shortTime = lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    fileLabelTxt.set(file.name +
-                     ' | ' + lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime +
-                     ' | ' + file.size + ' bytes');
-
-    fileLabel.textContent = fileLabelTxt.get();
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        diagText.set(e.target.result);
-        clickedSignalIndex.set(0);
-        loadDiagram(diagText.get());
-    };
-    reader.readAsText(file);
-}
-
-
-Asdf.prototype.fileInputOnClick = function() {
-    fileInput.value = "";  // so same file can be selected again
-}
-
-
-function loadDiagram(asdf) {
-    diag = Diagram.parse(asdf);
-
-    function applyActorOrder() {
-        if (arraysHaveSameElements(actorOrder.getArray(), diag.actors.map(element => element.name))) {
-            const participantOrder = printArrayElementsAsParticipants(actorOrder.getArray());
-            orderedAsdf = participantOrder + "\n\n" + asdf;
-            diag = Diagram.parse(orderedAsdf);
-        } else {
-            actorOrder.clear();
-            filteredActors.clear();
-            clickedSignalIndex.set(0);
-        }
+        this.uiElem = document.getElementById(this.uiElemId);
+        this.uiElem.checked = this.value.get();
+        this.uiElem.addEventListener("change", () => this.toggle(this.uiElem.checked));
     }
 
-    applyActorOrder();
-    parseMeta(diag);
-    applyShowIds(showIds.get());
-    applyShowInstance(showInstance.get());
-    applyShowRelated(showRelated.get());
-
-    drawDiagram(diag);
-}
-
-
-function parseMeta(diag)
-{
-    diag.signals.forEach((s, i) => {
-        s.origIndex = s.index;
-        s.origMessage = s.message;
-        s.addinfoHead = {};
-        if(s.meta) {
-            try {
-                s.addinfoHead = JSON.parse(s.meta);
-            } catch (e) {
-                console.error("Invalid JSON in additional info head:", s.meta);
-            }
-        }
-    });
-}
-
-
-function drawDiagram(diag) {
-    function removeSignalsOfFilteredActors() {
-        for (let i = diag.signals.length - 1; i >= 0; i--) {
-            signal = diag.signals[i];
-            if((signal.type === 'Signal' && (filteredActors.has(signal.actorA.name) ||
-                                            filteredActors.has(signal.actorB.name))) ||
-            (signal.type === 'Note' && filteredActors.has(signal.actor.name))) {
-                diag.signals.splice(i, 1);
-            }
-            // mark actor having signal
-            else if(signal.type === 'Signal') {
-                signal.actorA.hasSignal = true;
-                signal.actorB.hasSignal = true;
-            }
-            else {
-                signal.actor.hasSignal = true;
-            }
-        }
+    toggle(isOn) {
+        this.value.set(isOn);
+        this.uiElem.checked = isOn;
+        this.onChangeHandler(this.onChangeArg, isOn);
     }
 
-
-    function populateElementLists() {
-        diag_signals = diag.signals.filter(item => item.type === 'Signal');
-        signal_paths = document.querySelectorAll('path.signal-arrow');
-        signal_texts = document.querySelectorAll('text.signal');
-        actor_paths = document.querySelectorAll('path.actor-line');
-        actor_boxes = document.querySelectorAll('rect.actor-box');
-        actor_texts = document.querySelectorAll('text.actor-text');
+    reset() {
+        this.toggle(false);
     }
-
-
-    function addSignalEventListeners() {
-        signal_texts.forEach((txt, index) => {
-            txt.addEventListener("click", () => signalTextOnClick(index));
-            txt.addEventListener("mouseenter", () => showTemporaryAddinfo(index));
-            txt.addEventListener("mouseleave", () => showAddinfoContent(clickedSignalIndex.get()));
-        });
-    }
-
-
-    function signalTextOnClick(index) {
-        if(diag_signals[index].clicked) {
-           index = -1;
-        }
-        applySignalClick(index);
-    }
-
-
-    function applySignalClick(index) {
-        if(clickedSignalIndex.get() >= 0 && clickedSignalIndex.get() < diag_signals.length) {
-            diag_signals[clickedSignalIndex.get()].clicked = false;
-        }
-        if(index >= 0 && index < diag_signals.length) {
-            diag_signals[index].clicked = true;
-        }
-        clickedSignalIndex.set(index);
-        showAddinfoContent(clickedSignalIndex.get());
-        markSignals(clickedSignalIndex.get());
-    }
-
-
-    function addActorEventListeners() {
-        actorOrder.clear();
-        diag.actors.forEach((actor, i) => {
-            actorOrder.add(actor.name);
-            if(filteredActors.has(actor.name) || actor.hasSignal) {
-                actor_texts[2*i].addEventListener("click", () => actorTextOnClick(i));
-                actor_texts[2*i+1].addEventListener("click", () => actorTextOnClick(i));
-            }
-        });
-    }
-
-
-    function actorTextOnClick(index) {
-        name = diag.actors[index].name;
-        if(filteredActors.has(name))
-            filteredActors.delete(name);
-        else
-            filteredActors.add(name);
-        loadDiagram(diagText.get());
-    }
-
-
-    function showTemporaryAddinfo(index) {
-        showAddinfoContent(index);
-    }
-
-
-    function markSignals(refIndex) {
-        refSig = refIndex >= 0 && refIndex < diag_signals.length
-                 ? diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null, "dstInstanceId": null } };
-        diag_signals.forEach((sig, index) => {
-
-            text = signal_texts[index];
-            circle = seqNum_circles[index];
-            seqNum = seqNum_texts[index];
-
-            if(sig.addinfoHead.srcInstanceId) {
-
-                sig.isSameSrcInstance = refSig.addinfoHead.srcInstanceId &&
-                                        sig.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
-                cl = 'same-id-signal';
-                if(sig.isSameSrcInstance) {
-                    text.classList.add(cl);
-                    circle.classList.add(cl);
-                    seqNum.classList.add(cl);
-                } else {
-                    text.classList.remove(cl);
-                    circle.classList.remove(cl);
-                    seqNum.classList.remove(cl);
-                }
-
-                sig.isRelated = refSig.addinfoHead.srcInstanceId &&
-                                (sig.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
-                                 sig.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
-                cl = 'related-signal';
-                if(sig.isRelated) {
-                    text.classList.add(cl);
-                    circle.classList.add(cl);
-                    seqNum.classList.add(cl);
-                } else {
-                    text.classList.remove(cl);
-                    circle.classList.remove(cl);
-                    seqNum.classList.remove(cl);
-                }
-            }
-
-            if(index === refIndex) {
-                text.classList.add('clicked-signal');
-                circle.classList.add('clicked-signal-circle');
-                seqNum.classList.add('clicked-signal-seq-num');
-            } else {
-                text.classList.remove('clicked-signal');
-                circle.classList.remove('clicked-signal-circle');
-                seqNum.classList.remove('clicked-signal-seq-num');
-            }
-        });
-    }
-
-
-    function showAddinfoContent(index) {
-        const notation = document.getElementById("notation");
-        const meta = document.getElementById("meta");
-        const addinfo = document.getElementById("addinfo");
-        notation.textContent = "";
-        meta.textContent = "";
-        addinfo.textContent = "";
-        if(index < 0)
-            return;
-        if(index < diag_signals.length) {
-            const s = diag_signals[index];
-            notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
-            meta.textContent = s.meta;
-            addinfo.textContent = s.addinfo;
-        }
-    }
-
-
-    function markFilteredActors() {
-        actor_paths.forEach((a, i) => {
-            if(filteredActors.has(diag.actors[i].name) ||
-                ! diag.actors[i].hasSignal)
-                a.classList.add("filtered-actor");
-        });
-    }
-
-
-    diagramContainer.innerHTML = "";
-
-    removeSignalsOfFilteredActors();
-    diag.drawSVG(diagramContainer, { theme: 'simple' });
-
-    populateElementLists();
-    addSignalEventListeners();
-    addActorEventListeners();
-    markFilteredActors();
-    markSpecialSignalTexts();
-    drawSeqNumCircles();
-    markActors();
-    applySignalClick(clickedSignalIndex.get());
-    // applyShowIds(showIds.get());
-    applyShowInstance(showInstance.get());
-    applyShowRelated(showRelated.get());
-}
-
-
-Asdf.prototype.resetToolbarOnClick = function() {
-    actorOrder.clear();
-    filteredActors.clear();
-    showIds.set(false);
-    showInstance.set(false);
-    showRelated.set(false);
-    clickedSignalIndex.set(0);
-    windowOnLoad();
-}
-
-
-Asdf.prototype.navbarBrandOnClick = function() {
-    diagText.set("");
-    fileLabelTxt.set("Choose file");
-    location.reload();  // Reload the page
-}
-
-
-Asdf.prototype.dividerOnMouseDown = function(e) {
-    isResizing = true;
-    startY = e.clientY; 
-    startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = 'row-resize';
-}
-
-
-function addDocumentEventListeners() {
-    function documentOnMouseMove(e) {
-        if (isResizing) {
-            const deltaY = e.clientY - startY;
-            const totalHeight = document.body.offsetHeight;
-            const diagramHeight = (startDiagramHeight + deltaY) / totalHeight * 100;
-            const infoHeight = 100 - diagramHeight;
-
-            if (diagramHeight > 5 && infoHeight > 5) {
-                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
-                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
-            }
-        }
-    }
-
-    function documentOnMouseUp() {
-        isResizing = false;
-        document.body.style.cursor = 'default';
-        document.body.style.userSelect = "";
-    }
-
-    document.addEventListener("mousemove", documentOnMouseMove);
-    document.addEventListener("mouseup", documentOnMouseUp);
-}
-
-
-function markSpecialSignalTexts() {
-    signal_texts.forEach((text, index) => {
-        const signal = diag_signals[index];
-        if (signal.addinfoHead) {
-            if (signal.addinfoHead.isSpecial || signal.addinfoHead.size <= 0) {
-                text.classList.add("special-signal");
-            }
-        }
-    });
-}
-
-
-function markActors() {
-    diag.actors.forEach((a, i) => {
-        if(filteredActors.has(diag.actors[i].name)) {
-            actor_boxes[2*i].classList.add("filtered-actor");
-            actor_boxes[2*i+1].classList.add("filtered-actor");
-            actor_texts[2*i].classList.add("filtered-actor");
-            actor_texts[2*i+1].classList.add("filtered-actor");
-        }
-        if(! a.hasSignal) {
-            actor_boxes[2*i].classList.add("orphan-actor");
-            actor_boxes[2*i+1].classList.add("orphan-actor");
-            actor_texts[2*i].classList.add("orphan-actor");
-            actor_texts[2*i+1].classList.add("orphan-actor");
-        }
-    });
-
-    addActorMoveBtns();
-}
-
-
-function drawSeqNumCircles(index) {
-    signal_paths.forEach((path, index) => {
-        // Get the starting point of the path
-        const start = path.getPointAtLength(0);
-
-        // Create a circle element
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", start.x);
-        circle.setAttribute("cy", start.y);
-        circle.setAttribute("r", 13); // Radius of the circle
-        circle.setAttribute("fill", "white"); // Color of the circle
-        circle.setAttribute("stroke", "black"); // Border color
-        circle.setAttribute("stroke-width", 1); // Border width
-        circle.setAttribute("class", "seq-num"); // Border width
-
-        // Create a text element
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", start.x);
-        text.setAttribute("y", start.y);
-        text.setAttribute("text-anchor", "middle"); // Center text horizontally
-        text.setAttribute("dy", "0.35em"); // Center text vertically
-        text.setAttribute("fill", "black"); // Color of the text inside the circle
-        text.setAttribute("font-size", "13px"); // Border width
-        text.setAttribute("class", "seq-num"); // Border width
-        text.textContent = index + 1;
-
-        // Append them to the SVG element
-        path.parentNode.appendChild(circle);
-        path.parentNode.appendChild(text);
-    });
-
-    seqNum_circles = document.querySelectorAll('circle.seq-num');
-    seqNum_texts = document.querySelectorAll('text.seq-num');
-}
-
-
-Asdf.prototype.showIdsOnChange = function(isChecked) {
-    showIds.set(isChecked);
-    applyShowIds(isChecked);
-    drawDiagram(diag);
-}
-
-function applyShowIds(isChecked) {
-    if (isChecked) {
-        diag.signals.forEach((signal, index) => {
-            if(signal.addinfoHead.srcInstanceId) {
-                signal.message += '\n' + signal.addinfoHead.srcInstanceId;
-            }
-        });
-    } else {
-        diag.signals.forEach((signal, index) => {
-            signal.message = signal.origMessage;
-        });
-    }
-}
-
-
-Asdf.prototype.showInstanceOnChange = function(isChecked) {
-    showInstance.set(isChecked);
-    applyShowInstance(isChecked);
-}
-
-function applyShowInstance(isChecked) {
-    cl = 'instance-highlight-off';
-    signal_texts.forEach((s, i) => {
-        c = seqNum_circles[i];
-        if(isChecked) {
-            s.classList.remove(cl);
-            c.classList.remove(cl);
-        } else {
-            s.classList.add(cl);
-            c.classList.add(cl);
-        }
-    });
-}
-
-
-Asdf.prototype.showRelatedOnChange = function(isChecked) {
-    showRelated.set(isChecked);
-    applyShowRelated(isChecked);
-}
-
-function applyShowRelated(isChecked) {
-    cl = 'related-highlight-off';
-    signal_texts.forEach((s, i) => {
-        c = seqNum_circles[i];
-        if(isChecked) {
-            s.classList.remove(cl);
-            c.classList.remove(cl);
-        } else {
-            s.classList.add(cl);
-            c.classList.add(cl);
-        }
-    });
-}
-
-
-function addActorMoveBtns() {
-    const selectedRects = document.querySelectorAll('.actor-top-box');
-
-    selectedRects.forEach((rect, index) => {
-        const rectX = parseFloat(rect.getAttribute('x'));
-        const rectY = parseFloat(rect.getAttribute('y'));
-        const rectWidth = parseFloat(rect.getAttribute('width'));
-
-        const moveLeft = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        moveLeft.setAttribute("width", "16");
-        moveLeft.setAttribute("height", "16");
-        moveLeft.setAttribute("fill", "currentColor");
-        moveLeft.setAttribute("class", "move move-left");
-        moveLeft.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm11.5 5.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5z"/>`;
-        moveLeft.setAttribute("x", rectX - 8);
-        moveLeft.setAttribute("y", rectY + 11);
-
-        moveLeft.addEventListener("click", () => {
-            chevronOnClick(index, 'left');
-        });
-
-        const moveRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        moveRight.setAttribute("width", "16");
-        moveRight.setAttribute("height", "16");
-        moveRight.setAttribute("fill", "currentColor");
-        moveRight.setAttribute("class", "move move-right");
-        moveRight.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>`;
-        moveRight.setAttribute("x", rectX + rectWidth - 8);
-        moveRight.setAttribute("y", rectY + 11);
-        moveRight.addEventListener("click", () => {
-            chevronOnClick(index, 'right');
-        });
-
-        if(index > 0) {
-            rect.parentNode.appendChild(moveLeft);
-        }
-        if(index < diag.actors.length - 1) {
-            rect.parentNode.appendChild(moveRight);
-        }
-    });
-}
-
-
-function chevronOnClick(index, dir) {
-    if(dir == 'left') {
-        actorOrder.move(index, index - 1);
-    } else if (dir == 'right') {
-        actorOrder.move(index, index + 1);
-    }
-
-    loadDiagram(diagText.get());
-}
-
-
-function printArrayElementsAsParticipants(array) {
-    return array.map(item => `participant ${item}`).join('\n');
 }
 
 
@@ -843,6 +341,527 @@ function arraysHaveSameElements(arr1, arr2) {
 
 
 
-window.onload = windowOnLoad;
-window.ASDF = new Asdf();
+/* ================================
+ * Model: Data and Business Logic
+ * ================================ */
+class AsdfModel {
+    constructor() {
+        this.file = null;
+        this.diagSrcPreamble = new PersistentString("diagSrcPreamble", "");
+        this.diagSrc = new PersistentString("diagTxt");
+        this.diag = null;
+        this.filteredActors = new PersistentSet("filteredActors");
+        this.actorOrder = new PersistentArray("actorOrder");
+        this.isShowIds = false;
+        this.observers = [];
+    }
+
+    subscribe(observer) {
+        this.observers.push(observer);
+    }
+
+    notify() {
+        this.observers.forEach(observer => observer.update());
+    }
+
+    init(isShowIds = false) {
+        this.isShowIds = isShowIds;
+        this.loadDiagramFromSrc();
+    }
+
+    clear() {
+        this.file = null;
+        this.diagSrc.set("");
+        this.diag = null;
+        this.reset();
+    }
+
+    reset() {
+        this.diagSrcPreamble.set("");
+        this.filteredActors.clear();
+        this.isShowIds = false;
+        this.loadDiagramFromSrc();
+    }
+
+    setActorOrder(actorOrder) {
+        this.actorOrder.setArray(actorOrder);
+        this.setPreamble( this.#printArrayElementsAsParticipants(this.actorOrder.getArray()) );
+    }
+
+    #printArrayElementsAsParticipants(array) {
+        return array.map(item => `participant ${item}`).join('\n');
+    }
+
+    setPreamble(preamble) {
+        this.diagSrcPreamble.set(preamble);
+        this.loadDiagramFromSrc();
+    }
+
+    loadDiagramFromFile(file) {
+        let model = this;
+        model.file = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            model.diagSrc.set(e.target.result);
+            model.loadDiagramFromSrc();
+        };
+        reader.readAsText(file);
+    }
+
+    loadDiagramFromSrc() {
+        if (this.diagSrc.length() > 0) {
+
+            this.diag = Diagram.parse(this.diagSrc.get());
+
+            if (arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
+                let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
+                this.diag = Diagram.parse(src);
+            }
+
+            this.#removeSignalsOfFilteredActors();
+            this.parseAddInfo();
+            if (this.isShowIds) {
+                this.includeIdsInSignalMsgs(this.isShowIds, false);
+            }
+        }
+        this.notify();
+    }
+
+    parseAddInfo() {
+        this.diag.signals.forEach(s => {
+            if (s.type === 'Signal') {
+                s.actorA.hasSignal = true;
+                s.actorB.hasSignal = true;
+            }
+            s.origIndex = s.index;
+            s.origMessage = s.message;
+            s.addinfoHead = {};
+            if (s.meta) {
+                try {
+                    s.addinfoHead = JSON.parse(s.meta);
+                } catch (e) { }
+            }
+        });
+    }
+
+    includeIdsInSignalMsgs(isOn, isToNotify = true) {
+        this.isShowIds = isOn;
+        if ( ! this.diag) { return; }
+        if (isOn) {
+            this.diag.signals.forEach(s => {
+                if (s.addinfoHead.srcInstanceId) {
+                    s.message += '\n' + s.addinfoHead.srcInstanceId;
+                }
+            });
+        } else {
+            this.diag.signals.forEach(s => {
+                s.message = s.origMessage;
+            });
+        }
+        if (isToNotify) {
+            this.notify();
+        }
+    }
+
+    toggleActor(index) {
+        let a = this.diag.actors[index];
+        if (this.filteredActors.has(a.name)) {
+            this.filteredActors.delete(a.name);
+        } else {
+            this.filteredActors.add(a.name);
+        }
+        this.loadDiagramFromSrc();
+    }
+
+    #removeSignalsOfFilteredActors() {
+        let s;
+        for (let i = this.diag.signals.length - 1; i >= 0; i--) {
+            s = this.diag.signals[i];
+            if ((s.type === 'Signal' && (this.filteredActors.has(s.actorA.name) ||
+                                         this.filteredActors.has(s.actorB.name))) ||
+                (s.type === 'Note' && this.filteredActors.has(s.actor.name))) {
+                 this.diag.signals.splice(i, 1);
+            }
+
+            // mark actor having signal
+            else if (s.type === 'Signal') {
+                s.actorA.hasSignal = true;
+                s.actorB.hasSignal = true;
+            }
+            else {
+                s.actor.hasSignal = true;
+            }
+        }
+    }
+}
+
+
+/* ==============================
+ * View Model: UI and Rendering
+ * ============================== */
+class AsdfViewModel  {
+    constructor(model) {
+        this.model = model;
+        this.isResizing = false;
+
+        this.model.subscribe(this);
+
+        // toolbar
+        this.fileInput = document.getElementById("fileInput");
+        this.fileLabel = document.getElementById("fileInputLabel");
+        this.fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
+
+        this.toggles = {
+            "showIds": new PersistentToggle("showIdsToggle", false, this.showIdsOnChange, this),
+            "showInstance": new PersistentToggle("showInstanceToggle", false, this.markSignalsHandler, this),
+            "showRelated": new PersistentToggle("showRelatedToggle", false, this.markSignalsHandler, this)
+        }
+
+        // placeholders
+        this.diagramContainer = document.getElementById("diagram");
+
+        // view state
+        this.clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
+        this.actorOrder = new PersistentArray("actorOrderVM");
+
+        this.diag_signals = []; // helper array of signals of original diagram (without notes)
+    }
+
+    init() {
+        this.model.init(this.toggles["showIds"].uiElem.checked);
+    }
+
+    fileInputOnChange(event) {
+        this.model.loadDiagramFromFile(event.target.files[0]);
+    }
+
+    fileInputOnClick() {
+        fileInput.value = "";  // so same file can be selected again
+    }
+
+    navbarBrandOnClick() {
+        this.reset();
+    }
+
+    dividerOnMouseDown(e) {
+        this.isResizing = true;
+        this.startY = e.clientY; 
+        this.startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = 'row-resize';
+    }
+
+    showIdsOnChange(vm, isOn) {
+        vm.model.includeIdsInSignalMsgs(isOn);
+    }
+
+    markSignalsHandler(vm) {
+        vm.markSignals(vm.clickedSignalIndex.get());
+    }
+
+    actorTextOnClick(index) {
+        this.model.toggleActor(index);
+    }
+
+    updateSvgElemLists() {
+        this.signal_paths = document.querySelectorAll('path.signal-arrow');
+        this.signal_texts = document.querySelectorAll('text.signal');
+        this.actor_paths = document.querySelectorAll('path.actor-line');
+        this.actor_boxes = document.querySelectorAll('rect.actor-box');
+        this.actor_texts = document.querySelectorAll('text.actor-text');
+        this.seqNum_circles = document.querySelectorAll('circle.seq-num');
+        this.seqNum_texts = document.querySelectorAll('text.seq-num');
+
+        // auxiliary info to handle signal elements of SVG
+        if (this.model.diag) {
+            this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
+        }
+    }
+
+    update() {
+        if( ! this.model.diag) { return; }
+        diagramContainer.innerHTML = "";
+        this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
+        this.updateSvgElemLists();
+        this.drawSeqNumCircles();
+        this.applySignalClick(this.clickedSignalIndex.get());
+        this.markActors();
+        this.addSignalEventListeners();
+        this.addActorEventListeners();
+        this.addDocumentEventListeners();
+    }
+
+    windowOnLoad() {
+        this.fileLabel.textContent = this.fileLabelTxt.get();
+        addDocumentEventListeners();
+    }
+
+    updateFileLabel(labelText) {
+        this.fileLabel.textContent = labelText;
+    }
+
+    documentOnMouseMove(e) {
+        if (this.isResizing) {
+            const deltaY = e.clientY - this.startY;
+            const totalHeight = document.body.offsetHeight;
+            const diagramHeight = (this.startDiagramHeight + deltaY) / totalHeight * 100;
+            const infoHeight = 100 - diagramHeight;
+
+            if (diagramHeight > 5 && infoHeight > 5) {
+                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
+                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+            }
+        }
+    }
+
+    documentOnMouseUp() {
+        this.isResizing = false;
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = "";
+    }
+
+    addDocumentEventListeners() {
+        document.addEventListener("mousemove", (e) => this.documentOnMouseMove(e));
+        document.addEventListener("mouseup", () => this.documentOnMouseUp());
+    }
+
+    showAddinfoContent(index) {
+        const notation = document.getElementById("notation");
+        const meta = document.getElementById("meta");
+        const addinfo = document.getElementById("addinfo");
+        notation.textContent = "";
+        meta.textContent = "";
+        addinfo.textContent = "";
+        if(index < 0)
+            return;
+        if(index < this.diag_signals.length) {
+            const s = this.diag_signals[index];
+            notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
+            meta.textContent = s.meta;
+            addinfo.textContent = s.addinfo;
+        }
+    }
+
+    signalTextOnClick(index) {
+        if(this.clickedSignalIndex.get() == index) {
+           index = -1;
+        }
+        this.applySignalClick(index);
+    }
+
+    applySignalClick(index) {
+        this.clickedSignalIndex.set(index);
+        this.showAddinfoContent(this.clickedSignalIndex.get());
+        this.markSignals(this.clickedSignalIndex.get());
+    }
+
+    addSignalEventListeners() {
+        this.signal_texts.forEach((txt, index) => {
+            txt.addEventListener("click", () => this.signalTextOnClick(index));
+            txt.addEventListener("mouseenter", () => this.showAddinfoContent(index));
+            txt.addEventListener("mouseleave", () => this.showAddinfoContent(this.clickedSignalIndex.get()));
+        });
+    }
+
+    drawSeqNumCircles() {
+        this.signal_paths.forEach((path, index) => {
+            // Get the starting point of the path
+            const start = path.getPointAtLength(0);
+
+            // Create a circle element
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", start.x);
+            circle.setAttribute("cy", start.y);
+            circle.setAttribute("r", 13); // Radius of the circle
+            circle.setAttribute("fill", "white"); // Color of the circle
+            circle.setAttribute("stroke", "black"); // Border color
+            circle.setAttribute("stroke-width", 1); // Border width
+            circle.setAttribute("class", "seq-num"); // Border width
+
+            // Create a text element
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", start.x);
+            text.setAttribute("y", start.y);
+            text.setAttribute("text-anchor", "middle"); // Center text horizontally
+            text.setAttribute("dy", "0.35em"); // Center text vertically
+            text.setAttribute("fill", "black"); // Color of the text inside the circle
+            text.setAttribute("font-size", "13px"); // Border width
+            text.setAttribute("class", "seq-num"); // Border width
+            text.textContent = index + 1;
+
+            // Append them to the SVG element
+            path.parentNode.appendChild(circle);
+            path.parentNode.appendChild(text);
+        });
+
+        this.seqNum_circles = document.querySelectorAll('circle.seq-num');
+        this.seqNum_texts = document.querySelectorAll('text.seq-num');
+    }
+
+    markSignals(refIndex) {
+        let refSig = 0 <= refIndex && refIndex < this.diag_signals.length
+                     ? this.diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null,
+                                                                        "dstInstanceId": null } };
+        this.diag_signals.forEach((s, i) => {
+
+            let text = this.signal_texts[i];
+            let circle = this.seqNum_circles[i];
+            let seqNum = this.seqNum_texts[i];
+
+            let isOfSameInstance = false;
+            let isRelated = false;
+            let cl = '';
+
+            if(s.addinfoHead.srcInstanceId) {
+
+                isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
+                                      s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
+                cl = 'same-id-signal';
+                if(isOfSameInstance && this.toggles["showInstance"].uiElem.checked) {
+                    text.classList.add(cl);
+                    circle.classList.add(cl);
+                    seqNum.classList.add(cl);
+                } else {
+                    text.classList.remove(cl);
+                    circle.classList.remove(cl);
+                    seqNum.classList.remove(cl);
+                }
+
+                isRelated = refSig.addinfoHead.srcInstanceId &&
+                              (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
+                               s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
+                cl = 'related-signal';
+                if(isRelated && this.toggles["showRelated"].uiElem.checked) {
+                    text.classList.add(cl);
+                    circle.classList.add(cl);
+                    seqNum.classList.add(cl);
+                } else {
+                    text.classList.remove(cl);
+                    circle.classList.remove(cl);
+                    seqNum.classList.remove(cl);
+                }
+            }
+
+            if (s.addinfoHead) {
+                if (s.addinfoHead.isSpecial || s.addinfoHead.size <= 0) {
+                    text.classList.add("special-signal");
+                }
+            }
+
+            if (i === refIndex) {
+                text.classList.add('clicked-signal');
+                circle.classList.add('clicked-signal-circle');
+                seqNum.classList.add('clicked-signal-seq-num');
+            } else {
+                text.classList.remove('clicked-signal');
+                circle.classList.remove('clicked-signal-circle');
+                seqNum.classList.remove('clicked-signal-seq-num');
+            }
+        });
+    }
+
+    addActorEventListeners() {
+        this.actorOrder.clear();
+        this.model.diag.actors.forEach((a, i) => {
+            this.actorOrder.add(a.name);
+            if(a.hasSignal || this.model.filteredActors.has(a.name)) {
+                this.actor_texts[2*i].addEventListener("click", () => this.actorTextOnClick(i));
+                this.actor_texts[2*i+1].addEventListener("click", () => this.actorTextOnClick(i));
+            }
+        });
+    }
+
+    markActors() {
+        this.model.diag.actors.forEach((a, i) => {
+            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
+                this.actor_boxes[2*i].classList.add("filtered-actor");
+                this.actor_boxes[2*i+1].classList.add("filtered-actor");
+                this.actor_texts[2*i].classList.add("filtered-actor");
+                this.actor_texts[2*i+1].classList.add("filtered-actor");
+                this.actor_paths[i].classList.add("filtered-actor");
+            }
+            if (! a.hasSignal) {
+                this.actor_boxes[2*i].classList.add("orphan-actor");
+                this.actor_boxes[2*i+1].classList.add("orphan-actor");
+                this.actor_texts[2*i].classList.add("orphan-actor");
+                this.actor_texts[2*i+1].classList.add("orphan-actor");
+                this.actor_paths[i].classList.add("orphan-actor");
+            }
+        });
+
+        this.addActorMoveBtns();
+    }
+
+    addActorMoveBtns() {
+        const selectedRects = document.querySelectorAll('.actor-top-box');
+
+        selectedRects.forEach((rect, index) => {
+            const rectX = parseFloat(rect.getAttribute('x'));
+            const rectY = parseFloat(rect.getAttribute('y'));
+            const rectWidth = parseFloat(rect.getAttribute('width'));
+
+            const moveLeft = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            moveLeft.setAttribute("width", "16");
+            moveLeft.setAttribute("height", "16");
+            moveLeft.setAttribute("fill", "currentColor");
+            moveLeft.setAttribute("class", "move move-left");
+            moveLeft.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm11.5 5.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5z"/>`;
+            moveLeft.setAttribute("x", rectX - 8);
+            moveLeft.setAttribute("y", rectY + 11);
+
+            moveLeft.addEventListener("click", () => {
+                this.chevronOnClick(index, 'left');
+            });
+
+            const moveRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            moveRight.setAttribute("width", "16");
+            moveRight.setAttribute("height", "16");
+            moveRight.setAttribute("fill", "currentColor");
+            moveRight.setAttribute("class", "move move-right");
+            moveRight.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>`;
+            moveRight.setAttribute("x", rectX + rectWidth - 8);
+            moveRight.setAttribute("y", rectY + 11);
+            moveRight.addEventListener("click", () => {
+                this.chevronOnClick(index, 'right');
+            });
+
+            if(index > 0) {
+                rect.parentNode.appendChild(moveLeft);
+            }
+            if(index < this.model.diag.actors.length - 1) {
+                rect.parentNode.appendChild(moveRight);
+            }
+        });
+    }
+
+    resetToolbarOnClick() {
+        Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
+        this.clickedSignalIndex.set(0);
+        this.model.reset();
+    }
+
+
+    reset() {
+        this.model.clear();
+        location.reload();
+    }
+
+    chevronOnClick(index, dir) {
+        if(dir == 'left') {
+            this.actorOrder.move(index, index - 1);
+        } else if (dir == 'right') {
+            this.actorOrder.move(index, index + 1);
+        }
+        this.model.setActorOrder(this.actorOrder.getArray());
+    }
+}
+
+
+/* ================================
+ * Application Initialization
+ * ================================ */
+const asdfM = new AsdfModel();
+const asdfVM = new AsdfViewModel(asdfM);
+window.onload = () => asdfVM.init();
+window.asdfVM = asdfVM;
 }());

@@ -102,6 +102,9 @@ rect.actor-box.filtered-actor {
 path.filtered-actor.actor-line {
     stroke: none;
 }
+path.orphan-actor.actor-line {
+    stroke: none;
+}
 path.actor-line:not(.filtered-actor) {
     stroke-width: 1px;
 }
