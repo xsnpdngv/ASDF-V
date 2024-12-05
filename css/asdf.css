@@ -78,7 +78,7 @@ text.actor-text.orphan-actor:hover {
 }
 text.actor-text.filtered-actor {
     fill: lightgrey;
-    text-decoration: none;
+    text-decoration: line-through;
 }
 text.actor-text.filtered-actor:hover {
     fill: black;
