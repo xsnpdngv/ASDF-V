@@ -345,7 +345,7 @@ class AsdfModel {
         this.observers.push(observer);
     }
 
-    notify() {
+    #notify() {
         this.observers.forEach(observer => observer.update());
     }
 
@@ -387,21 +387,18 @@ class AsdfModel {
 
     loadDiagramFromSrc() {
         if (this.diagSrc.length() > 0) {
-
             this.diag = Diagram.parse(this.diagSrc.get());
-
             if (this.#arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
                 let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
-
-            this.#removeSignalsOfFilteredActors();
-            this.#parseAddInfo();
+            this.#postProcActors();
+            this.#postProcSignals();
             if (this.isShowIds) {
                 this.includeIdsInSignalMsgs(this.isShowIds, false);
             }
         }
-        this.notify();
+        this.#notify();
     }
 
     includeIdsInSignalMsgs(isOn, isToNotify = true) {
@@ -419,7 +416,7 @@ class AsdfModel {
             });
         }
         if (isToNotify) {
-            this.notify();
+            this.#notify();
         }
     }
 
@@ -427,10 +424,12 @@ class AsdfModel {
         let a = this.diag.actors[index];
         if (this.filteredActors.has(a.name)) {
             this.filteredActors.delete(a.name);
+            this.loadDiagramFromSrc();
         } else {
             this.filteredActors.add(a.name);
+            this.#postProcActors();
+            this.#notify();
         }
-        this.loadDiagramFromSrc();
     }
 
     setActorOrder(actorOrder) {
@@ -438,13 +437,25 @@ class AsdfModel {
         this.#setPreamble( this.#printArrayElementsAsParticipants(this.actorOrder.getArray()) );
     }
 
-    #parseAddInfo() {
+    #postProcActors() {
+        this.#removeSignalsOfFilteredActors();
+        this.diag.actors.forEach(a => { a.signalCount = 0; });
         this.diag.signals.forEach(s => {
             if (s.type === 'Signal') {
-                s.actorA.hasSignal = true;
-                s.actorB.hasSignal = true;
+                s.actorA.signalCount++;
+                s.actorB.signalCount++;
+            } else if (s.type === 'Note') {
+                s.actor.signalCount++;
             }
-            s.origIndex = s.index;
+        });
+    }
+
+    #postProcSignals() {
+        let sIdx = 0;
+        this.diag.signals.forEach(s => {
+            if (s.type === 'Signal') {
+                s.origIndex = sIdx++;
+            }
             s.origMessage = s.message;
             s.addinfoHead = {};
             if (s.meta) {
@@ -473,30 +484,17 @@ class AsdfModel {
                 (s.type === 'Note' && this.filteredActors.has(s.actor.name))) {
                  this.diag.signals.splice(i, 1);
             }
-
-            // mark actor having signal
-            else if (s.type === 'Signal') {
-                s.actorA.hasSignal = true;
-                s.actorB.hasSignal = true;
-            }
-            else {
-                s.actor.hasSignal = true;
-            }
         }
     }
 
     #arraysHaveSameElements(arr1, arr2) {
         if (arr1.length !== arr2.length) return false;
-
         const set1 = new Set(arr1);
         const set2 = new Set(arr2);
-
         if (set1.size !== set2.size) return false;
-
         for (let elem of set1) {
-            if (!set2.has(elem)) return false;
+            if ( ! set2.has(elem)) return false;
         }
-
         return true;
     }
 }
@@ -548,6 +546,7 @@ class AsdfViewModel  {
         this.#drawSeqNumCircles();
         this.#applySignalClick(this.clickedSignalIndex.get());
         this.#markActors();
+        this.#addActorMoveBtns();
         this.#addSignalEventListeners();
         this.#addActorEventListeners();
         this.#addDocumentEventListeners();
@@ -597,7 +596,7 @@ class AsdfViewModel  {
             text.setAttribute("fill", "black"); // Color of the text inside the circle
             text.setAttribute("font-size", "13px"); // Border width
             text.setAttribute("class", "seq-num"); // Border width
-            text.textContent = index + 1;
+            text.textContent = this.diag_signals[index].origIndex + 1;
 
             // Append them to the SVG element
             path.parentNode.appendChild(circle);
@@ -679,7 +678,7 @@ class AsdfViewModel  {
                 this.actor_texts[2*i+1].classList.add("filtered-actor");
                 this.actor_paths[i].classList.add("filtered-actor");
             }
-            if (! a.hasSignal) {
+            if (a.signalCount == 0) {
                 this.actor_boxes[2*i].classList.add("orphan-actor");
                 this.actor_boxes[2*i+1].classList.add("orphan-actor");
                 this.actor_texts[2*i].classList.add("orphan-actor");
@@ -687,7 +686,6 @@ class AsdfViewModel  {
                 this.actor_paths[i].classList.add("orphan-actor");
             }
         });
-        this.#addActorMoveBtns();
     }
 
     #addActorMoveBtns() {
@@ -788,9 +786,9 @@ class AsdfViewModel  {
         notation.textContent = "";
         meta.textContent = "";
         addinfo.textContent = "";
-        if(index < 0)
+        if (index < 0)
             return;
-        if(index < this.diag_signals.length) {
+        if (index < this.diag_signals.length) {
             const s = this.diag_signals[index];
             notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
             meta.textContent = s.meta;
@@ -803,7 +801,7 @@ class AsdfViewModel  {
         this.actorOrder.clear();
         this.model.diag.actors.forEach((a, i) => {
             this.actorOrder.add(a.name);
-            if(a.hasSignal || this.model.filteredActors.has(a.name)) {
+            if (a.signalCount > 0 || this.model.filteredActors.has(a.name)) {
                 this.actor_texts[2*i].addEventListener("click", () => this.#actorTextOnClick(i));
                 this.actor_texts[2*i+1].addEventListener("click", () => this.#actorTextOnClick(i));
             }
