@@ -508,15 +508,12 @@ class AsdfModel {
 class AsdfViewModel  {
     constructor(model) {
         this.model = model;
-        this.isResizing = false;
-
         this.model.subscribe(this);
+        this.isResizing = false;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
         this.fileLabel = document.getElementById("fileInputLabel");
-        this.fileLabelTxt = new PersistentString("fileLabelText", "Choose file");
-
         this.toggles = {
             "showIds": new PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
             "showInstance": new PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
@@ -735,24 +732,17 @@ class AsdfViewModel  {
         });
     }
 
-
     // ---- toolbar ----
     navbarBrandOnClick() {
         this.clear();
-    }
-
-    fileInputOnChange(event) {
-        this.model.loadDiagramFromFile(event.target.files[0]);
     }
 
     fileInputOnClick() {
         fileInput.value = "";  // so same file can be selected again
     }
 
-    resetToolbarOnClick() {
-        Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
-        this.clickedSignalIndex.set(0);
-        this.model.reset();
+    fileInputOnChange(event) {
+        this.model.loadDiagramFromFile(event.target.files[0]);
     }
 
     #showIdsOnChange(vm, isOn) {
@@ -761,6 +751,12 @@ class AsdfViewModel  {
 
     #markSignalsHandler(vm) {
         vm.#markSignals(vm.clickedSignalIndex.get());
+    }
+
+    resetToolbarOnClick() {
+        Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
+        this.clickedSignalIndex.set(0);
+        this.model.reset();
     }
 
     // ---- signal ----
