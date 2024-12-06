@@ -392,11 +392,12 @@ class AsdfModel {
                 let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
-            this.#postProcActors();
             this.#postProcSignals();
+            this.#postProcActors();
             if (this.isShowIds) {
                 this.includeIdsInSignalMsgs(this.isShowIds, false);
             }
+            console.log(this.diag);
         }
         this.#notify();
     }
@@ -451,11 +452,7 @@ class AsdfModel {
     }
 
     #postProcSignals() {
-        let sIdx = 0;
         this.diag.signals.forEach(s => {
-            if (s.type === 'Signal') {
-                s.origIndex = sIdx++;
-            }
             s.origMessage = s.message;
             s.addinfoHead = {};
             if (s.meta) {
@@ -522,7 +519,7 @@ class AsdfViewModel  {
         this.diagramContainer = document.getElementById("diagram");
 
         // view state
-        this.clickedSignalIndex = new PersistentInt("clickedSignalIdx", -1);
+        this.clickedSignalSeqNum = new PersistentInt("clickedSignalIdx", -1);
         this.actorOrder = new PersistentArray("actorOrderVM");
 
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
@@ -544,7 +541,7 @@ class AsdfViewModel  {
         this.#updateFileLabel();
         this.#updateSvgElemLists();
         this.#drawSeqNumCircles();
-        this.#applySignalClick(this.clickedSignalIndex.get());
+        this.#applySignalClick(this.clickedSignalSeqNum.get());
         this.#markActors();
         this.#addActorMoveBtns();
         this.#addSignalEventListeners();
@@ -596,7 +593,7 @@ class AsdfViewModel  {
             text.setAttribute("fill", "black"); // Color of the text inside the circle
             text.setAttribute("font-size", "13px"); // Border width
             text.setAttribute("class", "seq-num"); // Border width
-            text.textContent = this.diag_signals[index].origIndex + 1;
+            text.textContent = this.diag_signals[index].seqNum;
 
             // Append them to the SVG element
             path.parentNode.appendChild(circle);
@@ -748,12 +745,12 @@ class AsdfViewModel  {
     }
 
     #markSignalsHandler(vm) {
-        vm.#markSignals(vm.clickedSignalIndex.get());
+        vm.#markSignals(vm.#indexOfSignal(vm.clickedSignalSeqNum.get()));
     }
 
     resetToolbarOnClick() {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
-        this.clickedSignalIndex.set(0);
+        this.clickedSignalSeqNum.set(1);
         this.model.reset();
     }
 
@@ -762,21 +759,32 @@ class AsdfViewModel  {
         this.signal_texts.forEach((txt, index) => {
             txt.addEventListener("click", () => this.#signalTextOnClick(index));
             txt.addEventListener("mouseenter", () => this.#showAddinfoContent(index));
-            txt.addEventListener("mouseleave", () => this.#showAddinfoContent(this.clickedSignalIndex.get()));
+            txt.addEventListener("mouseleave", () => this.#showAddinfoContent(this.#indexOfSignal(this.clickedSignalSeqNum.get())));
         });
     }
 
     #signalTextOnClick(index) {
-        if(this.clickedSignalIndex.get() == index) {
+        if(this.clickedSignalSeqNum.get() == index) {
            index = -1;
         }
-        this.#applySignalClick(index);
+        this.#applySignalClick(this.diag_signals[index].seqNum);
     }
 
-    #applySignalClick(index) {
-        this.clickedSignalIndex.set(index);
-        this.#showAddinfoContent(this.clickedSignalIndex.get());
-        this.#markSignals(this.clickedSignalIndex.get());
+    #applySignalClick(seqNum) {
+        let i = this.#indexOfSignal(seqNum);
+        this.clickedSignalSeqNum.set(seqNum);
+        this.#showAddinfoContent(i);
+        this.#markSignals(i);
+    }
+
+    #indexOfSignal(seqNum) {
+        let i = this.diag_signals.length;
+        while ( i --> 0 ) {
+            if (seqNum == this.diag_signals[i].seqNum) {
+                break;
+            }
+        }
+        return i;
     }
 
     #showAddinfoContent(index) {
@@ -790,7 +798,7 @@ class AsdfViewModel  {
             return;
         if (index < this.diag_signals.length) {
             const s = this.diag_signals[index];
-            notation.textContent = `${index + 1}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
+            notation.textContent = `${s.seqNum}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
             meta.textContent = s.meta;
             addinfo.textContent = s.addinfo;
         }
