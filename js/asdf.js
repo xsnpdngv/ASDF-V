@@ -407,6 +407,7 @@ class AsdfModel {
         if ( ! this.diag) { return; }
         if (isOn) {
             this.diag.signals.forEach(s => {
+                s.origMessage = s.message;
                 if (s.addinfoHead.srcInstanceId) {
                     s.message += '\n' + s.addinfoHead.srcInstanceId;
                 }
@@ -454,12 +455,6 @@ class AsdfModel {
     #postProcSignals() {
         this.diag.signals.forEach(s => {
             s.origMessage = s.message;
-            s.addinfoHead = {};
-            if (s.meta) {
-                try {
-                    s.addinfoHead = JSON.parse(s.meta);
-                } catch (e) { }
-            }
         });
     }
 
@@ -764,10 +759,11 @@ class AsdfViewModel  {
     }
 
     #signalTextOnClick(index) {
-        if(this.clickedSignalSeqNum.get() == index) {
-           index = -1;
+        let seqNum = this.diag_signals[index].seqNum;
+        if(this.clickedSignalSeqNum.get() == seqNum) {
+           seqNum = -1;
         }
-        this.#applySignalClick(this.diag_signals[index].seqNum);
+        this.#applySignalClick(seqNum);
     }
 
     #applySignalClick(seqNum) {
