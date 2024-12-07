@@ -23,9 +23,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 (function() { // Immediately Invoked Function Expression (IIFE)
-              // so global namespace is not polluted
+              // to not pullute the global namespace
 
 
+/* ====================================================================
+ * Auxiliary classes to support storing some data persistently in
+ * the browser's local storage
+ * ==================================================================== */
 class PersistentSet {
     constructor(key) {
         this.key = key;
@@ -324,6 +328,19 @@ class PersistentToggle {
 }
 
 
+/* ====================================================================
+ * ASDF Graphics implements the Model-View-ViewModel (MVVM) pattern
+ *
+ * View:      asdf.html     - Structure and layout of UI
+ *            asdf.css      - Appearance of UI elements
+ * ViewModel: AsdfViewModel - Intermediary, coordinates the View's
+ *                            interactions with the Model, updates
+ *                            both the Model and the View
+ * Model:     AsdfModel     - Non-visual, the data model and business
+ *                            logic of the application
+ * ==================================================================== */
+
+
 /* ================================
  * Model: Data and Business Logic
  * ================================ */
@@ -392,12 +409,10 @@ class AsdfModel {
                 let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
-            this.#postProcSignals();
             this.#postProcActors();
             if (this.isShowIds) {
                 this.includeIdsInSignalMsgs(this.isShowIds, false);
             }
-            console.log(this.diag);
         }
         this.#notify();
     }
@@ -449,12 +464,6 @@ class AsdfModel {
             } else if (s.type === 'Note') {
                 s.actor.signalCount++;
             }
-        });
-    }
-
-    #postProcSignals() {
-        this.diag.signals.forEach(s => {
-            s.origMessage = s.message;
         });
     }
 
@@ -533,8 +542,8 @@ class AsdfViewModel  {
         if( ! this.model.diag) { return; }
         diagramContainer.innerHTML = "";
         this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
-        this.#updateFileLabel();
         this.#updateSvgElemLists();
+        this.#updateFileLabel();
         this.#drawSeqNumCircles();
         this.#applySignalClick(this.clickedSignalSeqNum.get());
         this.#markActors();
@@ -542,12 +551,6 @@ class AsdfViewModel  {
         this.#addSignalEventListeners();
         this.#addActorEventListeners();
         this.#addDocumentEventListeners();
-    }
-
-    #updateFileLabel() {
-        this.fileLabel.textContent = this.model.fileName.get() + ' | ' +
-                                     this.model.fileLastMod.get() + ' | ' +
-                                     this.model.fileSize.get() + ' bytes';
     }
 
     #updateSvgElemLists() {
@@ -562,6 +565,12 @@ class AsdfViewModel  {
         if (this.model.diag) {
             this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
         }
+    }
+
+    #updateFileLabel() {
+        this.fileLabel.textContent = this.model.fileName.get() + ' | ' +
+                                     this.model.fileLastMod.get() + ' | ' +
+                                     this.model.fileSize.get() + ' bytes';
     }
 
     #drawSeqNumCircles() {
@@ -663,19 +672,21 @@ class AsdfViewModel  {
 
     #markActors() {
         this.model.diag.actors.forEach((a, i) => {
+            let cl = 'filtered-actor';
             if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
-                this.actor_boxes[2*i].classList.add("filtered-actor");
-                this.actor_boxes[2*i+1].classList.add("filtered-actor");
-                this.actor_texts[2*i].classList.add("filtered-actor");
-                this.actor_texts[2*i+1].classList.add("filtered-actor");
-                this.actor_paths[i].classList.add("filtered-actor");
+                this.actor_boxes[2*i].classList.add(cl);
+                this.actor_boxes[2*i+1].classList.add(cl);
+                this.actor_texts[2*i].classList.add(cl);
+                this.actor_texts[2*i+1].classList.add(cl);
+                this.actor_paths[i].classList.add(cl);
             }
+            cl = 'orphan-actor';
             if (a.signalCount == 0) {
-                this.actor_boxes[2*i].classList.add("orphan-actor");
-                this.actor_boxes[2*i+1].classList.add("orphan-actor");
-                this.actor_texts[2*i].classList.add("orphan-actor");
-                this.actor_texts[2*i+1].classList.add("orphan-actor");
-                this.actor_paths[i].classList.add("orphan-actor");
+                this.actor_boxes[2*i].classList.add(cl);
+                this.actor_boxes[2*i+1].classList.add(cl);
+                this.actor_texts[2*i].classList.add(cl);
+                this.actor_texts[2*i+1].classList.add(cl);
+                this.actor_paths[i].classList.add(cl);
             }
         });
     }
