@@ -422,14 +422,15 @@ class AsdfModel {
         if ( ! this.diag) { return; }
         if (isOn) {
             this.diag.signals.forEach(s => {
-                s.origMessage = s.message;
                 if (s.addinfoHead.srcInstanceId) {
                     s.message += '\n' + s.addinfoHead.srcInstanceId;
                 }
             });
         } else {
             this.diag.signals.forEach(s => {
-                s.message = s.origMessage;
+                if (s.addinfoHead.srcInstanceId) {
+                    s.message = s.message.slice(0, s.message.length - s.addinfoHead.srcInstanceId.length - 1/*'\n'*/);
+                }
             });
         }
         if (isToNotify) {
