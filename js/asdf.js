@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Tamas Dezso (dezso.t.tamas@gmail.com)
+Copyright (c) 2024 Tamas Dezso (asdf.hu)
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
