@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2024 Tamas Dezso (asdf.hu)
+Copyright (c) 2024 Tamás Dezső (asdf.hu)
+https://github.com/xsnpdngv/asdf
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
@@ -510,7 +511,6 @@ class AsdfViewModel  {
         this.model = model;
         this.model.subscribe(this);
         this.isResizing = false;
-        this.fileLastMod = null;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -533,6 +533,8 @@ class AsdfViewModel  {
 
     init() {
         this.model.init(this.toggles["showIds"].uiElem.checked);
+        this.#addDocumentEventListeners();
+        this.diagramContainer.addEventListener("drawComplete", (event) => this.#diagramContainerOnDrawComplete(event));
     }
 
     clear() {
@@ -542,25 +544,23 @@ class AsdfViewModel  {
 
     update() {
         if ( ! this.model.diag) { return; }
-        if (this.fileLastMod != this.model.fileLastMod.get()) { // only if another file
-            // clear the diagram container before starting to draw
-            diagramContainer.innerHTML = "";
-            this.fileLastMod = this.model.fileLastMod.get();
-        }
+        this.diagramContainer.innerHTML = "";
         this.#updateFileLabel();
         setTimeout(() => {
-            diagramContainer.innerHTML = ""; // this actually does not render
-                                             // until there is anything to do
-            this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
-            this.#updateSvgElemLists();
-            this.#drawSeqNumCircles();
-            this.#applySignalClick(this.clickedSignalSeqNum.get());
-            this.#markActors();
-            this.#addActorMoveBtns();
-            this.#addSignalEventListeners();
-            this.#addActorEventListeners();
-            this.#addDocumentEventListeners();
+            this.model.diag.drawSVG(this.diagramContainer, { theme: 'simple' });
+            // draws in chunks to make the UI more responsive,
+            // emits 'drawComplete' event to diagramContainer if ready
         }, 0);
+    }
+
+    #diagramContainerOnDrawComplete(event) {
+        this.#updateSvgElemLists();
+        this.#drawSeqNumCircles();
+        this.#applySignalClick(this.clickedSignalSeqNum.get());
+        this.#markActors();
+        this.#addActorMoveBtns();
+        this.#addSignalEventListeners();
+        this.#addActorEventListeners();
     }
 
     #updateSvgElemLists() {
