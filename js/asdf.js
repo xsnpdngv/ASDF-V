@@ -510,6 +510,7 @@ class AsdfViewModel  {
         this.model = model;
         this.model.subscribe(this);
         this.isResizing = false;
+        this.fileLastMod = null;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -540,18 +541,26 @@ class AsdfViewModel  {
     }
 
     update() {
-        if( ! this.model.diag) { return; }
-        diagramContainer.innerHTML = "";
-        this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
-        this.#updateSvgElemLists();
+        if ( ! this.model.diag) { return; }
+        if (this.fileLastMod != this.model.fileLastMod.get()) { // only if another file
+            // clear the diagram container before starting to draw
+            diagramContainer.innerHTML = "";
+            this.fileLastMod = this.model.fileLastMod.get();
+        }
         this.#updateFileLabel();
-        this.#drawSeqNumCircles();
-        this.#applySignalClick(this.clickedSignalSeqNum.get());
-        this.#markActors();
-        this.#addActorMoveBtns();
-        this.#addSignalEventListeners();
-        this.#addActorEventListeners();
-        this.#addDocumentEventListeners();
+        setTimeout(() => {
+            diagramContainer.innerHTML = ""; // this actually does not render
+                                             // until there is anything to do
+            this.model.diag.drawSVG(diagramContainer, { theme: 'simple' });
+            this.#updateSvgElemLists();
+            this.#drawSeqNumCircles();
+            this.#applySignalClick(this.clickedSignalSeqNum.get());
+            this.#markActors();
+            this.#addActorMoveBtns();
+            this.#addSignalEventListeners();
+            this.#addActorEventListeners();
+            this.#addDocumentEventListeners();
+        }, 0);
     }
 
     #updateSvgElemLists() {
