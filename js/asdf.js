@@ -544,9 +544,9 @@ class AsdfViewModel  {
 
     update() {
         if ( ! this.model.diag) { return; }
-        this.diagramContainer.innerHTML = "";
         this.#updateFileLabel();
         setTimeout(() => {
+            this.diagramContainer.innerHTML = "";
             this.model.diag.drawSVG(this.diagramContainer, { theme: 'simple' });
             // draws in chunks to make the UI more responsive,
             // emits 'drawComplete' event to diagramContainer if ready
