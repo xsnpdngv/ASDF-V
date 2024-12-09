@@ -1,0 +1,14 @@
+ "Alice"->"Bob": Hey Bob, how you doin'?
+	~~~ { "timestamp": "2024-11-16T09:30:16.215", "srcInstanceId": "fPZKzpC", "dstInstanceId": "c9c73c34", "size": 32, "isSpecial": true }
+Hello Bob, I was wondering if
+you would fancy saying hi to me
+	~~~
+
+note over "Bob": Hmm, wierd
+	~~~ { "timestamp": "2024-11-16T09:30:17.689", "srcInstanceId": "c9c73c34", "size": 0 }
+	~~~
+
+"Bob"-->>"Alice": Oh, hi
+	~~~ { "timestamp": "2024-11-16T13:43:21.361", "srcInstanceId": "c9c73c34", "dstInstanceId": "fPZKzpC", "size": 6 }
+Oh, hi
+	~~~
