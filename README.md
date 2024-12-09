@@ -7,26 +7,25 @@ sequence diagrams in the Augmented Sequence Diagram Format (ASDF).
 ## Input example
 
 ```
-title: Dialogue of Alice and Bob
-Alice->Bob: Hey Bob, how you doin'?
-	~~~ {"ts": "2024-11-11T15:20:43.320", "size": 116}
-Additional information that belongs
-toe signal above. It is shown if
-the signal text is clicked on the
-rendered SVG.
+"Alice"->"Bob": Hey Bob, how you doin'?
+	~~~ { "timestamp": "2024-11-16T09:30:16.215", "srcInstanceId": "fPZKzpC", "dstInstanceId": "c9c73c34", "size": 32, "isSpecial": true }
+Hello Bob, I was wondering if
+you would fancy saying hi to me
 	~~~
-Note over Bob: Hmm, what does she want?
-Bob-->>Alice: Oh, hi
-	~~~ {"ts": "2024-11-11T15:34:22.460", "special": true, "size": 85}
-Bob is not a talkative person on the
-surface but might have something to say
-to Alice
+
+note over "Bob": Hmm, wierd
+	~~~ { "timestamp": "2024-11-16T09:30:17.689", "srcInstanceId": "c9c73c34", "size": 0 }
+	~~~
+
+"Bob"-->>"Alice": Oh, hi
+	~~~ { "timestamp": "2024-11-16T13:43:21.361", "srcInstanceId": "c9c73c34", "dstInstanceId": "fPZKzpC", "size": 6 }
+Oh, hi
 	~~~
 ```
 
 ## Rendered diagram example
 
-![Traceviz example](img/traceviz-example.png)
+![ASDF example](img/asdf-example.png)
 
 
 ## Usage
