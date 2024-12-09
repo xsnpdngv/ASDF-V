@@ -514,7 +514,7 @@ class AsdfViewModel  {
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
-        this.fileLabel = document.getElementById("fileInputLabel");
+        this.fileInputLabel = document.getElementById("fileInputLabel");
         this.toggles = {
             "showIds": new PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
             "showInstance": new PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
@@ -548,7 +548,7 @@ class AsdfViewModel  {
 
     update() {
         if ( ! this.model.diag) { return; }
-        this.#updateFileLabel();
+        this.#updateFileInputLabel();
         this.diagramHeadContainer.style.visibility = "visible";
         this.diagramHeadDiv.innerHTML = "";
         this.model.diag.drawHeader(this.diagramHeadDiv);
@@ -564,7 +564,7 @@ class AsdfViewModel  {
 
     #diagramContainerOnDrawComplete(event) {
         this.#updateSvgElemLists();
-        this.#drawSeqNumCircles();
+        this.#drawSignalSeqNumCircles();
         this.#applySignalClick(this.clickedSignalSeqNum.get());
         this.#markActors();
         this.#addActorMoveBtns();
@@ -593,13 +593,41 @@ class AsdfViewModel  {
         }
     }
 
-    #updateFileLabel() {
-        this.fileLabel.textContent = this.model.fileName.get() + ' | ' +
-                                     this.model.fileLastMod.get() + ' | ' +
-                                     this.model.fileSize.get() + ' bytes';
+    // ---- toolbar ----
+    navbarBrandOnClick() {
+        this.clear();
     }
 
-    #drawSeqNumCircles() {
+    fileInputOnClick() {
+        fileInput.value = "";  // so same file can be selected again
+    }
+
+    fileInputOnChange(event) {
+        this.model.loadDiagramFromFile(event.target.files[0]);
+    }
+
+    #updateFileInputLabel() {
+        this.fileInputLabel.textContent = this.model.fileName.get() + ' | ' +
+                                          this.model.fileLastMod.get() + ' | ' +
+                                          this.model.fileSize.get() + ' bytes';
+    }
+
+    #showIdsOnChange(vm, isOn) {
+        vm.model.includeIdsInSignalMsgs(isOn);
+    }
+
+    #markSignalsHandler(vm) {
+        vm.#markSignals(vm.#indexOfSignal(vm.clickedSignalSeqNum.get()));
+    }
+
+    resetToolbarOnClick() {
+        Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
+        this.clickedSignalSeqNum.set(1);
+        this.model.reset();
+    }
+
+    // ---- signal ----
+    #drawSignalSeqNumCircles() {
         this.signal_paths.forEach((path, index) => {
             // Get the starting point of the path
             const start = path.getPointAtLength(0);
@@ -632,6 +660,56 @@ class AsdfViewModel  {
 
         this.seqNum_circles = document.querySelectorAll('circle.seq-num');
         this.seqNum_texts = document.querySelectorAll('text.seq-num');
+    }
+
+    #addSignalEventListeners() {
+        this.signal_texts.forEach((txt, index) => {
+            txt.onclick = () => this.#signalTextOnClick(index);
+            txt.onmouseenter = () => this.#showAddinfoContent(index);
+            txt.onmouseleave = () => this.#showAddinfoContent(this.#indexOfSignal(this.clickedSignalSeqNum.get()));
+        });
+    }
+
+    #signalTextOnClick(index) {
+        let seqNum = this.diag_signals[index].seqNum;
+        if(this.clickedSignalSeqNum.get() == seqNum) {
+           seqNum = -1;
+        }
+        this.#applySignalClick(seqNum);
+    }
+
+    #applySignalClick(seqNum) {
+        let i = this.#indexOfSignal(seqNum);
+        this.clickedSignalSeqNum.set(seqNum);
+        this.#showAddinfoContent(i);
+        this.#markSignals(i);
+    }
+
+    #indexOfSignal(seqNum) {
+        let i = this.diag_signals.length;
+        while ( i --> 0 ) {
+            if (seqNum == this.diag_signals[i].seqNum) {
+                break;
+            }
+        }
+        return i;
+    }
+
+    #showAddinfoContent(index) {
+        const notation = document.getElementById("notation");
+        const meta = document.getElementById("meta");
+        const addinfo = document.getElementById("addinfo");
+        notation.textContent = "";
+        meta.textContent = "";
+        addinfo.textContent = "";
+        if (index < 0)
+            return;
+        if (index < this.diag_signals.length) {
+            const s = this.diag_signals[index];
+            notation.textContent = `${s.seqNum}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
+            meta.textContent = s.meta;
+            addinfo.textContent = s.addinfo;
+        }
     }
 
     #markSignals(refIndex) {
@@ -696,40 +774,20 @@ class AsdfViewModel  {
         });
     }
 
-    #markHeadActors() {
+    // ---- actor ----
+    #addActorEventListeners() {
+        this.actorOrder.clear();
         this.model.diag.actors.forEach((a, i) => {
-            let cl = 'filtered-actor';
-            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
-                this.head_actor_boxes[i].classList.add(cl);
-                this.head_actor_texts[i].classList.add(cl);
-            }
-            cl = 'orphan-actor';
-            if (a.signalCount == 0) {
-                this.head_actor_boxes[i].classList.add(cl);
-                this.head_actor_texts[i].classList.add(cl);
+            this.actorOrder.add(a.name);
+            if (a.signalCount > 0 || this.model.filteredActors.has(a.name)) {
+                this.head_actor_texts[i].onclick = () => this.#actorTextOnClick(i);
+                this.actor_texts[2*i+1].onclick = () => this.#actorTextOnClick(i);
             }
         });
     }
 
-    #markActors() {
-        this.model.diag.actors.forEach((a, i) => {
-            let cl = 'filtered-actor';
-            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
-                this.actor_boxes[2*i].classList.add(cl);
-                this.actor_boxes[2*i+1].classList.add(cl);
-                this.actor_texts[2*i].classList.add(cl);
-                this.actor_texts[2*i+1].classList.add(cl);
-                this.actor_paths[i].classList.add(cl);
-            }
-            cl = 'orphan-actor';
-            if (a.signalCount == 0) {
-                this.actor_boxes[2*i].classList.add(cl);
-                this.actor_boxes[2*i+1].classList.add(cl);
-                this.actor_texts[2*i].classList.add(cl);
-                this.actor_texts[2*i+1].classList.add(cl);
-                this.actor_paths[i].classList.add(cl);
-            }
-        });
+    #actorTextOnClick(index) {
+        this.model.toggleActor(index);
     }
 
     #addActorMoveBtns() {
@@ -769,100 +827,6 @@ class AsdfViewModel  {
         });
     }
 
-    // ---- toolbar ----
-    navbarBrandOnClick() {
-        this.clear();
-    }
-
-    fileInputOnClick() {
-        fileInput.value = "";  // so same file can be selected again
-    }
-
-    fileInputOnChange(event) {
-        this.model.loadDiagramFromFile(event.target.files[0]);
-    }
-
-    #showIdsOnChange(vm, isOn) {
-        vm.model.includeIdsInSignalMsgs(isOn);
-    }
-
-    #markSignalsHandler(vm) {
-        vm.#markSignals(vm.#indexOfSignal(vm.clickedSignalSeqNum.get()));
-    }
-
-    resetToolbarOnClick() {
-        Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
-        this.clickedSignalSeqNum.set(1);
-        this.model.reset();
-    }
-
-    // ---- signal ----
-    #addSignalEventListeners() {
-        this.signal_texts.forEach((txt, index) => {
-            txt.onclick = () => this.#signalTextOnClick(index);
-            txt.onmouseenter = () => this.#showAddinfoContent(index);
-            txt.onmouseleave = () => this.#showAddinfoContent(this.#indexOfSignal(this.clickedSignalSeqNum.get()));
-        });
-    }
-
-    #signalTextOnClick(index) {
-        let seqNum = this.diag_signals[index].seqNum;
-        if(this.clickedSignalSeqNum.get() == seqNum) {
-           seqNum = -1;
-        }
-        this.#applySignalClick(seqNum);
-    }
-
-    #applySignalClick(seqNum) {
-        let i = this.#indexOfSignal(seqNum);
-        this.clickedSignalSeqNum.set(seqNum);
-        this.#showAddinfoContent(i);
-        this.#markSignals(i);
-    }
-
-    #indexOfSignal(seqNum) {
-        let i = this.diag_signals.length;
-        while ( i --> 0 ) {
-            if (seqNum == this.diag_signals[i].seqNum) {
-                break;
-            }
-        }
-        return i;
-    }
-
-    #showAddinfoContent(index) {
-        const notation = document.getElementById("notation");
-        const meta = document.getElementById("meta");
-        const addinfo = document.getElementById("addinfo");
-        notation.textContent = "";
-        meta.textContent = "";
-        addinfo.textContent = "";
-        if (index < 0)
-            return;
-        if (index < this.diag_signals.length) {
-            const s = this.diag_signals[index];
-            notation.textContent = `${s.seqNum}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
-            meta.textContent = s.meta;
-            addinfo.textContent = s.addinfo;
-        }
-    }
-
-    // ---- actor ----
-    #addActorEventListeners() {
-        this.actorOrder.clear();
-        this.model.diag.actors.forEach((a, i) => {
-            this.actorOrder.add(a.name);
-            if (a.signalCount > 0 || this.model.filteredActors.has(a.name)) {
-                this.head_actor_texts[i].onclick = () => this.#actorTextOnClick(i);
-                this.actor_texts[2*i+1].onclick = () => this.#actorTextOnClick(i);
-            }
-        });
-    }
-
-    #actorTextOnClick(index) {
-        this.model.toggleActor(index);
-    }
-
     #actorMoveBtnOnClick(index, dir) {
         if(dir == 'left') {
             this.actorOrder.move(index, index - 1);
@@ -870,6 +834,42 @@ class AsdfViewModel  {
             this.actorOrder.move(index, index + 1);
         }
         this.model.setActorOrder(this.actorOrder.getArray());
+    }
+
+    #markHeadActors() {
+        this.model.diag.actors.forEach((a, i) => {
+            let cl = 'filtered-actor';
+            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
+                this.head_actor_boxes[i].classList.add(cl);
+                this.head_actor_texts[i].classList.add(cl);
+            }
+            cl = 'orphan-actor';
+            if (a.signalCount == 0) {
+                this.head_actor_boxes[i].classList.add(cl);
+                this.head_actor_texts[i].classList.add(cl);
+            }
+        });
+    }
+
+    #markActors() {
+        this.model.diag.actors.forEach((a, i) => {
+            let cl = 'filtered-actor';
+            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
+                this.actor_boxes[2*i].classList.add(cl);
+                this.actor_boxes[2*i+1].classList.add(cl);
+                this.actor_texts[2*i].classList.add(cl);
+                this.actor_texts[2*i+1].classList.add(cl);
+                this.actor_paths[i].classList.add(cl);
+            }
+            cl = 'orphan-actor';
+            if (a.signalCount == 0) {
+                this.actor_boxes[2*i].classList.add(cl);
+                this.actor_boxes[2*i+1].classList.add(cl);
+                this.actor_texts[2*i].classList.add(cl);
+                this.actor_texts[2*i+1].classList.add(cl);
+                this.actor_paths[i].classList.add(cl);
+            }
+        });
     }
 
     // ---- divider -----
