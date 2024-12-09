@@ -5,6 +5,9 @@
     --highlight-color2: rgb(255, 255, 132);
     --highlight-color3: greenyellow;
     --special-color: orangered;
+    --toolbar-height: 60px;
+    --divider-height: 2px;
+    --head-height: 59px;
 }
 
 body {
@@ -17,85 +20,114 @@ body {
 }
 
 pre {
-  font-family: monospace;  /* Font style */
-  border-radius: 5px;                     /* Rounded corners for the background */
-  overflow-x: auto;                       /* Enable horizontal scrolling for long lines */
+  font-family: monospace;
+  border-radius: 5px;
+  overflow-x: auto;
 }
 
-#main {
-    padding: 10px;
+#toolbar {
+    position: fixed;
+    top: 0;
+    height: var(--toolbar-height);
+    background-color: var(--body-bg-color);
 }
 
-/* Diagram container at the top */
-#diagramContainer {
-    height: 85%; /* Start with 3/4 of the viewport height */
-    padding: 20px;
-    overflow-y: auto; /* Allow scrolling within the diagram area */
-    /* border-bottom: 2px solid #ccc; */
+#diagramArea {
+    padding-left: 20px;
+    padding-right: 20px;
     font-weight: 300;
+    position: relative;
+    height: 85%;
 }
 
-/* Movable divider */
+#diagramHeadContainer {
+    position: sticky; /* Keep it fixed relative to its nearest scrollable ancestor */
+    top: 0;
+    /* left: 0; */
+    height: var(--head-height);
+    overflow-y: hidden;
+    overflow-x: hidden;
+    visibility: hidden;
+    z-index: 10;
+    background-color: var(--body-bg-color);
+}
+
+#diagramContainer {
+    overflow-y: auto;
+    overflow-x: auto;
+    font-weight: 300;
+    height: 100%;
+    position: relative;
+    top: calc(0px - var(--head-height));
+}
+
 #divider {
-    height: 2px;
+    height: var(--divider-height);
     background: #ddd;
     cursor: row-resize;
 }
 
-/* Info display area at the bottom */
 #addinfoDisplay {
-    height: 15%; /* Start with 1/4 of the viewport height */
+    height: calc(15vh - var(--divider-height));
     padding: 20px;
     background: var(--body-bg-color);
-    overflow-y: auto; /* Allow scrolling within the info area */
+    overflow-y: auto;
+    overflow-x: auto;
 }
 
-/* Additional content to allow scrolling */
 .content {
-    margin-top: 50px; /* Space for the fixed toolbar */
-    height: calc(100vh - 50px);
-    /* height: 2000px; Example height to make the page scrollable */
+    margin-top: var(--toolbar-height);
+    height: calc(100vh - var(--toolbar-height));
 }
 
 
-text.actor-text {
+text.actor-text,
+text.head-actor-text {
     cursor: pointer;
     font-weight: 100;
 }
-text.actor-text:hover {
+text.actor-text:hover,
+text.head-actor-text:hover {
     /* stroke: lightgrey; */
     text-decoration: line-through;
     cursor: pointer;
 }
-text.actor-text.orphan-actor {
+text.actor-text.orphan-actor,
+text.head-actor-text.orphan-actor {
     fill: lightgrey;
     text-decoration: none;
 }
-text.actor-text.orphan-actor:hover {
+text.actor-text.orphan-actor:hover,
+text.head-actor-text.orphan-actor:hover {
     stroke: none;
     cursor: default;
     text-decoration: none;
 }
-text.actor-text.filtered-actor {
+text.actor-text.filtered-actor,
+text.head-actor-text.filtered-actor {
     fill: lightgrey;
     text-decoration: line-through;
 }
-text.actor-text.filtered-actor:hover {
+text.actor-text.filtered-actor:hover,
+text.head-actor-text.filtered-actor:hover {
     fill: black;
     stroke: black;
     cursor: pointer;
     text-decoration: none;
 }
 
-rect.actor-box {
+rect.actor-box,
+rect.head-actor-box {
     rx: 5;
     ry: 5;
     stroke-width: 2px;
 }
-rect.actor-box.orphan-actor {
+rect.actor-box.orphan-actor,
+rect.head-actor-box.orphan-actor {
     stroke: none;
 }
-rect.actor-box.filtered-actor {
+rect.actor-box.filtered-actor,
+rect.head-actor-box.filtered-actor {
     stroke: none;
 }
 

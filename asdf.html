@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ASDF Graphics</title>
+    <title>ASDF Vector</title>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" type="text/css" href="css/asdf.css"/>
     <link rel="icon" href="img/chevron-double-right.svg">
@@ -10,9 +10,9 @@
 
 <body>
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
-    <div class="container-fluid justify-content-start">
+    <div class="container-fluid justify-content-start" id="toolbar">
 
-        <a class="navbar-brand" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF Graphics
+        <a class="navbar-brand" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF Vector
             <img src="img/chevron-double-right.svg">
         </a>
 
@@ -39,15 +39,19 @@
     </nav>
 
     <div class="content">
+      <div id="diagramArea">
+        <div id="diagramHeadContainer">
+            <div id="diagramHead"></div>
+        </div>
         <div id="diagramContainer">
             <div id="diagram">
                 <pre>
 
-    ASDF Graphics is a tool for visualizing sequence diagrams in
-    the Augmented Sequence Diagram Format (ASDF). Upload an ASDF
-    file to view and interact with it.
+    ASDF Vector is a tool for visualizing sequence diagrams
+    in the Augmented Sequence Diagram Format (ASDF). Upload
+    an ASDF file to view and interact with it.
 
-    Release Notes - v1.0 (December 6, 2024)
+    Release Notes - v1.0 (December 9, 2024)
     ---------------------------------------
     • Parse and visualize ASDF input.
     • View/peek additional signal information on click/hover.
@@ -60,10 +64,11 @@
     • Preserve toolbar settings in browser over page reloads.
     • Assign sequence numbers to signals.
     • Align window heights for diagram and additional info.
+    • Render big diagrams in chunks.
+    • Show floating participants header.
 
     Feature Requests
     ----------------
-    • Show participants even if diagram's top is scrolled out of view.
     • Filter signals by time (interval) and additional info content.
     • Show signal list view on demand.
     • Step over subsequent signals (first, prev, next, last).
@@ -79,6 +84,7 @@
 
             </div>
         </div>
+      </div>
 
         <div id="divider" onmousedown="asdfVM.dividerOnMouseDown(event)"></div>
 

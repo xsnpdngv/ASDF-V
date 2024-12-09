@@ -314,7 +314,7 @@ class PersistentToggle {
 
         this.uiElem = document.getElementById(this.uiElemId);
         this.uiElem.checked = this.value.get();
-        this.uiElem.addEventListener("change", () => this.toggle(this.uiElem.checked));
+        this.uiElem.onchange = () => this.toggle(this.uiElem.checked);
     }
 
     toggle(isOn) {
@@ -522,7 +522,10 @@ class AsdfViewModel  {
         }
 
         // placeholders
-        this.diagramContainer = document.getElementById("diagram");
+        this.diagramHeadContainer = document.getElementById("diagramHeadContainer");
+        this.diagramHeadDiv = document.getElementById("diagramHead");
+        this.diagramContainer = document.getElementById("diagramContainer");
+        this.diagramDiv = document.getElementById("diagram");
 
         // view state
         this.clickedSignalSeqNum = new PersistentInt("clickedSignalIdx", -1);
@@ -534,20 +537,26 @@ class AsdfViewModel  {
     init() {
         this.model.init(this.toggles["showIds"].uiElem.checked);
         this.#addDocumentEventListeners();
-        this.diagramContainer.addEventListener("drawComplete", (event) => this.#diagramContainerOnDrawComplete(event));
+        this.diagramDiv.addEventListener("drawComplete", (event) => this.#diagramContainerOnDrawComplete(event));
     }
 
     clear() {
         this.model.clear();
         location.reload();
+        this.diagramHeadContainer.style.visibility = "hidden";
     }
 
     update() {
         if ( ! this.model.diag) { return; }
         this.#updateFileLabel();
+        this.diagramHeadContainer.style.visibility = "visible";
+        this.diagramHeadDiv.innerHTML = "";
+        this.model.diag.drawHeader(this.diagramHeadDiv);
+        this.#updateHeadSvgElemLists();
+        this.#markHeadActors();
         setTimeout(() => {
-            this.diagramContainer.innerHTML = "";
-            this.model.diag.drawSVG(this.diagramContainer, { theme: 'simple' });
+            this.diagramDiv.innerHTML = "";
+            this.model.diag.drawSVG(this.diagramDiv, { theme: 'simple' });
             // draws in chunks to make the UI more responsive,
             // emits 'drawComplete' event to diagramContainer if ready
         }, 0);
@@ -563,7 +572,14 @@ class AsdfViewModel  {
         this.#addActorEventListeners();
     }
 
+    #updateHeadSvgElemLists() {
+        this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
+        this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
+    }
+
     #updateSvgElemLists() {
+        this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
+        this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
         this.signal_paths = document.querySelectorAll('path.signal-arrow');
         this.signal_texts = document.querySelectorAll('text.signal');
         this.actor_paths = document.querySelectorAll('path.actor-line');
@@ -680,6 +696,21 @@ class AsdfViewModel  {
         });
     }
 
+    #markHeadActors() {
+        this.model.diag.actors.forEach((a, i) => {
+            let cl = 'filtered-actor';
+            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
+                this.head_actor_boxes[i].classList.add(cl);
+                this.head_actor_texts[i].classList.add(cl);
+            }
+            cl = 'orphan-actor';
+            if (a.signalCount == 0) {
+                this.head_actor_boxes[i].classList.add(cl);
+                this.head_actor_texts[i].classList.add(cl);
+            }
+        });
+    }
+
     #markActors() {
         this.model.diag.actors.forEach((a, i) => {
             let cl = 'filtered-actor';
@@ -702,7 +733,7 @@ class AsdfViewModel  {
     }
 
     #addActorMoveBtns() {
-        const selectedRects = document.querySelectorAll('.actor-top-box');
+        const selectedRects = document.querySelectorAll('.head-actor-box');
 
         selectedRects.forEach((rect, index) => {
             const rectX = parseFloat(rect.getAttribute('x'));
@@ -717,10 +748,7 @@ class AsdfViewModel  {
             moveLeft.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm11.5 5.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5z"/>`;
             moveLeft.setAttribute("x", rectX - 8);
             moveLeft.setAttribute("y", rectY + 11);
-
-            moveLeft.addEventListener("click", () => {
-                this.#actorMoveBtnOnClick(index, 'left');
-            });
+            moveLeft.onclick = () => this.#actorMoveBtnOnClick(index, 'left');
 
             const moveRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             moveRight.setAttribute("width", "16");
@@ -730,9 +758,7 @@ class AsdfViewModel  {
             moveRight.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>`;
             moveRight.setAttribute("x", rectX + rectWidth - 8);
             moveRight.setAttribute("y", rectY + 11);
-            moveRight.addEventListener("click", () => {
-                this.#actorMoveBtnOnClick(index, 'right');
-            });
+            moveRight.onclick = () => this.#actorMoveBtnOnClick(index, 'right');
 
             if(index > 0) {
                 rect.parentNode.appendChild(moveLeft);
@@ -773,9 +799,9 @@ class AsdfViewModel  {
     // ---- signal ----
     #addSignalEventListeners() {
         this.signal_texts.forEach((txt, index) => {
-            txt.addEventListener("click", () => this.#signalTextOnClick(index));
-            txt.addEventListener("mouseenter", () => this.#showAddinfoContent(index));
-            txt.addEventListener("mouseleave", () => this.#showAddinfoContent(this.#indexOfSignal(this.clickedSignalSeqNum.get())));
+            txt.onclick = () => this.#signalTextOnClick(index);
+            txt.onmouseenter = () => this.#showAddinfoContent(index);
+            txt.onmouseleave = () => this.#showAddinfoContent(this.#indexOfSignal(this.clickedSignalSeqNum.get()));
         });
     }
 
@@ -827,8 +853,8 @@ class AsdfViewModel  {
         this.model.diag.actors.forEach((a, i) => {
             this.actorOrder.add(a.name);
             if (a.signalCount > 0 || this.model.filteredActors.has(a.name)) {
-                this.actor_texts[2*i].addEventListener("click", () => this.#actorTextOnClick(i));
-                this.actor_texts[2*i+1].addEventListener("click", () => this.#actorTextOnClick(i));
+                this.head_actor_texts[i].onclick = () => this.#actorTextOnClick(i);
+                this.actor_texts[2*i+1].onclick = () => this.#actorTextOnClick(i);
             }
         });
     }
@@ -848,14 +874,19 @@ class AsdfViewModel  {
 
     // ---- divider -----
     #addDocumentEventListeners() {
-        document.addEventListener("mousemove", (e) => this.#documentOnMouseMove(e));
-        document.addEventListener("mouseup", () => this.#documentOnMouseUp());
+        document.onmousemove = (e) => this.#documentOnMouseMove(e);
+        document.onmouseup = () => this.#documentOnMouseUp();
+        this.diagramContainer.onscroll = () => this.#syncScroll();
+    }
+
+    #syncScroll() {
+        this.diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
     }
 
     dividerOnMouseDown(e) {
         this.isResizing = true;
         this.startY = e.clientY; 
-        this.startDiagramHeight = document.getElementById("diagramContainer").offsetHeight;
+        this.startDiagramHeight = document.getElementById("diagramArea").offsetHeight;
         document.body.style.userSelect = "none";
         document.body.style.cursor = 'row-resize';
     }
@@ -868,7 +899,7 @@ class AsdfViewModel  {
             const infoHeight = 100 - diagramHeight;
 
             if (diagramHeight > 5 && infoHeight > 5) {
-                document.getElementById("diagramContainer").style.height = `${diagramHeight}%`;
+                document.getElementById("diagramArea").style.height = `${diagramHeight}%`;
                 document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
             }
         }
