@@ -330,9 +330,9 @@ class PersistentToggle {
 
 
 /* ====================================================================
- * ASDF Graphics implements the Model-View-ViewModel (MVVM) pattern
+ * ASDF Vector implements the Model-View-ViewModel (MVVM) pattern
  *
- * View:      asdf.html     - Structure and layout of UI
+ * View:      index.html    - Structure and layout of UI
  *            asdf.css      - Appearance of UI elements
  * ViewModel: AsdfViewModel - Intermediary, coordinates the View's
  *                            interactions with the Model, updates

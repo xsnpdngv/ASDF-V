@@ -1,8 +1,8 @@
-# Trace Visualizer
+# ASDF Vector
 
-Displays trace logs of a specialized sequence diagram syntax as SVG. The
-signals/messages on the shown diagram are clickable. On click the additional
-information that belongs to the signal is displayed under the diagram.
+ASDF Vector is an interactive vector graphics tool for visualizing
+sequence diagrams in the Augmented Sequence Diagram Format (ASDF).
+
 
 ## Input example
 
@@ -31,29 +31,26 @@ to Alice
 
 ## Usage
 
-Open `traceviz.html`, choose a file of the syntax shown above
+Open `index.html`, choose a file of the syntax shown above
 and explore the visualization.
 
 
 ## Dependencies
 
-### `js/sequence-diagrams-min.js`
+### `js/sequence-diagrams.js`
 
-and `js/sequence-diagram.js` (for debugging) are
 taken from https://github.com/xsnpdngv/seqdiag-js which is a
 modification of https://github.com/bramp/js-sequence-diagrams to handle
 the extra syntax for additional information between tilde-triplets
 (`~~~`).
 
 
-### `js/raphael.min.js`
+### `js/raphael.js`
 
-and `js/raphael.js` (for debugging) are taken from
 https://github.com/DmitryBaranovskiy/raphael
 
 
-### `js/underscore/min.js`
+### `js/underscore.js`
 
-and `js/underscore.js` (for debugging) are taken from
 https://github.com/jashkenas/underscore
 
