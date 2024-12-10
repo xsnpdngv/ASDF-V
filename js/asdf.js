@@ -781,6 +781,7 @@ class AsdfViewModel  {
             this.actorOrder.add(a.name);
             if (a.signalCount > 0 || this.model.filteredActors.has(a.name)) {
                 this.head_actor_texts[i].onclick = () => this.#actorTextOnClick(i);
+                this.actor_texts[2*i].onclick = () => this.#actorTextOnClick(i);
                 this.actor_texts[2*i+1].onclick = () => this.#actorTextOnClick(i);
             }
         });
@@ -791,40 +792,38 @@ class AsdfViewModel  {
     }
 
     #addActorMoveBtns() {
-        const selectedRects = document.querySelectorAll('.head-actor-box');
+        this.#addMoveBtnsToElemList('.head-actor-box');
+        this.#addMoveBtnsToElemList('.actor-top-box');
+        this.#addMoveBtnsToElemList('.actor-bottom-box');
+    }
 
-        selectedRects.forEach((rect, index) => {
-            const rectX = parseFloat(rect.getAttribute('x'));
-            const rectY = parseFloat(rect.getAttribute('y'));
-            const rectWidth = parseFloat(rect.getAttribute('width'));
-
-            const moveLeft = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            moveLeft.setAttribute("width", "16");
-            moveLeft.setAttribute("height", "16");
-            moveLeft.setAttribute("fill", "currentColor");
-            moveLeft.setAttribute("class", "move move-left");
-            moveLeft.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm11.5 5.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5z"/>`;
-            moveLeft.setAttribute("x", rectX - 8);
-            moveLeft.setAttribute("y", rectY + 11);
-            moveLeft.onclick = () => this.#actorMoveBtnOnClick(index, 'left');
-
-            const moveRight = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            moveRight.setAttribute("width", "16");
-            moveRight.setAttribute("height", "16");
-            moveRight.setAttribute("fill", "currentColor");
-            moveRight.setAttribute("class", "move move-right");
-            moveRight.innerHTML = `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>`;
-            moveRight.setAttribute("x", rectX + rectWidth - 8);
-            moveRight.setAttribute("y", rectY + 11);
-            moveRight.onclick = () => this.#actorMoveBtnOnClick(index, 'right');
-
+    #addMoveBtnsToElemList(uiElemId) {
+        const elemList = document.querySelectorAll(uiElemId)
+        elemList.forEach((elem, index) => {
+            const rectX = parseFloat(elem.getAttribute('x'));
+            const rectY = parseFloat(elem.getAttribute('y'));
             if(index > 0) {
-                rect.parentNode.appendChild(moveLeft);
+                elem.parentNode.appendChild( this.#createMoveBtn(index, rectX-8, rectY+11, 'left') );
             }
             if(index < this.model.diag.actors.length - 1) {
-                rect.parentNode.appendChild(moveRight);
+                const rectWidth = parseFloat(elem.getAttribute('width'));
+                elem.parentNode.appendChild( this.#createMoveBtn(index, rectX+rectWidth-8, rectY+11, 'right') );
             }
         });
+    }
+
+    #createMoveBtn(idx, x, y, dir) {
+        const moveBtn = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        moveBtn.setAttribute("width", "16");
+        moveBtn.setAttribute("height", "16");
+        moveBtn.setAttribute("fill", "currentColor");
+        moveBtn.setAttribute("class", "move move-" + dir);
+        moveBtn.innerHTML = dir == 'left' ? `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm11.5 5.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5z"/>`
+                              /* right */ : `<rect x="0" y="0" width="100%" height="100%" fill="white"/><path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>`;
+        moveBtn.setAttribute("x", x);
+        moveBtn.setAttribute("y", y);
+        moveBtn.onclick = () => this.#actorMoveBtnOnClick(idx, dir);
+        return moveBtn;
     }
 
     #actorMoveBtnOnClick(index, dir) {
