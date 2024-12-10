@@ -1,6 +1,6 @@
-# ASDF Vector
+# ASDF-V
 
-ASDF Vector is an interactive vector graphics tool for visualizing
+ASDF-V is an interactive vector graphics tool for visualizing
 sequence diagrams in the Augmented Sequence Diagram Format (ASDF).
 
 
@@ -52,4 +52,3 @@ https://github.com/DmitryBaranovskiy/raphael
 ### `js/underscore.js`
 
 https://github.com/jashkenas/underscore
-

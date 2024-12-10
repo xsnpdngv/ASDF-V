@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2024 Tamás Dezső (asdf.hu)
-https://github.com/xsnpdngv/asdf
+https://github.com/xsnpdngv/ASDF-V
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
@@ -330,7 +330,7 @@ class PersistentToggle {
 
 
 /* ====================================================================
- * ASDF Vector implements the Model-View-ViewModel (MVVM) pattern
+ * ASDF-V implements the Model-View-ViewModel (MVVM) pattern
  *
  * View:      index.html    - Structure and layout of UI
  *            asdf.css      - Appearance of UI elements
