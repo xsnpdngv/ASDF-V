@@ -548,6 +548,7 @@ class AsdfViewModel  {
 
     update() {
         if ( ! this.model.diag) { return; }
+        this.#saveScrollPosition();
         this.#updateFileInputLabel();
         this.diagramHeadContainer.style.visibility = "visible";
         this.diagramHeadDiv.innerHTML = "";
@@ -563,6 +564,7 @@ class AsdfViewModel  {
     }
 
     #diagramContainerOnDrawComplete(event) {
+        this.#restoreScrollPosition();
         this.#updateSvgElemLists();
         this.#drawSignalSeqNumCircles();
         this.#applySignalClick(this.clickedSignalSeqNum.get());
@@ -591,6 +593,21 @@ class AsdfViewModel  {
         if (this.model.diag) {
             this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
         }
+    }
+
+    #resetScrollPosition() {
+        this.diagramContainer.scrollLeft = 0;
+        this.diagramContainer.scrollTop = 0;
+    }
+
+    #saveScrollPosition() {
+        this.scrollLeft = this.diagramContainer.scrollLeft;
+        this.scrollTop = this.diagramContainer.scrollTop;
+    }
+
+    #restoreScrollPosition() {
+        this.diagramContainer.scrollLeft = this.scrollLeft;
+        this.diagramContainer.scrollTop = this.scrollTop;
     }
 
     // ---- toolbar ----
@@ -623,6 +640,7 @@ class AsdfViewModel  {
     resetToolbarOnClick() {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
         this.clickedSignalSeqNum.set(1);
+        this.#resetScrollPosition();
         this.model.reset();
     }
 
