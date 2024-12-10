@@ -536,8 +536,9 @@ class AsdfViewModel  {
 
     init() {
         this.model.init(this.toggles["showIds"].uiElem.checked);
-        this.#addDocumentEventListeners();
-        this.diagramDiv.addEventListener("drawComplete", (event) => this.#diagramContainerOnDrawComplete(event));
+        this.#addDividerEventListeners();
+        this.#addScrollEventListeners();
+        this.#addDiagramEventListeners();
     }
 
     clear() {
@@ -549,23 +550,41 @@ class AsdfViewModel  {
     update() {
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
-        this.#updateFileInputLabel();
+        this.#updateToolbar();
+        this.#updateHead();
+        this.#restoreHeadScrollPosition();
+        setTimeout(() => { this.#updateDiagram(); }, 0); // let head render
+    }
+
+    // ---- diagram head ----
+    #updateHead() {
         this.diagramHeadContainer.style.visibility = "visible";
         this.diagramHeadDiv.innerHTML = "";
         this.model.diag.drawHeader(this.diagramHeadDiv);
         this.#updateHeadSvgElemLists();
         this.#markHeadActors();
-        setTimeout(() => {
-            this.diagramDiv.innerHTML = "";
-            this.model.diag.drawSVG(this.diagramDiv, { theme: 'simple' });
-            // draws in chunks to make the UI more responsive,
-            // emits 'drawComplete' event to diagramContainer if ready
-        }, 0);
     }
 
-    #diagramContainerOnDrawComplete(event) {
-        this.#restoreScrollPosition();
-        this.#updateSvgElemLists();
+    #updateHeadSvgElemLists() {
+        this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
+        this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
+    }
+
+    // ---- diagram ----
+    #updateDiagram() {
+        this.diagramDiv.innerHTML = "";
+        this.model.diag.drawSVG(this.diagramDiv, { theme: 'simple' });
+        // draws in chunks to make the UI more responsive,
+        // emits 'drawComplete' event to diagramContainer if ready
+    }
+
+    #addDiagramEventListeners() {
+        this.diagramDiv.addEventListener("drawComplete", (event) => this.#diagramOnDrawComplete(event));
+    }
+
+    #diagramOnDrawComplete(event) {
+        this.#restoreDiagramScrollPosition();
+        this.#updateDiagramSvgElemLists();
         this.#drawSignalSeqNumCircles();
         this.#applySignalClick(this.clickedSignalSeqNum.get());
         this.#markActors();
@@ -574,12 +593,7 @@ class AsdfViewModel  {
         this.#addActorEventListeners();
     }
 
-    #updateHeadSvgElemLists() {
-        this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
-        this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
-    }
-
-    #updateSvgElemLists() {
+    #updateDiagramSvgElemLists() {
         this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
         this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
         this.signal_paths = document.querySelectorAll('path.signal-arrow');
@@ -595,22 +609,47 @@ class AsdfViewModel  {
         }
     }
 
+    // ---- scroll ----
+    #addScrollEventListeners() {
+        this.diagramContainer.onscroll = () => this.#syncScroll();
+    }
+
+    #syncScroll() {
+        this.diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
+    }
+
     #resetScrollPosition() {
-        this.diagramContainer.scrollLeft = 0;
-        this.diagramContainer.scrollTop = 0;
+        const c = this.diagramContainer;
+        c.scrollLeft = 0;
+        c.scrollTop = 0;
     }
 
     #saveScrollPosition() {
-        this.scrollLeft = this.diagramContainer.scrollLeft;
-        this.scrollTop = this.diagramContainer.scrollTop;
+        const c = this.diagramContainer;
+        this.scrollLeft = c.scrollLeft;
+        this.scrollTop = c.scrollTop;
+        this.scrollWidth = c.scrollWidth;
+        this.scrollHeight = c.scrollHeight;
+        this.clientWidth = c.clientWidth;
+        this.clientHeight = c.clientHeight;
     }
 
-    #restoreScrollPosition() {
-        this.diagramContainer.scrollLeft = this.scrollLeft;
-        this.diagramContainer.scrollTop = this.scrollTop;
+    #restoreHeadScrollPosition() {
+        this.diagramHeadContainer.scrollLeft = this.scrollLeft;
+    }
+
+    #restoreDiagramScrollPosition() {
+        const c = this.diagramContainer;
+        c.scrollLeft = this.scrollLeft;
+        c.scrollTop  = this.scrollTop == 0 ? 0 : (this.scrollTop + this.clientHeight / 2) * 
+                                                 (c.scrollHeight / this.scrollHeight) - c.clientHeight / 2;
     }
 
     // ---- toolbar ----
+    #updateToolbar() {
+        this.#updateFileInputLabel();
+    }
+
     navbarBrandOnClick() {
         this.clear();
     }
@@ -890,14 +929,10 @@ class AsdfViewModel  {
     }
 
     // ---- divider -----
-    #addDocumentEventListeners() {
+    #addDividerEventListeners() {
         document.onmousemove = (e) => this.#documentOnMouseMove(e);
         document.onmouseup = () => this.#documentOnMouseUp();
-        this.diagramContainer.onscroll = () => this.#syncScroll();
-    }
-
-    #syncScroll() {
-        this.diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
+        document.getElementById("divider").onmousedown = (e) => this.dividerOnMouseDown(e);
     }
 
     dividerOnMouseDown(e) {
