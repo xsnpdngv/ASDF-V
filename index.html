@@ -12,9 +12,7 @@
     <nav class="navbar bg-light fixed-top p-2" data-bs-theme="light">
     <div class="container-fluid justify-content-start" id="toolbar">
 
-        <a class="navbar-brand" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V
-            <img src="img/chevron-double-right.svg">
-        </a>
+        <a class="navbar-brand" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V &rang;&rang;</a>
 
         <div>
             <label class="btn btn-sm btn-outline-secondary me-3" for="fileInput" id="fileInputLabel">Choose File</label>
@@ -37,10 +35,11 @@
 
         <nav>
             <ul class="pagination pagination-sm bs-secondary mb-0 me-3" id="paginator" style="visibility: hidden;">
-                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pageFirst()">&lang;&lang;</a></li>
-                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pagePrev()">&lang;</a></li>
-                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pageNext()">&rang;</a></li>
-                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pageLast()">&rang;&rang;</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="pageFirst" onclick="asdfVM.pageFirst()">&lang;&lang;</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="pagePrev" onclick="asdfVM.pagePrev()">&lang;</a></li>
+                <li class="page-item disabled"><a class="page-link" href="#" id="pageInfo" onclick="asdfVM.pagePrev()"></a></li>
+                <li class="page-item"><a class="page-link" href="#" id="pageNext" onclick="asdfVM.pageNext()">&rang;</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="pageLast" onclick="asdfVM.pageLast()">&rang;&rang;</a></li>
             </ul>
         </nav>
 

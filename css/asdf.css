@@ -83,6 +83,12 @@ pre {
 .pagination .page-link {
     color: var(--bs-secondary);
 }
+.page-item .page-link {
+    outline: none;
+    box-shadow: none;
+    color: inherit;
+    background-color: inherit;
+}
 
 text.actor-text,
 text.head-actor-text {

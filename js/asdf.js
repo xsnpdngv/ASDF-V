@@ -543,6 +543,10 @@ class AsdfViewModel  {
         this.diagramContainer = document.getElementById("diagramContainer");
         this.diagramDiv = document.getElementById("diagram");
         this.paginator = document.getElementById("paginator");
+        this.pageFirstBtn = document.getElementById("pageFirst");
+        this.pagePrevBtn = document.getElementById("pagePrev");
+        this.pageNextBtn = document.getElementById("pageNext");
+        this.pageLastBtn = document.getElementById("pageLast");
 
         // view state
         this.clickedSignalSeqNum = new PersistentInt("clickedSignalIdx", -1);
@@ -707,12 +711,32 @@ class AsdfViewModel  {
         this.paginator.style.visibility = 
             this.model.diag.signalCount > this.pageSize ? "visible" : "hidden";
         this.#assessPaginator();
+        this.#updatePaginatorInfo();
     }
 
     #assessPaginator() {
         if (this.currPage.get() >= this.#pageCount()) {
             this.#setCurrPage(this.#pageCount() - 1);
         }
+        if (this.currPage.get() == 0) {
+            this.pageFirstBtn.style.visibility = "hidden";
+            this.pagePrevBtn.style.visibility = "hidden";
+        } else {
+            this.pageFirstBtn.style.visibility = "visible";
+            this.pagePrevBtn.style.visibility = "visible";
+        }
+        if (this.currPage.get() == this.#pageCount() - 1) {
+            this.pageLastBtn.style.visibility = "hidden";
+            this.pageNextBtn.style.visibility = "hidden";
+        } else {
+            this.pageLastBtn.style.visibility = "visible";
+            this.pageNextBtn.style.visibility = "visible";
+        }
+    }
+
+    #updatePaginatorInfo() {
+        const pageInfo = document.getElementById("pageInfo");
+        pageInfo.innerHTML = (this.currPage.get() + 1) + "/" + (this.#pageCount());
     }
 
     #setCurrPage(page) {
