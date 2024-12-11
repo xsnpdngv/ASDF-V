@@ -932,10 +932,10 @@ class AsdfViewModel  {
     #addDividerEventListeners() {
         document.onmousemove = (e) => this.#documentOnMouseMove(e);
         document.onmouseup = () => this.#documentOnMouseUp();
-        document.getElementById("divider").onmousedown = (e) => this.dividerOnMouseDown(e);
+        document.getElementById("divider").onmousedown = (e) => this.#dividerOnMouseDown(e);
     }
 
-    dividerOnMouseDown(e) {
+    #dividerOnMouseDown(e) {
         this.isResizing = true;
         this.startY = e.clientY; 
         this.startDiagramHeight = document.getElementById("diagramArea").offsetHeight;

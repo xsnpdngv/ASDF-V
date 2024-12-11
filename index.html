@@ -35,17 +35,17 @@
             <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="asdfVM.resetToolbarOnClick()">Reset</button>
         </div>
 
-    </div>
+    </div><!--toolbar-->
     </nav>
 
     <div class="content">
-      <div id="diagramArea">
-        <div id="diagramHeadContainer">
-            <div id="diagramHead"></div>
-        </div>
-        <div id="diagramContainer">
-            <div id="diagram">
-                <pre>
+        <div id="diagramArea">
+            <div id="diagramHeadContainer">
+                <div id="diagramHead"></div>
+            </div>
+            <div id="diagramContainer">
+                <div id="diagram">
+                    <pre>
 
     ASDF-V is an interactive vector graphics tool for visualizing
     sequence diagrams in the Augmented Sequence Diagram Format (ASDF).
@@ -85,20 +85,17 @@
     (c) 2024 Tamás Dezső (asdf.hu)
     https://github.com/xsnpdngv/asdfv
 
-                </pre>
-
-            </div>
-        </div>
-      </div>
-
-        <div id="divider" onmousedown="asdfVM.dividerOnMouseDown(event)"></div>
-
+                    </pre>
+                </div><!--diagram-->
+            </div><!--diagramContainer-->
+        </div><!--diagramArea-->
+        <div id="divider"><!----------------------------------------------------------></div>
         <div id="addinfoDisplay">
             <pre id="notation"></pre>
             <pre id="meta"></pre>
             <pre id="addinfo"></pre>
         </div>
-    </div>
+    </div><!--content-->
 
     <script src="js/underscore.js"></script>
     <script src="js/raphael.js"></script>
