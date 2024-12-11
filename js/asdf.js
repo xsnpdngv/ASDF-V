@@ -719,24 +719,24 @@ class AsdfViewModel  {
             this.#setCurrPage(this.#pageCount() - 1);
         }
         if (this.currPage.get() == 0) {
-            this.pageFirstBtn.style.visibility = "hidden";
-            this.pagePrevBtn.style.visibility = "hidden";
+            this.pageFirstBtn.classList.add("disabled");
+            this.pagePrevBtn.classList.add("disabled");
         } else {
-            this.pageFirstBtn.style.visibility = "visible";
-            this.pagePrevBtn.style.visibility = "visible";
+            this.pageFirstBtn.classList.remove("disabled");
+            this.pagePrevBtn.classList.remove("disabled");
         }
         if (this.currPage.get() == this.#pageCount() - 1) {
-            this.pageLastBtn.style.visibility = "hidden";
-            this.pageNextBtn.style.visibility = "hidden";
+            this.pageLastBtn.classList.add("disabled");
+            this.pageNextBtn.classList.add("disabled");
         } else {
-            this.pageLastBtn.style.visibility = "visible";
-            this.pageNextBtn.style.visibility = "visible";
+            this.pageLastBtn.classList.remove("disabled");
+            this.pageNextBtn.classList.remove("disabled");
         }
     }
 
     #updatePaginatorInfo() {
         const pageInfo = document.getElementById("pageInfo");
-        pageInfo.innerHTML = (this.currPage.get() + 1) + "/" + (this.#pageCount());
+        pageInfo.innerHTML = (this.currPage.get() + 1) + "/" + this.#pageCount();
     }
 
     #setCurrPage(page) {
@@ -761,7 +761,7 @@ class AsdfViewModel  {
     }
 
     #pageCount() {
-        return Math.floor((this.model.diag.netSignalCount + this.pageSize - 1) / this.pageSize);
+        return Math.max(1, Math.ceil(this.model.diag.netSignalCount / this.pageSize));
     }
 
     // ---- signal ----

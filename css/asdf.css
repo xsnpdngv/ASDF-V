@@ -20,9 +20,9 @@ body {
 }
 
 pre {
-  font-family: monospace;
-  border-radius: 5px;
-  overflow-x: auto;
+    font-family: monospace;
+    border-radius: 5px;
+    overflow-x: auto;
 }
 
 #toolbar {
@@ -82,6 +82,8 @@ pre {
 
 .pagination .page-link {
     color: var(--bs-secondary);
+    font-family: monospace;
+    font-size: 12px;
 }
 .page-item .page-link {
     outline: none;
