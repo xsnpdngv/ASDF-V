@@ -80,6 +80,9 @@ pre {
     height: calc(100vh - var(--toolbar-height));
 }
 
+.pagination .page-link {
+    color: var(--bs-secondary);
+}
 
 text.actor-text,
 text.head-actor-text {

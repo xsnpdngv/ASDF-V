@@ -356,6 +356,8 @@ class AsdfModel {
         this.filteredActors = new PersistentSet("filteredActors");
         this.actorOrder = new PersistentArray("actorOrder");
         this.isShowIds = false;
+        this.relevantSignalStart = new PersistentInt("signalStart", 0);
+        this.relevantSignalCount = new PersistentInt("signalCount", 1000);
         this.observers = [];
     }
 
@@ -382,6 +384,7 @@ class AsdfModel {
     reset() {
         this.diagSrcPreamble.set("");
         this.filteredActors.clear();
+        this.setRelevantSignals(0, this.relevantSignalCount.get());
         this.isShowIds = false;
         this.loadDiagramFromSrc();
     }
@@ -406,11 +409,14 @@ class AsdfModel {
     loadDiagramFromSrc() {
         if (this.diagSrc.length() > 0) {
             this.diag = Diagram.parse(this.diagSrc.get());
+            this.diag.netSignalCount = this.diag.signals.length;
             if (this.#arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
                 let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
-            this.#postProcActors();
+            this.#removeSignalsOfFilteredActors();
+            this.#removeIrrelevantSignals();
+            this.#countActorSignals();
             if (this.isShowIds) {
                 this.includeIdsInSignalMsgs(this.isShowIds, false);
             }
@@ -443,12 +449,10 @@ class AsdfModel {
         let a = this.diag.actors[index];
         if (this.filteredActors.has(a.name)) {
             this.filteredActors.delete(a.name);
-            this.loadDiagramFromSrc();
         } else {
             this.filteredActors.add(a.name);
-            this.#postProcActors();
-            this.#notify();
         }
+        this.loadDiagramFromSrc();
     }
 
     setActorOrder(actorOrder) {
@@ -456,8 +460,7 @@ class AsdfModel {
         this.#setPreamble( this.#printArrayElementsAsParticipants(this.actorOrder.getArray()) );
     }
 
-    #postProcActors() {
-        this.#removeSignalsOfFilteredActors();
+    #countActorSignals() {
         this.diag.actors.forEach(a => { a.signalCount = 0; });
         this.diag.signals.forEach(s => {
             if (s.type === 'Signal') {
@@ -488,6 +491,18 @@ class AsdfModel {
                  this.diag.signals.splice(i, 1);
             }
         }
+        this.diag.netSignalCount = this.diag.signals.length;
+    }
+
+    setRelevantSignals(start, count) {
+        this.relevantSignalStart.set(start);
+        this.relevantSignalCount.set(count);
+        this.loadDiagramFromSrc();
+    }
+
+    #removeIrrelevantSignals() {
+        this.diag.signals.splice(0, this.relevantSignalStart.get());
+        this.diag.signals.splice(this.relevantSignalCount.get());
     }
 
     #arraysHaveSameElements(arr1, arr2) {
@@ -511,6 +526,7 @@ class AsdfViewModel  {
         this.model = model;
         this.model.subscribe(this);
         this.isResizing = false;
+        this.pageSize = 250;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -526,10 +542,12 @@ class AsdfViewModel  {
         this.diagramHeadDiv = document.getElementById("diagramHead");
         this.diagramContainer = document.getElementById("diagramContainer");
         this.diagramDiv = document.getElementById("diagram");
+        this.paginator = document.getElementById("paginator");
 
         // view state
         this.clickedSignalSeqNum = new PersistentInt("clickedSignalIdx", -1);
         this.actorOrder = new PersistentArray("actorOrderVM");
+        this.currPage = new PersistentInt("currPage", 0);
 
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
     }
@@ -550,6 +568,7 @@ class AsdfViewModel  {
     update() {
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
+        this.#initPaginator();
         this.#updateToolbar();
         this.#updateHead();
         this.#restoreHeadScrollPosition();
@@ -683,6 +702,44 @@ class AsdfViewModel  {
         this.model.reset();
     }
 
+    // ---- paginator ----
+    #initPaginator() {
+        this.paginator.style.visibility = 
+            this.model.diag.signalCount > this.pageSize ? "visible" : "hidden";
+        this.#assessPaginator();
+    }
+
+    #assessPaginator() {
+        if (this.currPage.get() >= this.#pageCount()) {
+            this.#setCurrPage(this.#pageCount() - 1);
+        }
+    }
+
+    #setCurrPage(page) {
+        this.currPage.set(page);
+        this.model.setRelevantSignals(page * this.pageSize - (page > 0 ? 1 : 0), this.pageSize);
+    }
+
+    pageFirst() {
+        this.#setCurrPage(0);
+    }
+
+    pagePrev() {
+        this.#setCurrPage(this.currPage.get() - (this.currPage.get() > 0));
+    }
+
+    pageNext() {
+        this.#setCurrPage(this.currPage.get() + (this.currPage.get() < this.#pageCount() - 1));
+    }
+
+    pageLast() {
+        this.#setCurrPage(this.#pageCount() - 1);
+    }
+
+    #pageCount() {
+        return Math.floor((this.model.diag.netSignalCount + this.pageSize - 1) / this.pageSize);
+    }
+
     // ---- signal ----
     #drawSignalSeqNumCircles() {
         this.signal_paths.forEach((path, index) => {
@@ -706,7 +763,7 @@ class AsdfViewModel  {
             text.setAttribute("text-anchor", "middle"); // Center text horizontally
             text.setAttribute("dy", "0.35em"); // Center text vertically
             text.setAttribute("fill", "black"); // Color of the text inside the circle
-            text.setAttribute("font-size", "13px"); // Border width
+            text.setAttribute("font-size", "11px"); // Border width
             text.setAttribute("class", "seq-num"); // Border width
             text.textContent = this.diag_signals[index].seqNum;
 

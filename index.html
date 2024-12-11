@@ -21,7 +21,7 @@
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf"
              onchange="asdfVM.fileInputOnChange(event)" onclick="asdfVM.fileInputOnClick()">
 
-            <div class="btn-group me-3" role="group" aria-label="Basic checkbox toggle button group">
+            <div class="btn-group me-3" role="group">
                 <input type="checkbox" class="btn-check" id="showIdsToggle">
                 <label class="btn btn-asdf btn-sm" for="showIdsToggle">IDs</label>
 
@@ -34,6 +34,15 @@
 
             <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="asdfVM.resetToolbarOnClick()">Reset</button>
         </div>
+
+        <nav>
+            <ul class="pagination pagination-sm bs-secondary mb-0 me-3" id="paginator" style="visibility: hidden;">
+                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pageFirst()">&lang;&lang;</a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pagePrev()">&lang;</a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pageNext()">&rang;</a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="asdfVM.pageLast()">&rang;&rang;</a></li>
+            </ul>
+        </nav>
 
     </div><!--toolbar-->
     </nav>
