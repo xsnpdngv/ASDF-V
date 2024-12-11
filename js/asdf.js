@@ -60,6 +60,10 @@ class PersistentSet {
         return [...this.set];
     }
 
+    size() {
+        return this.set.size;
+    }
+
     forEach(callback, thisArg = undefined) {
         // Call the callback for each element in the set
         this.set.forEach(callback, thisArg);
@@ -595,10 +599,23 @@ class AsdfViewModel  {
 
     // ---- diagram ----
     #updateDiagram() {
+        this.#updateDiagramInfo();
         this.diagramDiv.innerHTML = "";
         this.model.diag.drawSVG(this.diagramDiv, { theme: 'simple' });
         // draws in chunks to make the UI more responsive,
         // emits 'drawComplete' event to diagramContainer if ready
+    }
+
+    #updateDiagramInfo() {
+        const di = document.getElementById("diagramInfo");
+        di.innerHTML = this.model.diag.actors.length + " participants";
+        if (this.model.filteredActors.size() > 0) {
+            di.innerHTML += " (" + this.model.filteredActors.size() + " filtered)";
+        }
+        di.innerHTML += "<br>" + this.model.diag.signalCount + " signals";
+        if (this.model.diag.netSignalCount != this.model.diag.signalCount) {
+            di.innerHTML += " (" + this.model.diag.netSignalCount + " displayed)";
+        }
     }
 
     #addDiagramEventListeners() {

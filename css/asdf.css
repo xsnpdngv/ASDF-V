@@ -32,6 +32,12 @@ pre {
     background-color: var(--body-bg-color);
 }
 
+#diagramInfo {
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.2; 
+}
+
 #diagramArea {
     padding-left: 20px;
     padding-right: 20px;
