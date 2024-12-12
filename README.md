@@ -28,6 +28,12 @@ Oh, hi
 ![ASDF example](img/asdf-example.png)
 
 
+## ASDF Syntax
+
+![ASDF syntax](img/asdf-rr.svg)
+
+![ASDF addinfo syntax](img/asdf-add-info-rr.svg)
+
 ## Usage
 
 Open `index.html`, choose a file of the syntax shown above

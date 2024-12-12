@@ -1,0 +1,4 @@
+asdf ::= ( ( ( participant ( '->' | '->>' | '-->' | '-->>' )? )
+	       | ( 'note' ( 'left of' | 'right of' | "over"  )    ) ) participant ':' message ( add-info )? )+
+
+add-info ::= HTAB "~~~" ( JSON-line )? body HTAB "~~~"
