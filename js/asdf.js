@@ -495,7 +495,7 @@ class AsdfModel {
                  this.diag.signals.splice(i, 1);
             }
         }
-        this.diag.netSignalCount = this.diag.signals.length;
+        this.diag.netSignalCount = this.diag.signals.filter(signal => signal.type === 'Signal').length;
     }
 
     setRelevantSignals(start, count) {
@@ -608,13 +608,14 @@ class AsdfViewModel  {
 
     #updateDiagramInfo() {
         const di = document.getElementById("diagramInfo");
+        const filteredActorCount = this.model.diag.actors.filter(actor => this.model.filteredActors.has(actor.name)).length;
         di.innerHTML = this.model.diag.actors.length + " participants";
-        if (this.model.filteredActors.size() > 0) {
-            di.innerHTML += " (" + this.model.filteredActors.size() + " filtered)";
+        if (filteredActorCount > 0) {
+            di.innerHTML += " (" + filteredActorCount + " filtered)";
         }
         di.innerHTML += "<br>" + this.model.diag.signalCount + " signals";
         if (this.model.diag.netSignalCount != this.model.diag.signalCount) {
-            di.innerHTML += " (" + this.model.diag.netSignalCount + " displayed)";
+            di.innerHTML += " (" + this.model.diag.netSignalCount + " shown)";
         }
     }
 

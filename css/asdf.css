@@ -16,7 +16,7 @@ body {
     background: var(--body-bg-color);
     font-family: 'Helvetica Neue', Helvetica, Arial, serif;
     font-weight: 300;
-    color: var(--bs-secondary)
+    color: var(--bs-secondary);
 }
 
 pre {
@@ -33,7 +33,9 @@ pre {
 }
 
 #diagramInfo {
-    font-family: monospace;
+    font-family: var(--bs-body-font-family);
+    font-size: var(--bs-body-font-size);
+    font-weight: var(--bs-body-font-weight);
     font-size: 12px;
     line-height: 1.2; 
 }
