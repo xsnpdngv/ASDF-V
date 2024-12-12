@@ -721,6 +721,7 @@ class AsdfViewModel  {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
         this.clickedSignalSeqNum.set(1);
         this.#resetScrollPosition();
+        this.currPage.set(0);
         this.model.reset();
     }
 

@@ -50,52 +50,85 @@
 
     <div class="content">
         <div id="diagramArea">
-            <div id="diagramHeadContainer">
+            <div id="diagramHeadContainer" class="container-fluid">
                 <div id="diagramHead"></div>
             </div>
             <div id="diagramContainer">
-                <div id="diagram">
-                    <pre>
 
+                <div id="diagram" class="container-fluid">
+                    <div class="row">
+                    <div class="col-xl-3">
+
+    <p>
     ASDF-V is an interactive vector graphics tool for visualizing
     sequence diagrams in the Augmented Sequence Diagram Format (ASDF).
     Select an ASDF file to view and interact with it.
+    </p>
 
+    <p>
     All operations are performed locally within the browser. Data
     remains on the device, with no information transferred to or stored
     on any server.
+    </p>
 
-    Release Notes - v1.0 (December 10, 2024)
-    ----------------------------------------
-    • Parse and visualize ASDF input.
-    • View/peek additional signal information on click/hover.
-    • Hide, unhide and reorder participants as preferred.
-    • Filter signals by hiding participants.
-    • Highlight clicked signal and relations by coloring when needed.
-    • Show/hide instance identifiers on signal arrows.
-    • Emphasize special signals by coloring.
-    • Keep participant order and visibility over reloads, if reasonable.
-    • Preserve toolbar settings in browser over page reloads.
-    • Assign sequence numbers to signals.
-    • Align window heights for diagram and additional info.
-    • Render big diagrams in chunks.
-    • Show floating participants header.
-    • Preserve/adapt scroll positions.
+    <p style="text-align: right;">
+    &copy; 2024 Tamás Dezső (<a href="http://asdf.hu">asdf.hu</a>)<br><a href="https://github.com/xsnpdngv/asdfv">github.com/xsnpdngv/asdfv</a>
+    </p><br>
 
-    Feature Requests
-    ----------------
-    • Filter signals by time (interval) and additional info content.
-    • Show signal list view on demand.
-    • Step over subsequent signals (first, prev, next, last).
-    • Resolve signal relations beyond neighbours.
-    • Fold indentation blocks in additional info.
-    • Show timestamps/deltas beside signal sequence numbers.
-    • Render additional info header.
+    <h6>Release Notes - v1.1 (December 12, 2024)</h6>
+    <ul>
+    <li>Paginate large diagrams</li>
+    <li>Show diagram/display summary</li>
+    <li>Add syntax definition</li>
+    </ul>
 
-    (c) 2024 Tamás Dezső (asdf.hu)
-    https://github.com/xsnpdngv/asdfv
+    <h6>Release Notes - v1.0 (December 10, 2024)</h6>
+    <ul>
+    <li>Parse and visualize ASDF input</li>
+    <li>View/peek additional signal information on click/hover</li>
+    <li>Hide, unhide and reorder participants as preferred</li>
+    <li>Fliter signals by hiding participants</li>
+    <li>Highlight clicked signal and relations by coloring when needed</li>
+    <li>Show/hide instance identifiers on signal arrows</li>
+    <li>Emphasize special signals by coloring</li>
+    <li>Keep participant order and visibliity over reloads, if reasonable</li>
+    <li>Preserve toolbar settings in browser over page reloads</li>
+    <li>Assign sequence numbers to signals</li>
+    <li>Align window heights for diagram and additional info</li>
+    <li>Render big diagrams in chunks</li>
+    <li>Show floating participants header</li>
+    <li>Preserve/adapt scroll positions</li>
+    </ul>
 
-                    </pre>
+    <h6>Feature Requests</h6>
+    <ul>
+    <li>Filter signals by time (interval) and additional info content</li>
+    <li>Show signal list view on demand</li>
+    <li>Step over subsequent signals (first, prev, next, last)</li>
+    <li>Resolve signal relations beyond neighbours</li>
+    <li>Fold indentation blocks in additional info</li>
+    <li>Show timestamps/deltas beside signal sequence numbers</li>
+    <li>Render additional info header</li>
+    </ul>
+
+                    </div>
+
+                    <div class="col-xl-1"></div>
+
+                    <div class="col">
+                        <div >
+                            <p style="font-size: 14px; font-weight:bold"><a name="asdf">ASDF Syntax:</a></p>
+                            <img src="img/asdf-rr.svg">
+
+                            <p style="font-size: 14px; font-weight:bold"><a name="add-info">add-info:</a></p>
+                            <img src="img/asdf-add-info-rr.svg">
+                        </p>
+
+                        </div>
+                    </div>
+                    </div>
+
+
                 </div><!--diagram-->
             </div><!--diagramContainer-->
         </div><!--diagramArea-->
