@@ -10,11 +10,20 @@
     --head-height: 59px;
 }
 
+@font-face {
+    font-family: 'stdfont';
+    src: url('../fonts/tgl.31034-1-normal.ttf') format('truetype');
+}
+
+.navbar-brand {
+    font-family: 'stdfont';
+    font-size: 28px;
+}
+
 body {
     font-size: 15px;
     line-height: 1.5; 
     background: var(--body-bg-color);
-    font-weight: 300;
     color: var(--bs-secondary);
 }
 
@@ -42,7 +51,6 @@ pre {
 
 #diagramInfo {
     font-family: var(--bs-body-font-family);
-    font-size: var(--bs-body-font-size);
     font-weight: var(--bs-body-font-weight);
     font-size: 12px;
     line-height: 1.2; 
@@ -236,7 +244,8 @@ circle.seq-num.related-signal:not(.related-highlight-off) {
     /* fill: var(--highlight-color2); */
 }
 text.seq-num {
-    font-weight: 400;
+    font-family: 'stdfont';
+    font-size: 16px;
 }
 text.seq-num.same-id-signal {
     /* fill: white; */
