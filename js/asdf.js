@@ -530,7 +530,7 @@ class AsdfViewModel  {
         this.model = model;
         this.model.subscribe(this);
         this.isResizing = false;
-        this.pageSize = 250;
+        this.pageSize = 200;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
