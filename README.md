@@ -30,7 +30,11 @@ Oh, hi
 
 ## ASDF Syntax
 
+### document:
+
 ![ASDF syntax](img/asdf-rr.svg)
+
+### add-info:
 
 ![ASDF addinfo syntax](img/asdf-add-info-rr.svg)
 
