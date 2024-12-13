@@ -760,6 +760,7 @@ class AsdfViewModel  {
 
     #setCurrPage(page) {
         this.currPage.set(page);
+        this.diagramContainer.scrollTop = 0;
         this.model.setRelevantSignals(page * this.pageSize - (page > 0 ? 1 : 0), this.pageSize);
     }
 
