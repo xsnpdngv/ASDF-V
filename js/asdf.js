@@ -498,9 +498,13 @@ class AsdfModel {
         this.diag.netSignalCount = this.diag.signals.filter(signal => signal.type === 'Signal').length;
     }
 
-    setRelevantSignals(start, count) {
+    initRelevantSignals(start, count) {
         this.relevantSignalStart.set(start);
         this.relevantSignalCount.set(count);
+    }
+
+    setRelevantSignals(start, count) {
+        this.initRelevantSignals(start, count);
         this.loadDiagramFromSrc();
     }
 
@@ -700,6 +704,7 @@ class AsdfViewModel  {
     }
 
     fileInputOnChange(event) {
+        this.#initPaginatorCurrPage(0);
         this.model.loadDiagramFromFile(event.target.files[0]);
     }
 
@@ -721,7 +726,7 @@ class AsdfViewModel  {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
         this.clickedSignalSeqNum.set(1);
         this.#resetScrollPosition();
-        this.currPage.set(0);
+        this.#initPaginatorCurrPage(0);
         this.model.reset();
     }
 
@@ -729,13 +734,13 @@ class AsdfViewModel  {
     #initPaginator() {
         this.paginator.style.visibility = 
             this.model.diag.signalCount > this.pageSize ? "visible" : "hidden";
-        this.#assessPaginator();
-        this.#updatePaginatorInfo();
+        this.#paginatorAssess();
+        this.#paginatorUpdateInfo();
     }
 
-    #assessPaginator() {
-        if (this.currPage.get() >= this.#pageCount()) {
-            this.#setCurrPage(this.#pageCount() - 1);
+    #paginatorAssess() {
+        if (this.currPage.get() >= this.#paginatorPageCount()) {
+            this.#paginatorSetCurrPage(this.#paginatorPageCount() - 1);
         }
         if (this.currPage.get() == 0) {
             this.pageFirstBtn.classList.add("disabled");
@@ -744,7 +749,7 @@ class AsdfViewModel  {
             this.pageFirstBtn.classList.remove("disabled");
             this.pagePrevBtn.classList.remove("disabled");
         }
-        if (this.currPage.get() == this.#pageCount() - 1) {
+        if (this.currPage.get() == this.#paginatorPageCount() - 1) {
             this.pageLastBtn.classList.add("disabled");
             this.pageNextBtn.classList.add("disabled");
         } else {
@@ -753,34 +758,40 @@ class AsdfViewModel  {
         }
     }
 
-    #updatePaginatorInfo() {
+    #paginatorUpdateInfo() {
         const pageInfo = document.getElementById("pageInfo");
-        pageInfo.innerHTML = (this.currPage.get() + 1) + "/" + this.#pageCount();
+        pageInfo.innerHTML = (this.currPage.get() + 1) + "/" + this.#paginatorPageCount();
     }
 
-    #setCurrPage(page) {
+    #initPaginatorCurrPage(page) {
+        this.currPage.set(page);
+        this.diagramContainer.scrollTop = 0;
+        this.model.initRelevantSignals(0, this.pageSize);
+    }
+
+    #paginatorSetCurrPage(page) {
         this.currPage.set(page);
         this.diagramContainer.scrollTop = 0;
         this.model.setRelevantSignals(page * this.pageSize - (page > 0 ? 1 : 0), this.pageSize);
     }
 
-    pageFirst() {
-        this.#setCurrPage(0);
+    paginatorPageFirst() {
+        this.#paginatorSetCurrPage(0);
     }
 
-    pagePrev() {
-        this.#setCurrPage(this.currPage.get() - (this.currPage.get() > 0));
+    paginatorPagePrev() {
+        this.#paginatorSetCurrPage(this.currPage.get() - (this.currPage.get() > 0));
     }
 
-    pageNext() {
-        this.#setCurrPage(this.currPage.get() + (this.currPage.get() < this.#pageCount() - 1));
+    paginatorPageNext() {
+        this.#paginatorSetCurrPage(this.currPage.get() + (this.currPage.get() < this.#paginatorPageCount() - 1));
     }
 
-    pageLast() {
-        this.#setCurrPage(this.#pageCount() - 1);
+    paginatorPageLast() {
+        this.#paginatorSetCurrPage(this.#paginatorPageCount() - 1);
     }
 
-    #pageCount() {
+    #paginatorPageCount() {
         return Math.max(1, Math.ceil(this.model.diag.netSignalCount / this.pageSize));
     }
 
