@@ -38,6 +38,10 @@ Oh, hi
 
 ![ASDF addinfo syntax](img/asdf-add-info-rr.svg)
 
+### name-value:
+
+![ASDF name-value syntax](img/asdf-name-value-rr.svg)
+
 ## Usage
 
 Open `index.html`, choose a file of the syntax shown above

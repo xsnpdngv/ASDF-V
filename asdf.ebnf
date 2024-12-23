@@ -1,4 +1,11 @@
 asdf ::= ( ( ( participant ( '->' | '->>' | '-->' | '-->>' )? )
            | ( 'note' ( 'left of' | 'right of' | "over"  )    ) ) participant ':' message ( add-info )? )+
 
-add-info ::= HTAB "~~~" ( JSON-line )? body HTAB "~~~"
+add-info ::= HTAB "~~~" ( "{" name-value ( "," name-value )* "}" )? body HTAB "~~~"
+
+name-value ::= ('"timestamp"' ":" JSON-string)
+             | ('"srcInstanceId"' ":" JSON-string)
+             | ('"dstInstanceId"' ":" JSON-string)
+             | ('"size"' ":" JSON-integer)
+             | ('"isSpecial"' ":" 'true')
+             | (JSON-string ":" JSON-value)
