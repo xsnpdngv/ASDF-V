@@ -382,7 +382,6 @@ class AsdfModel {
         this.file = null;
         this.diagSrc.set("");
         this.diag = null;
-        this.reset();
     }
 
     reset() {
