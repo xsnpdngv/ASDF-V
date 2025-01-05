@@ -118,6 +118,7 @@ pre {
     color: var(--bs-secondary);
     font-family: monospace;
     font-size: 12px;
+    cursor: pointer;
 }
 .page-item .page-link {
     outline: none;
