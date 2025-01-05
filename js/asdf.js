@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2024 Tamás Dezső (asdf.hu)
-https://github.com/xsnpdngv/asdfv
+https://github.com/xsnpdngv/asdf-v
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
