@@ -399,7 +399,13 @@ class AsdfModel {
         model.fileSize.set(file.size);
         const lastMod = new Date(file.lastModified);
         const shortTime = lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        model.fileLastMod.set(lastMod.getFullYear() + '-' + (lastMod.getMonth()+1) + '-' + lastMod.getDate() + ' ' + shortTime);
+        model.fileLastMod.set(lastMod.getFullYear() +
+                              '-' +
+                              String(lastMod.getMonth()+1).padStart(2, '0') +
+                              '-' +
+                              String(lastMod.getDate()).padStart(2, '0') +
+                              ' ' +
+                              shortTime);
 
         const reader = new FileReader();
         reader.onload = function(e) {
