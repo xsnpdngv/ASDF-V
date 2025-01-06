@@ -429,6 +429,7 @@ class AsdfModel {
             if (this.isShowIds) {
                 this.includeIdsInSignalMsgs(this.isShowIds, false);
             }
+            delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
         }
         this.#notify();
     }
