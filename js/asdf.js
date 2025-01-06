@@ -546,6 +546,7 @@ class AsdfViewModel  {
         this.fileInput = document.getElementById("fileInput");
         this.fileInputLabel = document.getElementById("fileInputLabel");
         this.toggles = {
+            "showTime": new PersistentToggle("showTimeToggle", false, this.#showTimeOnChange, this),
             "showIds": new PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
             "showInstance": new PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
             "showRelated": new PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
@@ -588,6 +589,7 @@ class AsdfViewModel  {
         this.#saveScrollPosition();
         this.#initPaginator();
         this.#updateToolbar();
+        this.#initShowTime(this.toggles["showTime"].uiElem.checked);
         this.#updateHead();
         this.#restoreHeadScrollPosition();
         setTimeout(() => { this.#updateDiagram(); }, 0); // let head render
@@ -637,6 +639,7 @@ class AsdfViewModel  {
         this.#restoreDiagramScrollPosition();
         this.#updateDiagramSvgElemLists();
         this.#drawSignalSeqNumCircles();
+        this.#drawTimestamps();
         this.#applySignalClick(this.clickedSignalSeqNum.get());
         this.#markActors();
         this.#addActorMoveBtns();
@@ -719,6 +722,15 @@ class AsdfViewModel  {
         this.fileInputLabel.textContent = this.model.fileName.get() + ' | ' +
                                           this.model.fileLastMod.get() + ' | ' +
                                           this.model.fileSize.get() + ' bytes';
+    }
+
+    #showTimeOnChange(vm, isOn) {
+        vm.#initShowTime(isOn);
+        vm.update();
+    }
+
+    #initShowTime(isOn) {
+        this.model.diag.setOffsetX(isOn ? 45 : 0);
     }
 
     #showIdsOnChange(vm, isOn) {
@@ -812,21 +824,21 @@ class AsdfViewModel  {
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             circle.setAttribute("cx", start.x);
             circle.setAttribute("cy", start.y);
-            circle.setAttribute("r", 13); // Radius of the circle
-            circle.setAttribute("fill", "white"); // Color of the circle
-            circle.setAttribute("stroke", "black"); // Border color
-            circle.setAttribute("stroke-width", 1); // Border width
-            circle.setAttribute("class", "seq-num"); // Border width
+            circle.setAttribute("r", 13);
+            circle.setAttribute("fill", "white");
+            circle.setAttribute("stroke", "black");
+            circle.setAttribute("stroke-width", 1);
+            circle.setAttribute("class", "seq-num");
 
             // Create a text element
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
             text.setAttribute("x", start.x);
             text.setAttribute("y", start.y);
-            text.setAttribute("text-anchor", "middle"); // Center text horizontally
-            text.setAttribute("dy", "0.35em"); // Center text vertically
-            text.setAttribute("fill", "black"); // Color of the text inside the circle
-            text.setAttribute("font-size", "11px"); // Border width
-            text.setAttribute("class", "seq-num"); // Border width
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("dy", "0.35em");
+            text.setAttribute("fill", "black");
+            text.setAttribute("font-size", "11px");
+            text.setAttribute("class", "seq-num");
             text.textContent = this.diag_signals[index].seqNum;
 
             // Append them to the SVG element
@@ -836,6 +848,50 @@ class AsdfViewModel  {
 
         this.seqNum_circles = document.querySelectorAll('circle.seq-num');
         this.seqNum_texts = document.querySelectorAll('text.seq-num');
+    }
+
+    #drawTimestamps() {
+        if ( ! this.toggles["showTime"].uiElem.checked) {
+            return;
+        }
+        let prevTS = ""; 
+        this.signal_paths.forEach((path, index) => {
+            const start = path.getPointAtLength(0);
+
+            let currTS = this.diag_signals[index].addinfoHead.timestamp.split('T')[1];
+            const { common, diff } = this.#getCommonAndDiffTsParts(currTS, prevTS);
+
+            // Create an SVG text element
+            const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            ts.setAttribute("x", 0);
+            ts.setAttribute("y", start.y+6);
+
+            const tspanCommon = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+            tspanCommon.setAttribute("class", "ts-common");
+            tspanCommon.textContent = common;
+
+            const tspanDiff = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+            tspanDiff.setAttribute("class", "ts-diff");
+            tspanDiff.textContent = diff;
+
+            ts.appendChild(tspanCommon);
+            ts.appendChild(tspanDiff);
+            path.parentNode.appendChild(ts);
+            prevTS = currTS;
+        });
+    }
+
+    #getCommonAndDiffTsParts(current, previous) {
+        let common = "";
+        let i = 0;
+
+        while (i < current.length && i < previous.length && current[i] === previous[i]) {
+            common += current[i];
+            i++;
+        }
+
+        const diff = current.slice(i);
+        return { common, diff };
     }
 
     #addSignalEventListeners() {

@@ -264,6 +264,16 @@ text.seq-num.same-id-signal {
     /* fill: darkgrey; */
     /* fill: gainsboro; */
 }
+tspan.ts-common {
+    font-family: 'stdfont';
+    font-size: 20px;
+    fill: darkgrey;
+}
+tspan.ts-diff {
+    font-family: 'stdfont';
+    font-size: 20px;
+    fill: black;
+}
 
 .move {
     cursor: pointer;
