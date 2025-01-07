@@ -274,6 +274,10 @@ tspan.ts-diff {
     font-size: 20px;
     fill: black;
 }
+path.gridline {
+    stroke: #f0f0f0;
+    stroke-width: 1px;
+}
 
 .move {
     cursor: pointer;

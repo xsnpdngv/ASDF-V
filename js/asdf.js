@@ -857,6 +857,15 @@ class AsdfViewModel  {
         if ( ! this.toggles["showTime"].uiElem.checked) {
             return;
         }
+
+        let svg = this.signal_paths[0].parentNode;
+
+        // add a background layer to append gridlines to
+        const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        bkgGroup.setAttribute("id", "background-layer");
+        svg.insertBefore(bkgGroup, svg.firstChild);
+        const width = svg.getAttribute("width");
+
         let prevTS = ""; 
         this.signal_paths.forEach((path, index) => {
             const start = path.getPointAtLength(0);
@@ -879,8 +888,13 @@ class AsdfViewModel  {
 
             ts.appendChild(tspanCommon);
             ts.appendChild(tspanDiff);
-            path.parentNode.appendChild(ts);
+            svg.appendChild(ts);
             prevTS = currTS;
+
+            const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            gridline.setAttribute("d", `M${75},${start.y} h${width}`);
+            gridline.setAttribute("class", "gridline");
+            bkgGroup.appendChild(gridline);
         });
     }
 
