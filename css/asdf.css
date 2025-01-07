@@ -264,19 +264,19 @@ text.seq-num.same-id-signal {
     /* fill: darkgrey; */
     /* fill: gainsboro; */
 }
-tspan.ts-common {
+text.ts {
     font-family: 'stdfont';
     font-size: 20px;
     fill: darkgrey;
 }
-tspan.ts-diff {
-    font-family: 'stdfont';
-    font-size: 20px;
-    fill: black;
-}
 path.gridline {
     stroke: #f0f0f0;
     stroke-width: 1px;
+}
+text.ts.clicked-ts {
+    fill: black;
+    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    /* font-weight: bold; */
 }
 
 .move {

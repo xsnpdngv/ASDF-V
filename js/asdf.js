@@ -658,6 +658,8 @@ class AsdfViewModel  {
         this.actor_texts = document.querySelectorAll('text.actor-text');
         this.seqNum_circles = document.querySelectorAll('circle.seq-num');
         this.seqNum_texts = document.querySelectorAll('text.seq-num');
+        this.timestamps = document.querySelectorAll('text.ts');
+        this.gridlines = document.querySelectorAll('path.gridline');
 
         if (this.model.diag) {
             this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
@@ -860,15 +862,13 @@ class AsdfViewModel  {
         }
 
         let svg = this.signal_paths[0].parentNode;
-        const timestampWidth = 75
-        const gridlineWidth = this.actor_paths[this.actor_paths.length-1].getPointAtLength(0).x - timestampWidth;
-
         // add a background layer to append gridlines to
         const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
         bkgGroup.setAttribute("id", "background-layer");
         svg.insertBefore(bkgGroup, svg.firstChild);
 
         let prevTS = ""; 
+        const gridlineWidth = this.actor_paths[this.actor_paths.length-1].getPointAtLength(0).x;
         this.signal_paths.forEach((path, index) => {
             const start = path.getPointAtLength(0);
 
@@ -878,26 +878,20 @@ class AsdfViewModel  {
             // Create an SVG text element
             const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
             ts.setAttribute("x", 0);
-            ts.setAttribute("y", start.y+6);
-
-            const tspanCommon = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-            tspanCommon.setAttribute("class", "ts-common");
-            tspanCommon.textContent = common;
-
-            const tspanDiff = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-            tspanDiff.setAttribute("class", "ts-diff");
-            tspanDiff.textContent = diff;
-
-            ts.appendChild(tspanCommon);
-            ts.appendChild(tspanDiff);
+            ts.setAttribute("y", start.y-6);
+            ts.setAttribute("class", "ts");
+            ts.textContent = currTS;
             svg.appendChild(ts);
             prevTS = currTS;
 
             const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            gridline.setAttribute("d", `M${timestampWidth},${start.y} h${gridlineWidth}`);
+            gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
             gridline.setAttribute("class", "gridline");
             bkgGroup.appendChild(gridline);
         });
+
+        this.timestamps = document.querySelectorAll('text.ts');
+        this.gridlines = document.querySelectorAll('path.gridline');
     }
 
     #getCommonAndDiffTsParts(current, previous) {
@@ -934,6 +928,7 @@ class AsdfViewModel  {
         this.clickedSignalSeqNum.set(seqNum);
         this.#showAddinfoContent(i);
         this.#markSignals(i);
+        this.#markTimestamps(i);
     }
 
     #indexOfSignal(seqNum) {
@@ -1023,6 +1018,14 @@ class AsdfViewModel  {
                 seqNum.classList.remove('clicked-signal-seq-num');
             }
         });
+    }
+
+    #markTimestamps(refIndex) {
+        this.timestamps.forEach(g => { g.classList.remove('clicked-ts'); });
+        if (refIndex < 0 || refIndex > this.timestamps.length - 1) {
+            return;
+        }
+        this.timestamps[refIndex].classList.add('clicked-ts');
     }
 
     // ---- actor ----
