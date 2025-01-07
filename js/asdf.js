@@ -215,11 +215,20 @@ class PersistentString {
     }
 
     #save() {
-        localStorage.setItem(this.key, this.value);
+        try {
+            localStorage.setItem(this.key, this.value);
+        } catch (e) {
+            // clear localStorage, so in-memory value can be used instead
+            try { localStorage.setItem(this.key, ""); } catch(e) {};
+        }
     }
 
     get() {
-        return localStorage.getItem(this.key);
+        try {
+            return localStorage.getItem(this.key) || this.value;
+        } catch {
+            return this.value;
+        }
     }
 
     set(newValue) {
