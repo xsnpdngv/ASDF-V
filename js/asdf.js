@@ -541,6 +541,7 @@ class AsdfViewModel  {
         this.model.subscribe(this);
         this.isResizing = false;
         this.pageSize = 200;
+        this.timeOffsetX = 45;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -730,7 +731,9 @@ class AsdfViewModel  {
     }
 
     #initShowTime(isOn) {
-        this.model.diag.setOffsetX(isOn ? 45 : 0);
+        if (this.model.diag) {
+            this.model.diag.setOffsetX(isOn ? this.timeOffsetX : 0);
+        }
     }
 
     #showIdsOnChange(vm, isOn) {
