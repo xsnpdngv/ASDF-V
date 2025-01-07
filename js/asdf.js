@@ -854,17 +854,19 @@ class AsdfViewModel  {
     }
 
     #drawTimestamps() {
-        if ( ! this.toggles["showTime"].uiElem.checked) {
+        if ( ! this.toggles["showTime"].uiElem.checked ||
+             ! this.signal_paths[0]) {
             return;
         }
 
         let svg = this.signal_paths[0].parentNode;
+        const timestampWidth = 75
+        const gridlineWidth = this.actor_paths[this.actor_paths.length-1].getPointAtLength(0).x - timestampWidth;
 
         // add a background layer to append gridlines to
         const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
         bkgGroup.setAttribute("id", "background-layer");
         svg.insertBefore(bkgGroup, svg.firstChild);
-        const width = svg.getAttribute("width");
 
         let prevTS = ""; 
         this.signal_paths.forEach((path, index) => {
@@ -892,7 +894,7 @@ class AsdfViewModel  {
             prevTS = currTS;
 
             const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            gridline.setAttribute("d", `M${75},${start.y} h${width}`);
+            gridline.setAttribute("d", `M${timestampWidth},${start.y} h${gridlineWidth}`);
             gridline.setAttribute("class", "gridline");
             bkgGroup.appendChild(gridline);
         });
