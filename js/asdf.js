@@ -545,10 +545,19 @@ class AsdfModel {
  * View Model: UI and Rendering
  * ============================== */
 class ActiveSignal {
+    #seqNum;
+
     constructor(name, signals) {
         this.signals = signals;
-        this.idx = -1;
-        this.seqNum = new PersistentInt(name, -1);
+        this.#seqNum = new PersistentInt(name, -1);
+    }
+
+    setBySeqNum(seqNum) {
+        this.#seqNum.set(seqNum);
+    }
+
+    reset() {
+        this.setBySeqNum(-1);
     }
 
     setByIdx(idx) {
@@ -556,36 +565,33 @@ class ActiveSignal {
             console.warn("Attempt to set Active Signal to invalid index");
             return;
         }
-        this.idx = idx;
-        this.seqNum = this.signals[idx].seqNum;
+        this.setBySeqNum(this.signals[idx].seqNum);
     }
 
-    setBySeqNum(seqNum) {
-        let i = this.#indexOf(seqNum);
-        if (i < 0) {
-            console.warn("Attempt to set Active Signal to non-existent sequence number");
-            return;
-        }
-        this.seqNum = seqNum;
-        this.idx = i;
+    getIdx() {
+        return this.#indexOf(this.#seqNum.get());
+    }
+
+    getSeqNum() {
+        return this.#seqNum.get();
     }
 
     #indexOf(seqNum) {
-        let i = this.signals.length;
-        while ( i --> 0 ) {
-            if (seqNum == this.signals[i].seqNum) {
+        let idx = this.signals.length;
+        while ( idx --> 0 ) {
+            if (seqNum == this.signals[idx].seqNum) {
                 break;
             }
         }
-        return i;
+        return idx;
     }
 
     setNext() {
-        this.setByIdx(this.idx + 1);
+        this.setByIdx(this.getIdx() + 1);
     }
 
     setPrev() {
-        this.setByIdx(this.idx - 1);
+        this.setByIdx(this.getIdx() - 1);
     }
 
     setFirst() {
@@ -597,11 +603,11 @@ class ActiveSignal {
     }
 
     isFirst() {
-        return this.idx == 0;
+        return this.getIdx() == 0;
     }
 
     isLast() {
-        return this.idx == this.signals.length - 1;
+        return this.getIdx() == this.signals.length - 1;
     }
 
     #isValidIdx(idx) {
@@ -609,7 +615,7 @@ class ActiveSignal {
     }
 
     isValid() {
-        return this.#isValidIdx(this.#indexOf(this.seqNum));
+        return this.#isValidIdx(this.getIdx());
     }
 }
 
@@ -645,7 +651,6 @@ class AsdfViewModel  {
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
         this.activeSignal = new ActiveSignal("selectedSignal", this.diag_signals);
-        this.clickedSignalSeqNum = new PersistentInt("clickedSigNum", -1);
         this.actorOrder = new PersistentArray("actorOrderVM");
         this.currPage = new PersistentInt("currPage", 0);
     }
@@ -708,13 +713,13 @@ class AsdfViewModel  {
     #selectFirstSignal() {
         this.activeSignal.setFirst();
         this.#shiftToSelectedSignal();
-        this.#applySignalClick(this.activeSignal.seqNum);
+        this.#applySignalClick();
     }
 
     #selectLastSignal() {
         this.activeSignal.setLast();
         this.#shiftToSelectedSignal();
-        this.#applySignalClick(this.activeSignal.seqNum);
+        this.#applySignalClick();
     }
 
     #selectNextSignal() {
@@ -728,7 +733,7 @@ class AsdfViewModel  {
                 this.activeSignal.setNext();
                 this.#rollWindow(+1);
             }
-            this.#applySignalClick(this.activeSignal.seqNum);
+            this.#applySignalClick();
         }
     }
 
@@ -743,14 +748,14 @@ class AsdfViewModel  {
                 this.activeSignal.setPrev();
                 this.#rollWindow(-1);
             }
-            this.#applySignalClick(this.activeSignal.seqNum);
+            this.#applySignalClick();
         }
     }
 
     #isSignalOutOfSight(sig) {
         const headHeight = 59;
-        const signalHeight = this.#signalDistance(sig.idx, sig.idx+1);
-        const sigY = this.signal_paths[sig.idx].getPointAtLength(0).y - this.diagramContainer.scrollTop;
+        const signalHeight = this.#signalDistance(sig.getIdx(), sig.getIdx()+1);
+        const sigY = this.signal_paths[sig.getIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
         return sigY - headHeight - signalHeight < 0 ||
                sigY > this.diagramContainer.offsetHeight;
     }
@@ -758,7 +763,7 @@ class AsdfViewModel  {
     #rollWindow(offset) {
         const headHeight = 59;
         const margin = 100; // let is be one signal height
-        const sigY = this.signal_paths[this.activeSignal.idx].getPointAtLength(0).y - this.diagramContainer.scrollTop;
+        const sigY = this.signal_paths[this.activeSignal.getIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
         if (offset < 0 && sigY < headHeight + margin ||
             offset > 0 && sigY > this.diagramContainer.offsetHeight - margin) {
             this.#scrollSignals(offset)
@@ -776,14 +781,14 @@ class AsdfViewModel  {
     }
 
     #scrollSignals(offset) {
-        this.diagramContainer.scrollTop += this.#signalDistance(this.activeSignal.idx, this.activeSignal.idx+offset);
+        this.diagramContainer.scrollTop += this.#signalDistance(this.activeSignal.getIdx(), this.activeSignal.getIdx()+offset);
     }
 
     #shiftToSelectedSignal() {
         if ( ! this.activeSignal.isValid()) {
             return;
         }
-        this.diagramContainer.scrollTop = this.signal_paths[this.activeSignal.idx].getPointAtLength(0).y -
+        this.diagramContainer.scrollTop = this.signal_paths[this.activeSignal.getIdx()].getPointAtLength(0).y -
                                           this.diagramContainer.offsetHeight / 2;
     }
 
@@ -832,7 +837,7 @@ class AsdfViewModel  {
         this.#updateDiagramSvgElemLists();
         this.#drawSignalSeqNumCircles();
         this.#drawTimestamps();
-        this.#applySignalClick(this.clickedSignalSeqNum.get());
+        this.#applySignalClick();
         this.#markActors();
         this.#addActorMoveBtns();
         this.#addSignalEventListeners();
@@ -918,7 +923,7 @@ class AsdfViewModel  {
 
     fileInputOnChange(event) {
         this.#initPaginatorCurrPage(0);
-        this.clickedSignalSeqNum.set(1);
+        this.activeSignal.setBySeqNum(1);
         this.model.loadDiagramFromFile(event.target.files[0]);
     }
 
@@ -944,15 +949,15 @@ class AsdfViewModel  {
     }
 
     #markSignalsHandler(vm) {
-        vm.#markSignals(vm.#indexOfSignal(vm.clickedSignalSeqNum.get()));
+        vm.#markSignals(vm.activeSignal.getIdx());
     }
 
     resetToolbarOnClick() {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
-        this.clickedSignalSeqNum.set(1);
         this.#resetScrollPosition();
         this.#initPaginatorCurrPage(0);
         this.model.reset();
+        this.activeSignal.setBySeqNum(1);
     }
 
     // ---- paginator ----
@@ -1112,35 +1117,23 @@ class AsdfViewModel  {
         this.signal_texts.forEach((txt, index) => {
             txt.onclick = () => this.#signalTextOnClick(index);
             txt.onmouseenter = () => this.#showAddinfoContent(index);
-            txt.onmouseleave = () => this.#showAddinfoContent(this.#indexOfSignal(this.clickedSignalSeqNum.get()));
+            txt.onmouseleave = () => this.#showAddinfoContent(this.activeSignal.getIdx());
         });
     }
 
     #signalTextOnClick(index) {
-        let seqNum = this.diag_signals[index].seqNum;
-        if(this.clickedSignalSeqNum.get() == seqNum) {
-           seqNum = -1;
+        if(this.activeSignal.getIdx() == index) {
+            this.activeSignal.reset();
+        } else {
+            this.activeSignal.setByIdx(index);
         }
-        this.#applySignalClick(seqNum);
+        this.#applySignalClick();
     }
 
-    #applySignalClick(seqNum) {
-        let i = this.#indexOfSignal(seqNum);
-        this.clickedSignalSeqNum.set(seqNum);
-        this.activeSignal.setBySeqNum(seqNum);
-        this.#showAddinfoContent(i);
-        this.#markSignals(i);
-        this.#markTimestamps(i);
-    }
-
-    #indexOfSignal(seqNum) {
-        let i = this.diag_signals.length;
-        while ( i --> 0 ) {
-            if (seqNum == this.diag_signals[i].seqNum) {
-                break;
-            }
-        }
-        return i;
+    #applySignalClick() {
+        this.#showAddinfoContent(this.activeSignal.getIdx());
+        this.#markSignals(this.activeSignal.getIdx());
+        this.#markTimestamps(this.activeSignal.getIdx());
     }
 
     #showAddinfoContent(index) {
