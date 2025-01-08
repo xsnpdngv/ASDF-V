@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2024 Tamás Dezső (asdf.hu)
-https://github.com/xsnpdngv/asdf-v
+https://github.com/xsnpdngv/ASDF-V
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
@@ -282,8 +282,8 @@ class PersistentInt {
         return this.#load();
     }
 
-    set(newValue) {
-        if (!Number.isInteger(newValue)) {
+    set(newValue = 0) {
+        if ( ! Number.isInteger(newValue)) {
             throw new Error("PersistentInt can only store integer values.");
         }
         this.value = newValue;
@@ -291,29 +291,29 @@ class PersistentInt {
     }
 
     increment(amount = 1) {
-        this.set(this.get() + amount);
+        if ( ! Number.isInteger(amount)) {
+            throw new Error("Can only increment with integer values.");
+        }
+        this.set(this.value + amount);
     }
 
     decrement(amount = 1) {
-        this.set(this.get() - amount);
+        if ( ! Number.isInteger(amount)) {
+            throw new Error("Can only decrement with integer values.");
+        }
+        this.set(this.value - amount);
     }
 
-    clear(defaultValue = 0) {
-        this.set
+    clear() {
+        this.set();
     }
 
     add(value) {
-        if (!Number.isInteger(value)) {
-            throw new Error("Can only add integer values.");
-        }
-        this.set(this.get() + value);
+        this.increment(value);
     }
 
     subtract(value) {
-        if (!Number.isInteger(value)) {
-            throw new Error("Can only subtract integer values.");
-        }
-        this.set(this.get() - value);
+        this.decrement(value);
     }
 }
 
@@ -544,6 +544,75 @@ class AsdfModel {
 /* ==============================
  * View Model: UI and Rendering
  * ============================== */
+class ActiveSignal {
+    constructor(name, signals) {
+        this.signals = signals;
+        this.idx = -1;
+        this.seqNum = new PersistentInt(name, -1);
+    }
+
+    setByIdx(idx) {
+        if (idx < 0 || idx > this.signals.length - 1) {
+            console.warn("Attempt to set Active Signal to invalid index");
+            return;
+        }
+        this.idx = idx;
+        this.seqNum = this.signals[idx].seqNum;
+    }
+
+    setBySeqNum(seqNum) {
+        let i = this.#indexOf(seqNum);
+        if (i < 0) {
+            console.warn("Attempt to set Active Signal to non-existent sequence number");
+            return;
+        }
+        this.seqNum = seqNum;
+        this.idx = i;
+    }
+
+    #indexOf(seqNum) {
+        let i = this.signals.length;
+        while ( i --> 0 ) {
+            if (seqNum == this.signals[i].seqNum) {
+                break;
+            }
+        }
+        return i;
+    }
+
+    setNext() {
+        this.setByIdx(this.idx + 1);
+    }
+
+    setPrev() {
+        this.setByIdx(this.idx - 1);
+    }
+
+    setFirst() {
+        this.setByIdx(0);
+    }
+
+    setLast() {
+        this.setByIdx(this.signals.length - 1);
+    }
+
+    isFirst() {
+        return this.idx == 0;
+    }
+
+    isLast() {
+        return this.idx == this.signals.length - 1;
+    }
+
+    #isValidIdx(idx) {
+        return 0 <= idx && idx < this.signals.length;
+    }
+
+    isValid() {
+        return this.#isValidIdx(this.#indexOf(this.seqNum));
+    }
+}
+
 class AsdfViewModel  {
     constructor(model) {
         this.model = model;
@@ -574,15 +643,16 @@ class AsdfViewModel  {
         this.pageLastBtn = document.getElementById("pageLast");
 
         // view state
-        this.clickedSignalSeqNum = new PersistentInt("clickedSignalIdx", -1);
+        this.diag_signals = []; // helper array of signals of original diagram (without notes)
+        this.activeSignal = new ActiveSignal("selectedSignal", this.diag_signals);
+        this.clickedSignalSeqNum = new PersistentInt("clickedSigNum", -1);
         this.actorOrder = new PersistentArray("actorOrderVM");
         this.currPage = new PersistentInt("currPage", 0);
-
-        this.diag_signals = []; // helper array of signals of original diagram (without notes)
     }
 
     init() {
         this.model.init(this.toggles["showIds"].uiElem.checked);
+        this.#addDocumentEventListeners();
         this.#addDividerEventListeners();
         this.#addScrollEventListeners();
         this.#addDiagramEventListeners();
@@ -602,7 +672,119 @@ class AsdfViewModel  {
         this.#initShowTime(this.toggles["showTime"].uiElem.checked);
         this.#updateHead();
         this.#restoreHeadScrollPosition();
-        setTimeout(() => { this.#updateDiagram(); }, 0); // let head render
+        setTimeout(() => { this.#updateDiagram(); }, 0); // let head render before
+    }
+
+    #addDocumentEventListeners() {
+        this.#addKeyboardShortcuts();
+    }
+
+    #addKeyboardShortcuts() {
+        let vm = this;
+        let keySeq = "";
+        document.addEventListener("keydown", function (event) {
+            keySeq += event.key;
+
+            if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
+            else if (event.key === "G") { vm.#selectLastSignal(); }
+            else if (event.key === "j") { vm.#selectNextSignal(); }
+            else if (event.key === "k") { vm.#selectPrevSignal(); }
+            else if (event.shiftKey && event.key === "J") { vm.#shiftToNextSignal(); }
+            else if (event.shiftKey && event.key === "K") { vm.#shiftToPrevSignal(); }
+            else if (keySeq.endsWith("zz")) { vm.#shiftToSelectedSignal(); }
+            else if (event.key === "c") { vm.#shiftToSelectedSignal(); }
+            else if (event.key === "/") { console.log("'/' was pressed!"); }
+            else if (event.shiftKey && event.key === "H") { vm.paginatorPageFirst(); }
+            else if (event.shiftKey && event.key === "L") { vm.paginatorPageLast(); }
+            else if (event.key === '<' || event.key === "h") { vm.paginatorPagePrev(); }
+            else if (event.key === '>' || event.key === "l") { vm.paginatorPageNext(); }
+            else if (event.key === "h") { console.log("'h' was pressed!"); }
+            else {
+                setTimeout(() => { keySeq = ""; }, 500);
+            }
+        });
+    }
+
+    #selectFirstSignal() {
+        this.activeSignal.setFirst();
+        this.#shiftToSelectedSignal();
+        this.#applySignalClick(this.activeSignal.seqNum);
+    }
+
+    #selectLastSignal() {
+        this.activeSignal.setLast();
+        this.#shiftToSelectedSignal();
+        this.#applySignalClick(this.activeSignal.seqNum);
+    }
+
+    #selectNextSignal() {
+        if ( ! this.activeSignal.isValid()) {
+            this.#selectFirstSignal();
+        } else {
+            if (this.#isSignalOutOfSight(this.activeSignal)) {
+                this.activeSignal.setNext();
+                this.#shiftToSelectedSignal();
+            } else {
+                this.activeSignal.setNext();
+                this.#rollWindow(+1);
+            }
+            this.#applySignalClick(this.activeSignal.seqNum);
+        }
+    }
+
+    #selectPrevSignal() {
+        if ( ! this.activeSignal.isValid()) {
+            this.#selectLastSignal();
+        } else {
+            if (this.#isSignalOutOfSight(this.activeSignal)) {
+                this.activeSignal.setPrev();
+                this.#shiftToSelectedSignal();
+            } else {
+                this.activeSignal.setPrev();
+                this.#rollWindow(-1);
+            }
+            this.#applySignalClick(this.activeSignal.seqNum);
+        }
+    }
+
+    #isSignalOutOfSight(sig) {
+        const headHeight = 59;
+        const signalHeight = this.#signalDistance(sig.idx, sig.idx+1);
+        const sigY = this.signal_paths[sig.idx].getPointAtLength(0).y - this.diagramContainer.scrollTop;
+        return sigY - headHeight - signalHeight < 0 ||
+               sigY > this.diagramContainer.offsetHeight;
+    }
+
+    #rollWindow(offset) {
+        const headHeight = 59;
+        const margin = 100; // let is be one signal height
+        const sigY = this.signal_paths[this.activeSignal.idx].getPointAtLength(0).y - this.diagramContainer.scrollTop;
+        if (offset < 0 && sigY < headHeight + margin ||
+            offset > 0 && sigY > this.diagramContainer.offsetHeight - margin) {
+            this.#scrollSignals(offset)
+        }
+    }
+
+    #shiftToNextSignal() {
+        this.#selectNextSignal();
+        this.#scrollSignals(+1);
+    }
+
+    #shiftToPrevSignal() {
+        this.#selectPrevSignal();
+        this.#scrollSignals(-1);
+    }
+
+    #scrollSignals(offset) {
+        this.diagramContainer.scrollTop += this.#signalDistance(this.activeSignal.idx, this.activeSignal.idx+offset);
+    }
+
+    #shiftToSelectedSignal() {
+        if ( ! this.activeSignal.isValid()) {
+            return;
+        }
+        this.diagramContainer.scrollTop = this.signal_paths[this.activeSignal.idx].getPointAtLength(0).y -
+                                          this.diagramContainer.offsetHeight / 2;
     }
 
     // ---- diagram head ----
@@ -672,7 +854,17 @@ class AsdfViewModel  {
 
         if (this.model.diag) {
             this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
+            this.activeSignal.signals = this.diag_signals;
         }
+    }
+
+    #signalDistance(i, j) {
+        if (i < 0 || i >= this.signal_paths.length-1 ||
+            j < 0 || j >= this.signal_paths.length-1) {
+            return 0;
+        }
+        return this.signal_paths[j].getPointAtLength(0).y -
+               this.signal_paths[i].getPointAtLength(0).y;
     }
 
     // ---- scroll ----
@@ -935,6 +1127,7 @@ class AsdfViewModel  {
     #applySignalClick(seqNum) {
         let i = this.#indexOfSignal(seqNum);
         this.clickedSignalSeqNum.set(seqNum);
+        this.activeSignal.setBySeqNum(seqNum);
         this.#showAddinfoContent(i);
         this.#markSignals(i);
         this.#markTimestamps(i);
