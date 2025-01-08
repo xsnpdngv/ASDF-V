@@ -327,17 +327,21 @@ class PersistentToggle {
 
         this.uiElem = document.getElementById(this.uiElemId);
         this.uiElem.checked = this.value.get();
-        this.uiElem.onchange = () => this.toggle(this.uiElem.checked);
+        this.uiElem.onchange = () => this.set(this.uiElem.checked);
     }
 
-    toggle(isOn) {
+    toggle() {
+        this.set( ! this.uiElem.checked);
+    }
+
+    set(isOn) {
         this.value.set(isOn);
         this.uiElem.checked = isOn;
         this.onChangeHandler(this.onChangeArg, isOn);
     }
 
     reset() {
-        this.toggle(false);
+        this.set(false);
     }
 }
 
@@ -704,6 +708,10 @@ class AsdfViewModel  {
             else if (event.key === '<' || event.key === "h") { vm.paginatorPagePrev(); }
             else if (event.key === '>' || event.key === "l") { vm.paginatorPageNext(); }
             else if (event.key === "h") { console.log("'h' was pressed!"); }
+            else if (event.shiftKey && event.key === "T") { vm.toggles['showTime'].toggle(); }
+            else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
+            else if (event.shiftKey && event.key === "I") { vm.toggles['showInstance'].toggle(); }
+            else if (event.shiftKey && event.key === "R") { vm.toggles['showRelated'].toggle(); }
             else {
                 setTimeout(() => { keySeq = ""; }, 500);
             }
