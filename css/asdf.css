@@ -83,7 +83,7 @@ pre {
     font-size: 12px;
 }
 
-#diagramInfo {
+.info-style {
     font-family: var(--bs-body-font-family);
     font-weight: var(--bs-body-font-weight);
     font-size: 12px;
