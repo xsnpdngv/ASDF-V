@@ -848,7 +848,7 @@ class AsdfViewModel  {
         this.diagramSearch.style.visibility = "hidden";
     }
 
-    #performSearchSignals() {
+    #performSearchSignals(dir = 1) {
         this.diagramSearchInput.blur();
         let searchPattern = this.diagramSearchInput.value;
         this.fullDiag = this.model.sideLoadDiagram();
@@ -858,16 +858,19 @@ class AsdfViewModel  {
                                                                        signal.actorB.name.includes(searchPattern) ||
                                                                        (signal.meta && signal.meta.includes(searchPattern)) ||
                                                                        (signal.addinfo && signal.addinfo.includes(searchPattern))));
-        this.currHit.setByIdx(0);
         this.#isLastSearchValid = true;
         if (this.currHit.signals.length > 0) {
-            this.#gotoNextHit();
+            if (dir < 0) {
+                this.#gotoPrevHit();
+            } else {
+                this.#gotoNextHit();
+            }
         }
     }
 
-    #gotoCurrHit() {
+    #gotoCurrHit(dir = 1) {
         if ( ! this.#isLastSearchValid) {
-            this.#performSearchSignals();
+            this.#performSearchSignals(dir);
             return;
         }
         this.activeSignal.setBySeqNum(this.currHit.getSeqNum());
@@ -883,8 +886,9 @@ class AsdfViewModel  {
 
     #gotoNextHit() {
         this.currHit.setFirst();
-        while (this.activeSignal.isValid() ? this.currHit.getSeqNum() <= this.activeSignal.getSeqNum()
-                                           : this.currHit.getSeqNum() < this.diag_signals[0].seqNum) {
+        const limit = this.activeSignal.isValid() ? this.activeSignal.getSeqNum()
+                                                  : this.diag_signals[0].seqNum - 1;
+        while (this.currHit.getSeqNum() <= limit) {
             if (this.currHit.isLast()) {
                 this.currHit.setFirst();
                 break;
@@ -896,15 +900,16 @@ class AsdfViewModel  {
 
     #gotoPrevHit() {
         this.currHit.setLast();
-        while (this.activeSignal.isValid() ? this.currHit.getSeqNum() >= this.activeSignal.getSeqNum()
-                                           : this.currHit.getSeqNum() > this.diag_signals[this.diag_signals.length-1].seqNum) {
+        const limit = this.activeSignal.isValid() ? this.activeSignal.getSeqNum()
+                                                  : this.diag_signals[this.diag_signals.length-1].seqNum + 1;
+        while (this.currHit.getSeqNum() >= limit) {
             if (this.currHit.isFirst()) {
                 this.currHit.setLast();
                 break;
             }
             this.currHit.setPrev();
         }
-        this.#gotoCurrHit();
+        this.#gotoCurrHit(-1);
     }
 
     #globalIndexOf(seqNum) {
