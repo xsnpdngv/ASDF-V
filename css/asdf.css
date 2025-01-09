@@ -63,7 +63,7 @@ pre {
     position: fixed;
     top: 0;
     right: 0;
-    width: 30%;
+    width: 300px;
     z-index: 10000;
     background-color: var(--body-bg-color);
     padding: 15px;

@@ -691,6 +691,7 @@ class AsdfViewModel  {
     }
 
     update() {
+        this.#isLastSearchValid = false;
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
         this.#initPaginator();
@@ -851,7 +852,12 @@ class AsdfViewModel  {
         this.diagramSearchInput.blur();
         let searchPattern = this.diagramSearchInput.value;
         this.fullDiag = this.model.sideLoadDiagram();
-        this.currHit.signals = this.fullDiag.signals.filter(signal => signal.message.includes(searchPattern));
+        this.currHit.signals = this.fullDiag.signals.filter(signal => signal.type === 'Signal' &&
+                                                                      (signal.message.includes(searchPattern) ||
+                                                                       signal.actorA.name.includes(searchPattern) ||
+                                                                       signal.actorB.name.includes(searchPattern) ||
+                                                                       (signal.meta && signal.meta.includes(searchPattern)) ||
+                                                                       (signal.addinfo && signal.addinfo.includes(searchPattern))));
         this.currHit.setByIdx(0);
         this.#isLastSearchValid = true;
         if (this.currHit.signals.length > 0) {
@@ -866,7 +872,7 @@ class AsdfViewModel  {
         }
         this.activeSignal.setBySeqNum(this.currHit.getSeqNum());
         let page = Math.floor(this.#globalIndexOf(this.currHit.getSeqNum()) / this.pageSize);
-        if (page != this.currPage.get()) {
+        if (page >= 0 && page != this.currPage.get()) {
             this.#paginatorSetCurrPage(page);
         }
         setTimeout(() => {
@@ -877,44 +883,26 @@ class AsdfViewModel  {
 
     #gotoNextHit() {
         this.currHit.setFirst();
-        if ( ! this.activeSignal.isValid()) {
-            while (this.currHit.getSeqNum() < this.diag_signals[0].seqNum) {
-                if (this.currHit.isLast()) {
-                    this.currHit.setFirst();
-                    break;
-                }
-                this.currHit.setNext();
+        while (this.activeSignal.isValid() ? this.currHit.getSeqNum() <= this.activeSignal.getSeqNum()
+                                           : this.currHit.getSeqNum() < this.diag_signals[0].seqNum) {
+            if (this.currHit.isLast()) {
+                this.currHit.setFirst();
+                break;
             }
-        } else {
-            while (this.currHit.getSeqNum() <= this.activeSignal.getSeqNum()) {
-                if (this.currHit.isLast()) {
-                    this.currHit.setFirst();
-                    break;
-                }
-                this.currHit.setNext();
-            }
+            this.currHit.setNext();
         }
         this.#gotoCurrHit();
     }
 
     #gotoPrevHit() {
         this.currHit.setLast();
-        if ( ! this.activeSignal.isValid()) {
-            while (this.currHit.getSeqNum() > this.diag_signals[this.diag_signals.length-1].seqNum) {
-                if (this.currHit.isFirst()) {
-                    this.currHit.setLast();
-                    break;
-                }
-                this.currHit.setPrev();
+        while (this.activeSignal.isValid() ? this.currHit.getSeqNum() >= this.activeSignal.getSeqNum()
+                                           : this.currHit.getSeqNum() > this.diag_signals[this.diag_signals.length-1].seqNum) {
+            if (this.currHit.isFirst()) {
+                this.currHit.setLast();
+                break;
             }
-        } else {
-            while (this.currHit.getSeqNum() >= this.activeSignal.getSeqNum()) {
-                if (this.currHit.isFirst()) {
-                    this.currHit.setLast();
-                    break;
-                }
-                this.currHit.setPrev();
-            }
+            this.currHit.setPrev();
         }
         this.#gotoCurrHit();
     }
@@ -1374,7 +1362,6 @@ class AsdfViewModel  {
 
     #actorTextOnClick(index) {
         this.model.toggleActor(index);
-        this.#isLastSearchValid = false;
     }
 
     #addActorMoveBtns() {
