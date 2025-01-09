@@ -725,6 +725,8 @@ class AsdfViewModel  {
 
             keySeq += event.key;
 
+            vm.#hideSearchInput();
+
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
             else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (event.key === "j") { vm.#selectNextSignal(); }
@@ -859,6 +861,7 @@ class AsdfViewModel  {
                                                                        (signal.meta && signal.meta.includes(searchPattern)) ||
                                                                        (signal.addinfo && signal.addinfo.includes(searchPattern))));
         this.#isLastSearchValid = true;
+        this.#showSearchStats();
         if (this.currHit.signals.length > 0) {
             if (dir < 0) {
                 this.#gotoPrevHit();
@@ -866,6 +869,11 @@ class AsdfViewModel  {
                 this.#gotoNextHit();
             }
         }
+    }
+
+    #showSearchStats() {
+        const searchStats = document.getElementById("searchStats");
+        searchStats.innerHTML = `${this.currHit.getIdx() + 1} /<BR>${this.currHit.signals.length}`;
     }
 
     #gotoCurrHit(dir = 1) {
@@ -878,6 +886,7 @@ class AsdfViewModel  {
         if (page >= 0 && page != this.currPage.get()) {
             this.#paginatorSetCurrPage(page);
         }
+        this.#showSearchStats();
         setTimeout(() => {
             this.#shiftToSelectedSignal();
             this.#applySignalClick();
@@ -885,6 +894,9 @@ class AsdfViewModel  {
     }
 
     #gotoNextHit() {
+        if (this.currHit.signals.length < 1) {
+            return;
+        }
         this.currHit.setFirst();
         const limit = this.activeSignal.isValid() ? this.activeSignal.getSeqNum()
                                                   : this.diag_signals[0].seqNum - 1;
@@ -899,6 +911,9 @@ class AsdfViewModel  {
     }
 
     #gotoPrevHit() {
+        if (this.currHit.signals.length < 1) {
+            return;
+        }
         this.currHit.setLast();
         const limit = this.activeSignal.isValid() ? this.activeSignal.getSeqNum()
                                                   : this.diag_signals[this.diag_signals.length-1].seqNum + 1;
