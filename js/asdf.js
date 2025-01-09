@@ -862,13 +862,8 @@ class AsdfViewModel  {
                                                                        (signal.addinfo && signal.addinfo.includes(searchPattern))));
         this.#isLastSearchValid = true;
         this.#showSearchStats();
-        if (this.currHit.signals.length > 0) {
-            if (dir < 0) {
-                this.#gotoPrevHit();
-            } else {
-                this.#gotoNextHit();
-            }
-        }
+        if (dir < 0) { this.#gotoPrevHit(); }
+        else { this.#gotoNextHit(); }
     }
 
     #showSearchStats() {
