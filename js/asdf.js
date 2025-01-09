@@ -428,6 +428,12 @@ class AsdfModel {
         reader.readAsText(file);
     }
 
+    sideLoadDiagram() {
+        let diag = Diagram.parse(this.diagSrc.get());
+        this.#removeSignalsOfFilteredActors(diag);
+        return diag;
+    }
+
     loadDiagramFromSrc() {
         if (this.diagSrc.length() > 0) {
             this.diag = Diagram.parse(this.diagSrc.get());
@@ -436,7 +442,7 @@ class AsdfModel {
                 let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
-            this.#removeSignalsOfFilteredActors();
+            this.#removeSignalsOfFilteredActors(this.diag);
             this.#removeIrrelevantSignals();
             this.#countActorSignals();
             if (this.isShowIds) {
@@ -504,17 +510,20 @@ class AsdfModel {
         this.loadDiagramFromSrc();
     }
 
-    #removeSignalsOfFilteredActors() {
+    #removeSignalsOfFilteredActors(diag) {
+        if ( ! diag || ! diag.signals || ! diag.signals.length) {
+            return;
+        }
         let s;
-        for (let i = this.diag.signals.length - 1; i >= 0; i--) {
-            s = this.diag.signals[i];
+        for (let i = diag.signals.length - 1; i >= 0; i--) {
+            s = diag.signals[i];
             if ((s.type === 'Signal' && (this.filteredActors.has(s.actorA.name) ||
                                          this.filteredActors.has(s.actorB.name))) ||
                 (s.type === 'Note' && this.filteredActors.has(s.actor.name))) {
-                 this.diag.signals.splice(i, 1);
+                 diag.signals.splice(i, 1);
             }
         }
-        this.diag.netSignalCount = this.diag.signals.filter(signal => signal.type === 'Signal').length;
+        diag.netSignalCount = this.diag.signals.filter(signal => signal.type === 'Signal').length;
     }
 
     initRelevantSignals(start, count) {
@@ -624,12 +633,17 @@ class ActiveSignal {
 }
 
 class AsdfViewModel  {
+    #signal_hits;
+    #isLastSearchValid;
+
     constructor(model) {
         this.model = model;
         this.model.subscribe(this);
         this.isResizing = false;
         this.pageSize = 200;
         this.timeOffsetX = 45;
+        this.#signal_hits = [];
+        this.#isLastSearchValid = false;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -642,6 +656,8 @@ class AsdfViewModel  {
         }
 
         // placeholders
+        this.diagramSearch = document.getElementById("diagramSearch");
+        this.diagramSearchInput = document.getElementById("diagramSearchInput");
         this.diagramHeadContainer = document.getElementById("diagramHeadContainer");
         this.diagramHeadDiv = document.getElementById("diagramHead");
         this.diagramContainer = document.getElementById("diagramContainer");
@@ -655,6 +671,7 @@ class AsdfViewModel  {
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
         this.activeSignal = new ActiveSignal("selectedSignal", this.diag_signals);
+        this.currHit = new ActiveSignal("activeHit", this.#signal_hits);
         this.actorOrder = new PersistentArray("actorOrderVM");
         this.currPage = new PersistentInt("currPage", 0);
     }
@@ -692,6 +709,19 @@ class AsdfViewModel  {
         let vm = this;
         let keySeq = "";
         document.addEventListener("keydown", function (event) {
+
+            if (document.activeElement === vm.diagramSearchInput) {
+                if (event.key === "Enter") { vm.#performSearchSignals(); }
+                if (event.key === "Escape") { vm.#hideSearchInput(); }
+                return;
+            }
+            if (vm.diagramSearch.style.visibility == "visible") {
+                if (event.key === "Escape") {
+                    vm.#hideSearchInput();
+                    return;
+                }
+            }
+
             keySeq += event.key;
 
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
@@ -702,11 +732,13 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "K") { vm.#shiftToPrevSignal(); }
             else if (keySeq.endsWith("zz")) { vm.#shiftToSelectedSignal(); }
             else if (event.key === "c") { vm.#shiftToSelectedSignal(); }
-            else if (event.key === "/") { console.log("'/' was pressed!"); }
             else if (event.shiftKey && event.key === "H") { vm.paginatorPageFirst(); }
             else if (event.shiftKey && event.key === "L") { vm.paginatorPageLast(); }
             else if (event.key === '<' || event.key === "h") { vm.paginatorPagePrev(); }
             else if (event.key === '>' || event.key === "l") { vm.paginatorPageNext(); }
+            else if (event.key === "/") { event.preventDefault(); vm.#searchSignals(); }
+            else if (event.key === "n") { vm.#showSearchInput(); vm.#gotoNextHit(); }
+            else if (event.shiftKey && event.key === "N") { vm.#showSearchInput(); vm.#gotoPrevHit(); }
             else if (event.key === "h") { console.log("'h' was pressed!"); }
             else if (event.shiftKey && event.key === "T") { vm.toggles['showTime'].toggle(); }
             else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
@@ -718,6 +750,7 @@ class AsdfViewModel  {
         });
     }
 
+    // ----- move around -----
     #selectFirstSignal() {
         this.activeSignal.setFirst();
         this.#shiftToSelectedSignal();
@@ -798,6 +831,102 @@ class AsdfViewModel  {
         }
         this.diagramContainer.scrollTop = this.signal_paths[this.activeSignal.getIdx()].getPointAtLength(0).y -
                                           this.diagramContainer.offsetHeight / 2;
+    }
+
+    // ----- search -----
+    #searchSignals() {
+        this.#showSearchInput();
+        this.diagramSearchInput.focus();
+    }
+
+    #showSearchInput() {
+        this.diagramSearch.style.visibility = "visible";
+    }
+
+    #hideSearchInput() {
+        this.diagramSearch.style.visibility = "hidden";
+    }
+
+    #performSearchSignals() {
+        this.diagramSearchInput.blur();
+        let searchPattern = this.diagramSearchInput.value;
+        this.fullDiag = this.model.sideLoadDiagram();
+        this.currHit.signals = this.fullDiag.signals.filter(signal => signal.message.includes(searchPattern));
+        this.currHit.setByIdx(0);
+        this.#isLastSearchValid = true;
+        if (this.currHit.signals.length > 0) {
+            this.#gotoNextHit();
+        }
+    }
+
+    #gotoCurrHit() {
+        if ( ! this.#isLastSearchValid) {
+            this.#performSearchSignals();
+            return;
+        }
+        this.activeSignal.setBySeqNum(this.currHit.getSeqNum());
+        let page = Math.floor(this.#globalIndexOf(this.currHit.getSeqNum()) / this.pageSize);
+        if (page != this.currPage.get()) {
+            this.#paginatorSetCurrPage(page);
+        }
+        setTimeout(() => {
+            this.#shiftToSelectedSignal();
+            this.#applySignalClick();
+        }, 0); // let paging happen before
+    }
+
+    #gotoNextHit() {
+        this.currHit.setFirst();
+        if ( ! this.activeSignal.isValid()) {
+            while (this.currHit.getSeqNum() < this.diag_signals[0].seqNum) {
+                if (this.currHit.isLast()) {
+                    this.currHit.setFirst();
+                    break;
+                }
+                this.currHit.setNext();
+            }
+        } else {
+            while (this.currHit.getSeqNum() <= this.activeSignal.getSeqNum()) {
+                if (this.currHit.isLast()) {
+                    this.currHit.setFirst();
+                    break;
+                }
+                this.currHit.setNext();
+            }
+        }
+        this.#gotoCurrHit();
+    }
+
+    #gotoPrevHit() {
+        this.currHit.setLast();
+        if ( ! this.activeSignal.isValid()) {
+            while (this.currHit.getSeqNum() > this.diag_signals[this.diag_signals.length-1].seqNum) {
+                if (this.currHit.isFirst()) {
+                    this.currHit.setLast();
+                    break;
+                }
+                this.currHit.setPrev();
+            }
+        } else {
+            while (this.currHit.getSeqNum() >= this.activeSignal.getSeqNum()) {
+                if (this.currHit.isFirst()) {
+                    this.currHit.setLast();
+                    break;
+                }
+                this.currHit.setPrev();
+            }
+        }
+        this.#gotoCurrHit();
+    }
+
+    #globalIndexOf(seqNum) {
+        let idx = this.fullDiag.signals.length;
+        while ( idx --> 0 ) {
+            if (seqNum == this.fullDiag.signals[idx].seqNum) {
+                break;
+            }
+        }
+        return idx;
     }
 
     // ---- diagram head ----
@@ -1010,7 +1139,7 @@ class AsdfViewModel  {
     #paginatorSetCurrPage(page) {
         this.currPage.set(page);
         this.diagramContainer.scrollTop = 0;
-        this.model.setRelevantSignals(page * this.pageSize - (page > 0 ? 1 : 0), this.pageSize);
+        this.model.setRelevantSignals(page * this.pageSize - (page > 0), this.pageSize + (page > 0));
     }
 
     paginatorPageFirst() {
@@ -1087,7 +1216,6 @@ class AsdfViewModel  {
             const start = path.getPointAtLength(0);
 
             let currTS = this.diag_signals[index].addinfoHead.timestamp.split('T')[1];
-            const { common, diff } = this.#getCommonAndDiffTsParts(currTS, prevTS);
 
             // Create an SVG text element
             const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -1246,6 +1374,7 @@ class AsdfViewModel  {
 
     #actorTextOnClick(index) {
         this.model.toggleActor(index);
+        this.#isLastSearchValid = false;
     }
 
     #addActorMoveBtns() {

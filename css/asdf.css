@@ -59,6 +59,30 @@ pre {
     background-color: var(--body-bg-color);
 }
 
+#diagramSearchContainer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 30%;
+    z-index: 10000;
+    background-color: var(--body-bg-color);
+    padding: 15px;
+}
+#diagramSearchInput {
+    color: var(--bs-secondary);
+    font-family: monospace;
+    font-size: 12px;
+}
+#diagramSearchInput:focus {
+    outline: none;
+    box-shadow: none;
+}
+.input-group-text {
+    color: var(--bs-secondary);
+    font-family: monospace;
+    font-size: 12px;
+}
+
 #diagramInfo {
     font-family: var(--bs-body-font-family);
     font-weight: var(--bs-body-font-weight);
