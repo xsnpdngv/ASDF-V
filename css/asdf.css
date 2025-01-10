@@ -35,6 +35,9 @@ a:hover {
     text-decoration: none;
     color: var(--bs-primary)
 }
+.disable-hover {
+    pointer-events: none;
+}
 
 figcaption {
     font-size: 16px;

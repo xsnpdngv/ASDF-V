@@ -704,12 +704,29 @@ class AsdfViewModel  {
 
     #addDocumentEventListeners() {
         this.#addKeyboardShortcuts();
+        this.#addHoverEnablerForMouseMove();
+    }
+
+    #addHoverEnablerForMouseMove() {
+        document.addEventListener("mousemove", () => {
+            this.#enableMouseHover();
+        });
+    }
+
+    #disableMouseHover() {
+        document.body.classList.add("disable-hover");
+    }
+
+    #enableMouseHover() {
+        document.body.classList.remove("disable-hover");
     }
 
     #addKeyboardShortcuts() {
         let vm = this;
         let keySeq = "";
         document.addEventListener("keydown", function (event) {
+
+            vm.#disableMouseHover();
 
             if (document.activeElement === vm.diagramSearchInput) {
                 if (event.key === "Enter") { vm.#performSearchSignals(); }
