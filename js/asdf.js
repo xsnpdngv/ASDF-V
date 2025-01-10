@@ -667,6 +667,7 @@ class AsdfViewModel  {
         this.pagePrevBtn = document.getElementById("pagePrev");
         this.pageNextBtn = document.getElementById("pageNext");
         this.pageLastBtn = document.getElementById("pageLast");
+        this.searchStats = document.getElementById("searchStats");
 
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
@@ -691,7 +692,7 @@ class AsdfViewModel  {
     }
 
     update() {
-        this.#isLastSearchValid = false;
+        this.#invalidateLastSearch();
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
         this.#initPaginator();
@@ -891,9 +892,17 @@ class AsdfViewModel  {
         else { this.#gotoNextHit(); }
     }
 
+    #invalidateLastSearch() {
+        this.#isLastSearchValid = false;
+        this.#hideSearchStats();
+    }
+
     #showSearchStats() {
-        const searchStats = document.getElementById("searchStats");
-        searchStats.innerHTML = `${this.currHit.getIdx() + 1} /<BR>${this.currHit.signals.length}`;
+        this.searchStats.innerHTML = `${this.currHit.getIdx() + 1} /<br>${this.currHit.signals.length}`;
+    }
+
+    #hideSearchStats() {
+        this.searchStats.innerHTML = "";
     }
 
     #gotoCurrHit(dir = 1) {
