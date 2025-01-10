@@ -245,7 +245,7 @@ text.signal:hover {
     /* fill: black; */
     font-style: italic;
 }
-body.no-hover text.signal:hover:not(.clicked-signal) {
+body.no-hover text.signal:hover:not(.active-signal) {
     stroke: none;
     font-style: normal;
 }
@@ -258,25 +258,25 @@ text.special-signal:hover {
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
 }
-text.clicked-signal.special-signal {
+text.active-signal.special-signal {
     font-weight: 900;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
     font-style: italic;
 }
-text.clicked-signal:not(.special-signal) {
+text.active-signal:not(.special-signal) {
     /* stroke: black; */
     font-weight: 900;
     font-style: italic;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.seq-num.clicked-signal-seq-num {
+text.seq-num.active-signal-seq-num {
     font-style: italic;
     /* stroke: black; */
 }
 
-circle.seq-num.clicked-signal-circle {
+circle.seq-num.active-signal-circle {
     /* stroke-width: 2; */
 }
 circle.seq-num.same-id-signal:not(.instance-highlight-off) {
@@ -304,7 +304,7 @@ path.gridline {
     stroke: #f0f0f0;
     stroke-width: 1px;
 }
-text.ts.clicked-ts {
+text.ts.active-ts {
     fill: black;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     /* font-weight: bold; */

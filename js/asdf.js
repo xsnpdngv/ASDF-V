@@ -1417,23 +1417,23 @@ class AsdfViewModel  {
             }
 
             if (i === refIndex) {
-                text.classList.add('clicked-signal');
-                circle.classList.add('clicked-signal-circle');
-                seqNum.classList.add('clicked-signal-seq-num');
+                text.classList.add('active-signal');
+                circle.classList.add('active-signal-circle');
+                seqNum.classList.add('active-signal-seq-num');
             } else {
-                text.classList.remove('clicked-signal');
-                circle.classList.remove('clicked-signal-circle');
-                seqNum.classList.remove('clicked-signal-seq-num');
+                text.classList.remove('active-signal');
+                circle.classList.remove('active-signal-circle');
+                seqNum.classList.remove('active-signal-seq-num');
             }
         });
     }
 
     #markTimestamps(refIndex) {
-        this.timestamps.forEach(g => { g.classList.remove('clicked-ts'); });
+        this.timestamps.forEach(g => { g.classList.remove('active-ts'); });
         if (refIndex < 0 || refIndex > this.timestamps.length - 1) {
             return;
         }
-        this.timestamps[refIndex].classList.add('clicked-ts');
+        this.timestamps[refIndex].classList.add('active-ts');
     }
 
     // ---- actor ----
