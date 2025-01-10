@@ -675,6 +675,14 @@ class HoverGate {
 }
 
 
+class offCanvasWrapper {
+    constructor(docElementId) {
+        const hoc = document.getElementById(docElementId);
+        this.offCanvas = new bootstrap.Offcanvas(hoc);
+    }
+}
+
+
 /* ==============================
  * View Model: UI and Rendering
  * ============================== */
@@ -682,6 +690,7 @@ class AsdfViewModel  {
     #signal_hits;
     #isLastSearchValid;
     #hoverGate;
+    #help;
 
     constructor(model) {
         this.model = model;
@@ -693,6 +702,7 @@ class AsdfViewModel  {
         this.#isLastSearchValid = false;
         this.#hoverGate = new HoverGate();
         this.#hoverGate.subscribe(() => this.#showActiveSignalAddinfo());
+        this.#help = new offCanvasWrapper("helpOffcanvas");
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -783,6 +793,7 @@ class AsdfViewModel  {
             vm.#hideSearchInput();
 
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
+            else if (keySeq.endsWith("ac")) { vm.resetToolbarOnClick(); }
             else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (event.key === "j") { vm.#selectNextSignal(); }
             else if (event.key === "k") { vm.#selectPrevSignal(); }
@@ -803,6 +814,7 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
             else if (event.shiftKey && event.key === "I") { vm.toggles['showInstance'].toggle(); }
             else if (event.shiftKey && event.key === "R") { vm.toggles['showRelated'].toggle(); }
+            else if (event.shiftKey && event.key === "?") { vm.#help.offCanvas.show(); }
             else {
                 setTimeout(() => { keySeq = ""; }, 500);
             }

@@ -65,7 +65,7 @@ pre {
 #diagramSearchContainer {
     position: fixed;
     top: 0;
-    right: 20px;
+    right: 0;
     width: 350px;
     z-index: 10000;
     background-color: transparent;
@@ -98,12 +98,9 @@ pre {
     box-shadow: none;
 }
 .help {
-    position: fixed;
-    top: 22px;
-    right: 0;
-    transform: rotate(270deg);
-    transform-origin: center;
-    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    left: 100%;
     cursor: pointer;
 }
 .shortcut-key {

@@ -56,12 +56,11 @@
             <div class="input-group input-group-sm mb-3">
             <span class="input-group-text">/</span>
             <input type="text" class="form-control" id="diagramSearchInput">
-            <span id="searchStats" class="info-style ms-2 me-2"></span>
+            <span id="searchStats" class="info-style ms-1 me-1"></span>
             </div>
         </div>
 
-        <button class="btn-outline-secondary info-style help" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">help</button>
-        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="helpOffcanvas" aria-labelledby="offcanvasRightLabel">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title" id="offcanvasRightLabel">Keyboard Shortcuts</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -70,8 +69,8 @@
                 <div class="shortcut-list">
                     <div class="shortcut-item"><span class="shortcut-key">j </span>cursor down</div>
                     <div class="shortcut-item"><span class="shortcut-key">k </span>cursor up</div>
-                    <div class="shortcut-item"><span class="shortcut-key">J </span>scroll locked cursor down</div>
-                    <div class="shortcut-item"><span class="shortcut-key">K </span>scroll locked cursor up</div>
+                    <div class="shortcut-item"><span class="shortcut-key">J </span>scroll-locked cursor down</div>
+                    <div class="shortcut-item"><span class="shortcut-key">K </span>scroll-locked cursor up</div>
                     <div class="shortcut-item"><span class="shortcut-key">&lt; </span>previous page</div>
                     <div class="shortcut-item"><span class="shortcut-key">&gt; </span>next page</div>
                     <div class="shortcut-item"><span class="shortcut-key">h </span>previous page</div>
@@ -91,6 +90,8 @@
                     <div class="shortcut-item"><span class="shortcut-key">S </span>toggle source instance ids</div>
                     <div class="shortcut-item"><span class="shortcut-key">I </span>toggle marking signals of the same instance</div>
                     <div class="shortcut-item"><span class="shortcut-key">R </span>toggle marking related signals</div>
+                    <div class="shortcut-item"><span class="shortcut-key">? </span>show keyboard shortcut reference</div>
+                    <div class="shortcut-item"><span class="shortcut-key">ac </span>all clear</div>
                 </div>
             </div>
         </div>
@@ -125,6 +126,14 @@
     &copy; 2024-2025 Tamás Dezső (<a href="http://asdf.hu">asdf.hu</a>)<br><a href="https://github.com/xsnpdngv/ASDF-V">github.com/xsnpdngv/ASDF-V</a></small>
     </p><br>
 
+    <h6>Release Notes - v1.2 (Januray 10, 2025)</h6>
+    <ul>
+    <li>Support very big input files</li>
+    <li>Show event timestamps on demand</li>
+    <li>Add Vim-like keyboard navigation</li>
+    <li>Implement signal search, also inspired by Vim</li>
+    </ul>
+
     <h6>Release Notes - v1.1 (December 12, 2024)</h6>
     <ul>
     <li>Paginate large diagrams</li>
@@ -154,10 +163,8 @@
     <ul>
     <li>Filter signals by time (interval) and additional info content</li>
     <li>Show signal list view on demand</li>
-    <li>Step over subsequent signals (first, prev, next, last)</li>
     <li>Resolve signal relations beyond neighbours</li>
     <li>Fold indentation blocks in additional info</li>
-    <li>Show timestamps/deltas beside signal sequence numbers</li>
     <li>Render additional info header</li>
     </ul>
 
@@ -185,7 +192,9 @@
                 </div><!--diagram-->
             </div><!--diagramContainer-->
         </div><!--diagramArea-->
-        <div id="divider"><!----------------------------------------------------------></div>
+        <div id="divider"><!---------------------------------------------------------->
+            <button class="info-style help" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="offcanvasRight">?</button>
+        </div>
         <div id="addinfoDisplay">
             <pre id="notation"></pre>
             <pre id="meta"></pre>
