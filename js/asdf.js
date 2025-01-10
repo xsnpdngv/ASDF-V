@@ -1218,7 +1218,10 @@ class AsdfViewModel  {
         this.signal_paths.forEach((path, index) => {
             const start = path.getPointAtLength(0);
 
-            let currTS = this.diag_signals[index].addinfoHead.timestamp.split('T')[1];
+            let currTS = ""
+            if (this.diag_signals[index].addinfoHead.timestamp) {
+                currTS = this.diag_signals[index].addinfoHead.timestamp.split('T')[1];
+            }
 
             // Create an SVG text element
             const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
