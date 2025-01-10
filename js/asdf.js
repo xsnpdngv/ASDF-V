@@ -853,6 +853,12 @@ class AsdfViewModel  {
     #performSearchSignals(dir = 1) {
         this.diagramSearchInput.blur();
         let searchPattern = this.diagramSearchInput.value;
+        if (searchPattern === "") {
+            this.currHit.reset();
+            this.currHit.signals = [];
+            this.#showSearchStats();
+            return;
+        }
         this.fullDiag = this.model.sideLoadDiagram();
         this.currHit.signals = this.fullDiag.signals.filter(signal => signal.type === 'Signal' &&
                                                                       (signal.message.includes(searchPattern) ||
