@@ -22,19 +22,19 @@
 
             <div class="btn-group me-3" role="group">
                 <input type="checkbox" class="btn-check" id="showTimeToggle">
-                <label class="btn btn-asdf btn-sm" for="showTimeToggle">TS</label>
+                <label class="btn btn-asdf btn-sm" for="showTimeToggle">ts</label>
 
                 <input type="checkbox" class="btn-check" id="showIdsToggle">
-                <label class="btn btn-asdf btn-sm" for="showIdsToggle">SrcID</label>
+                <label class="btn btn-asdf btn-sm" for="showIdsToggle">src</label>
 
                 <input type="checkbox" class="btn-check" id="showInstanceToggle">
-                <label class="btn btn-sm btn-asdf" for="showInstanceToggle">Instance</label>
+                <label class="btn btn-sm btn-asdf" for="showInstanceToggle">inst</label>
 
                 <input type="checkbox" class="btn-check" id="showRelatedToggle">
-                <label class="btn btn-asdf btn-sm" for="showRelatedToggle">Related</label>
+                <label class="btn btn-asdf btn-sm" for="showRelatedToggle">rel</label>
             </div>
 
-            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="asdfVM.resetToolbarOnClick()">AC</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="asdfVM.resetToolbarOnClick()">ac</button>
         </div>
 
         <nav>
@@ -59,6 +59,42 @@
             <span id="searchStats" class="info-style ms-2 me-2"></span>
             </div>
         </div>
+
+        <button class="btn-outline-secondary info-style help" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">help</button>
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasRightLabel">Keyboard Shortcuts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="shortcut-list">
+                    <div class="shortcut-item"><span class="shortcut-key">j </span>cursor down</div>
+                    <div class="shortcut-item"><span class="shortcut-key">k </span>cursor up</div>
+                    <div class="shortcut-item"><span class="shortcut-key">J </span>scroll locked cursor down</div>
+                    <div class="shortcut-item"><span class="shortcut-key">K </span>scroll locked cursor up</div>
+                    <div class="shortcut-item"><span class="shortcut-key">&lt; </span>previous page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">&gt; </span>next page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">h </span>previous page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">l </span>next page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">H </span>first page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">L </span>last page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">zz</span>center cursor</div>
+                    <div class="shortcut-item"><span class="shortcut-key">gg</span>first signal on page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">G </span>last signal on page</div>
+                    <div class="shortcut-item"><span class="shortcut-key">/ </span>start search pattern input</div>
+                    <div class="shortcut-item"><span class="shortcut-key">Esc </span>leave search pattern input</div>
+                    <div class="shortcut-item"><span class="shortcut-key">n </span>next match</div>
+                    <div class="shortcut-item"><span class="shortcut-key">N </span>previous match</div>
+                    <div class="shortcut-item"><span class="shortcut-key">* </span>next occurence of current signal</div>
+                    <div class="shortcut-item"><span class="shortcut-key"># </span>previous occurence of current signal</div>
+                    <div class="shortcut-item"><span class="shortcut-key">T </span>toggle timestamps</div>
+                    <div class="shortcut-item"><span class="shortcut-key">S </span>toggle source instance ids</div>
+                    <div class="shortcut-item"><span class="shortcut-key">I </span>toggle marking signals of the same instance</div>
+                    <div class="shortcut-item"><span class="shortcut-key">R </span>toggle marking related signals</div>
+                </div>
+            </div>
+        </div>
+
     </div><!--diagramSearchContainer-->
 
     <div class="content">
@@ -86,7 +122,7 @@
     </p>
 
     <p style="text-align: right;"><small>
-    &copy; 2024 Tamás Dezső (<a href="http://asdf.hu">asdf.hu</a>)<br><a href="https://github.com/xsnpdngv/ASDF-V">github.com/xsnpdngv/ASDF-V</a></small>
+    &copy; 2024-2025 Tamás Dezső (<a href="http://asdf.hu">asdf.hu</a>)<br><a href="https://github.com/xsnpdngv/ASDF-V">github.com/xsnpdngv/ASDF-V</a></small>
     </p><br>
 
     <h6>Release Notes - v1.1 (December 12, 2024)</h6>
@@ -157,6 +193,7 @@
         </div>
     </div><!--content-->
 
+    <script src="js/bootstrap.js"></script>
     <script src="js/underscore.js"></script>
     <script src="js/raphael.js"></script>
     <script src="js/sequence-diagram.js"></script>

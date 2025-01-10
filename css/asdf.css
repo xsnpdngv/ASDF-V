@@ -65,7 +65,7 @@ pre {
 #diagramSearchContainer {
     position: fixed;
     top: 0;
-    right: 0;
+    right: 20px;
     width: 350px;
     z-index: 10000;
     background-color: transparent;
@@ -87,10 +87,45 @@ pre {
 }
 
 .info-style {
+    background-color: var(--body-bg-color);
+    color: var(--bs-secondary);
     font-family: var(--bs-body-font-family);
     font-weight: var(--bs-body-font-weight);
     font-size: 12px;
     line-height: 1.2; 
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+.help {
+    position: fixed;
+    top: 22px;
+    right: 0;
+    transform: rotate(270deg);
+    transform-origin: center;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.shortcut-key {
+    font-family: "Courier New", monospace; /* Monospace font for the keys */
+    margin-right: 20px; /* Bigger space between key and definition */
+    font-weight: bold; /* Make the keys more prominent */
+}
+.shortcut-list {
+    padding-left: 8px;
+    list-style-type: none;
+    font-family: var(--bs-body-font-family);
+
+    /* color: var(--bs-secondary); */
+}
+.shortcut-item {
+    margin-bottom: 6px; /* Add spacing between each item */
+    font-size: 14px; /* Adjust font size if needed */
+}
+.shortcut-item span {
+    font-family: "Courier New", monospace; /* Monospace font for the keys */
+    margin-right: 10px; /* Bigger space between the key and definition */
+    font-weight: bold;
 }
 
 #diagramArea {

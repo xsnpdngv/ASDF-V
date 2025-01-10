@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 Tamás Dezső (asdf.hu)
+Copyright (c) 2024-2025 Tamás Dezső (asdf.hu)
 https://github.com/xsnpdngv/ASDF-V
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -799,7 +799,6 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "N") { vm.#showSearchInput(); vm.#gotoPrevHit(); }
             else if (event.shiftKey && event.key === "*") { vm.#findOccurence() }
             else if (event.shiftKey && event.key === "#") { vm.#findOccurence(-1) }
-            else if (event.key === "h") { console.log("'h' was pressed!"); }
             else if (event.shiftKey && event.key === "T") { vm.toggles['showTime'].toggle(); }
             else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
             else if (event.shiftKey && event.key === "I") { vm.toggles['showInstance'].toggle(); }
