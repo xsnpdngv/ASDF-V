@@ -700,7 +700,10 @@ class AsdfViewModel  {
         this.#initShowTime(this.toggles["showTime"].uiElem.checked);
         this.#updateHead();
         this.#restoreHeadScrollPosition();
-        setTimeout(() => { this.#updateDiagram(); }, 0); // let head render before
+        setTimeout(() => {
+            this.#updateDiagram();
+            this.#shiftToSelectedSignal();
+        }, 0); // let head render before
     }
 
     #addDocumentEventListeners() {
@@ -850,6 +853,7 @@ class AsdfViewModel  {
 
     #shiftToSelectedSignal() {
         if ( ! this.activeSignal.isValid()) {
+            this.diagramContainer.scrollTop = 0;
             return;
         }
         this.diagramContainer.scrollTop = this.signal_paths[this.activeSignal.getIdx()].getPointAtLength(0).y -
@@ -1184,7 +1188,6 @@ class AsdfViewModel  {
 
     #paginatorSetCurrPage(page) {
         this.currPage.set(page);
-        this.diagramContainer.scrollTop = 0;
         this.model.setRelevantSignals(page * this.pageSize - (page > 0), this.pageSize + (page > 0));
     }
 
