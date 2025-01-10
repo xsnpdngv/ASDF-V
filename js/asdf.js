@@ -759,6 +759,8 @@ class AsdfViewModel  {
             else if (event.key === "/") { event.preventDefault(); vm.#searchSignals(); }
             else if (event.key === "n") { vm.#showSearchInput(); vm.#gotoNextHit(); }
             else if (event.shiftKey && event.key === "N") { vm.#showSearchInput(); vm.#gotoPrevHit(); }
+            else if (event.shiftKey && event.key === "*") { vm.#findOccurence() }
+            else if (event.shiftKey && event.key === "#") { vm.#findOccurence(-1) }
             else if (event.key === "h") { console.log("'h' was pressed!"); }
             else if (event.shiftKey && event.key === "T") { vm.toggles['showTime'].toggle(); }
             else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
@@ -943,6 +945,15 @@ class AsdfViewModel  {
             this.currHit.setPrev();
         }
         this.#gotoCurrHit(-1);
+    }
+
+    #findOccurence(dir = 1) {
+        if ( ! this.activeSignal.isValid()) {
+            return;
+        }
+        this.#showSearchInput();
+        this.diagramSearchInput.value = this.diag_signals[this.activeSignal.getIdx()].message;
+        this.#performSearchSignals(dir);
     }
 
     #globalIndexOf(seqNum) {
