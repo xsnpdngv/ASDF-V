@@ -889,7 +889,7 @@ class AsdfViewModel  {
     }
 
     #gotoNextHit() {
-        if (this.currHit.signals.length < 1) {
+        if (this.#isLastSearchValid && this.currHit.signals.length < 1) {
             return;
         }
         this.currHit.setFirst();
@@ -906,7 +906,7 @@ class AsdfViewModel  {
     }
 
     #gotoPrevHit() {
-        if (this.currHit.signals.length < 1) {
+        if (this.#isLastSearchValid && this.currHit.signals.length < 1) {
             return;
         }
         this.currHit.setLast();
