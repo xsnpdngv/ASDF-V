@@ -554,9 +554,9 @@ class AsdfModel {
 }
 
 
-/* ==============================
- * View Model: UI and Rendering
- * ============================== */
+/* ====================================================================
+ * Auxiliary classes to support the View Model
+ * ==================================================================== */
 class ActiveSignal {
     #seqNum;
 
@@ -632,9 +632,56 @@ class ActiveSignal {
     }
 }
 
+
+class HoverGate {
+    #isOpen;
+    #callbacks;
+
+    constructor() {
+        this.#isOpen = true;
+        this.#callbacks = [];
+    }
+
+    subscribe(observer) {
+        this.#callbacks.push(observer);
+    }
+
+    #notify() {
+        this.#callbacks.forEach(callback => callback());
+    }
+
+    open() {
+        this.#isOpen = true;
+        document.body.classList.remove('no-hover');
+        this.#notify();
+    }
+
+    close() {
+        this.#isOpen = false;
+        document.body.classList.add('no-hover');
+        this.#addRestorer();
+        this.#notify();
+    }
+
+    isOpen() {
+        return this.#isOpen;
+    }
+
+    #addRestorer() {
+        ['mousemove', 'click', 'wheel'].forEach(event => {
+            window.addEventListener(event, () => this.open(), { once: true });
+        });
+    }
+}
+
+
+/* ==============================
+ * View Model: UI and Rendering
+ * ============================== */
 class AsdfViewModel  {
     #signal_hits;
     #isLastSearchValid;
+    #hoverGate;
 
     constructor(model) {
         this.model = model;
@@ -644,6 +691,8 @@ class AsdfViewModel  {
         this.timeOffsetX = 45;
         this.#signal_hits = [];
         this.#isLastSearchValid = false;
+        this.#hoverGate = new HoverGate();
+        this.#hoverGate.subscribe(() => this.#showActiveSignalAddinfo());
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
@@ -708,21 +757,6 @@ class AsdfViewModel  {
 
     #addDocumentEventListeners() {
         this.#addKeyboardShortcuts();
-        this.#addHoverEnablerForMouseMove();
-    }
-
-    #addHoverEnablerForMouseMove() {
-        document.addEventListener("mousemove", () => {
-            this.#enableMouseHover();
-        });
-    }
-
-    #disableMouseHover() {
-        document.body.classList.add("disable-hover");
-    }
-
-    #enableMouseHover() {
-        document.body.classList.remove("disable-hover");
     }
 
     #addKeyboardShortcuts() {
@@ -730,7 +764,7 @@ class AsdfViewModel  {
         let keySeq = "";
         document.addEventListener("keydown", function (event) {
 
-            vm.#disableMouseHover();
+            vm.#hoverGate.close();
 
             if (document.activeElement === vm.diagramSearchInput) {
                 if (event.key === "Enter") { vm.#performSearchSignals(); }
@@ -1288,24 +1322,11 @@ class AsdfViewModel  {
         this.gridlines = document.querySelectorAll('path.gridline');
     }
 
-    #getCommonAndDiffTsParts(current, previous) {
-        let common = "";
-        let i = 0;
-
-        while (i < current.length && i < previous.length && current[i] === previous[i]) {
-            common += current[i];
-            i++;
-        }
-
-        const diff = current.slice(i);
-        return { common, diff };
-    }
-
     #addSignalEventListeners() {
         this.signal_texts.forEach((txt, index) => {
             txt.onclick = () => this.#signalTextOnClick(index);
-            txt.onmouseenter = () => this.#showAddinfoContent(index);
-            txt.onmouseleave = () => this.#showAddinfoContent(this.activeSignal.getIdx());
+            txt.onmouseenter = () => { if (this.#hoverGate.isOpen()) { this.#showAddinfoContent(index); } };
+            txt.onmouseleave = () => { if (this.#hoverGate.isOpen()) { this.#showActiveSignalAddinfo(); } };
         });
     }
 
@@ -1319,7 +1340,7 @@ class AsdfViewModel  {
     }
 
     #applySignalClick() {
-        this.#showAddinfoContent(this.activeSignal.getIdx());
+        this.#showActiveSignalAddinfo();
         this.#markSignals(this.activeSignal.getIdx());
         this.#markTimestamps(this.activeSignal.getIdx());
     }
@@ -1339,6 +1360,10 @@ class AsdfViewModel  {
             meta.textContent = s.meta;
             addinfo.textContent = s.addinfo;
         }
+    }
+
+    #showActiveSignalAddinfo() {
+        this.#showAddinfoContent(this.activeSignal.getIdx());
     }
 
     #markSignals(refIndex) {

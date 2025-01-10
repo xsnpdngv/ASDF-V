@@ -35,8 +35,8 @@ a:hover {
     text-decoration: none;
     color: var(--bs-primary)
 }
-.disable-hover {
-    pointer-events: none;
+.no-hover *:hover {
+    cursor: default;
 }
 
 figcaption {
@@ -242,8 +242,12 @@ text.signal:hover {
     /* stroke: black; */
     /* stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill; */
     stroke: var(--highlight-color); stroke-width: 3px; paint-order: stroke fill;
-    fill: black;
+    /* fill: black; */
     font-style: italic;
+}
+body.no-hover text.signal:hover:not(.clicked-signal) {
+    stroke: none;
+    font-style: normal;
 }
 text.special-signal {
     fill: var(--special-color);
