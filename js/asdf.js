@@ -810,7 +810,7 @@ class AsdfViewModel  {
             keySeq += event.key;
 
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
-            else if (keySeq.endsWith("rv")) { vm.resetToolbarOnClick(); }
+            else if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
             else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (event.key === "j") { vm.#selectNextSignal(); }
             else if (event.key === "k") { vm.#selectPrevSignal(); }
