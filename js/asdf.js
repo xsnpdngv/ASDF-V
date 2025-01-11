@@ -809,6 +809,8 @@ class AsdfViewModel  {
 
             keySeq += event.key;
 
+            document.activeElement.blur();
+
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
             else if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
             else if (event.key === "G") { vm.#selectLastSignal(); }
