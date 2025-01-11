@@ -9,10 +9,10 @@
 </head>
 
 <body>
-    <nav class="navbar bg-light navbar-expand-xxl rounded fixed-top ps-2 pe-2 pt-1" data-bs-theme="light">
+    <nav class="navbar bg-light navbar-expand-md navbar-expand-lg navbar-expand-xl navbar-expand-xxl rounded fixed-top ps-2 pe-2 pt-1" data-bs-theme="light">
     <div class="container-fluid justify-content-start" id="toolbar">
 
-        <ul class="navbar-nav col-lg-5 justify-content-lg-start align-items-center">
+        <ul class="navbar-nav col-lg-7 col-xl-6 col-xxl-5 justify-content-start align-items-center">
         <a class="navbar-brand pt-0 pb-0" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V &rang;&rang;</a>
 
         <div>
@@ -51,7 +51,7 @@
         </div>
         </ul>
 
-        <ul class="navbar-nav col-lg-2 justify-content-lg-center">
+        <ul class="navbar-nav col-lg-2 col-xl-2 col-xxl-2 justify-content-xxl-center justify-content-xl-start">
         <nav>
             <ul class="pagination bs-secondary mt-0 mb-0 pt-0 pb-0 me-3 align-items-start" id="paginator" style="visibility: hidden;">
                 <li class="page-item"><a class="page-link" id="pageFirst" onclick="asdfVM.paginatorPageFirst()">&lang;&lang;</a></li>
@@ -63,12 +63,12 @@
         </nav>
         </ul>
 
-        <ul class="navbar-nav col-lg-5 justify-content-lg-end align-items-center">
+        <ul class="navbar-nav col-lg-3 col-xl-4 col-xxl-5 justify-content-end align-items-center">
         <div id="diagramSearchContainer" class="container-fluid">
             <div id="diagramSearch" style="visibility: hidden;">
-                <div class="input-group input-group-sm justify-content-end alignt-items-center">
+                <div class="input-group input-group-sm justify-content-end">
                     <span class="input-group-text">/</span>
-                    <input type="text" class="form-control" id="diagramSearchInput" style="max-width: 300px; width: 100%;">
+                    <input type="text" class="form-control" id="diagramSearchInput" style="max-width: 300px; width: auto;">
                     <span id="searchStats" class="info ms-1 me-0"></span>
                 </div>
             </div>
