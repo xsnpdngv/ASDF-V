@@ -16,7 +16,7 @@
         <a class="navbar-brand pt-0 pb-0" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V &rang;&rang;</a>
 
         <div>
-            <label class="btn btn-sm btn-light twolined info-dense me-3" for="fileInput" id="fileInputLabel">open</label>
+            <label class="btn btn-sm btn-light twolined dense me-3" for="fileInput" id="fileInputLabel">open</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf"
              onchange="asdfVM.fileInputOnChange(event)" onclick="asdfVM.fileInputOnClick()">
         </div>
@@ -32,14 +32,14 @@
                 -->
 
                 <input type="checkbox" class="btn-check" id="showInstanceToggle">
-                <label class="btn btn-sm btn-light info-dense" for="showInstanceToggle"
+                <label class="btn btn-sm btn-light dense" for="showInstanceToggle"
                        data-bs-toggle="tooltip"
                        data-bs-custom-class="custom-tooltip"
                        data-bs-placement="bottom"
                        data-bs-title="Highlight signals of the same instance based on their source instance IDs">instance</label>
 
                 <input type="checkbox" class="btn-check" id="showRelatedToggle">
-                <label class="btn btn-sm btn-light info-dense" for="showRelatedToggle"
+                <label class="btn btn-sm btn-light dense" for="showRelatedToggle"
                        data-bs-toggle="tooltip"
                        data-bs-custom-class="custom-tooltip"
                        data-bs-placement="bottom"
@@ -51,7 +51,7 @@
                     data-bs-custom-class="custom-tooltip"
                     data-bs-placement="bottom"
                     data-bs-title="Clear all modifications including signal highlighting and participant filtering">ac</button>
-            <button class="btn btn-sm btn-light info-dense" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="offcanvasRight">help</button>
+            <button class="btn btn-sm btn-light dense" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="offcanvasRight">help</button>
         </div>
         </ul>
 
@@ -73,7 +73,7 @@
                 <div class="input-group input-group-sm justify-content-end alignt-items-center">
                     <span class="input-group-text">/</span>
                     <input type="text" class="form-control" id="diagramSearchInput" style="max-width: 300px; width: 100%;">
-                    <span id="searchStats" class="info ms-1 me-1"></span>
+                    <span id="searchStats" class="info ms-1 me-0"></span>
                 </div>
             </div>
         </div><!--diagramSearchContainer-->

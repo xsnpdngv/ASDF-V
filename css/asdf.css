@@ -105,7 +105,7 @@ pre {
     --bs-btn-disabled-border-color: #f8f9fa;
 }
 .info {
-    color: black;
+    color: var(--bs-secondary);
     font-family: monospace, var(--bs-body-font-family);
     font-weight: light;
     font-size: 12px;
@@ -114,8 +114,7 @@ pre {
     box-shadow: none;
     white-space: nowrap;
 }
-.info-dense {
-    /* font-size: 11px; */
+.dense {
     line-height: 1.2;
 }
 .shortcut-key {
