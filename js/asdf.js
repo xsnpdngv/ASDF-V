@@ -169,8 +169,10 @@ class PersistentArray {
 
 
 class PersistentBool {
+    #defaultValue;
     constructor(key, defaultValue = false) {
         this.key = key;
+        this.#defaultValue = defaultValue;
         if (localStorage.getItem(this.key) === null) {
             this.value = defaultValue;
             this.#save();
@@ -199,6 +201,10 @@ class PersistentBool {
 
     clear() {
         localStorage.removeItem(this.key);
+    }
+
+    reset() {
+        this.set(this.#defaultValue);
     }
 }
 
@@ -319,29 +325,38 @@ class PersistentInt {
 
 
 class PersistentToggle {
-    constructor(uiElemId, defaultValue, onChangeHandler, onChangeArg) {
-        this.uiElemId = uiElemId;
-        this.value = new PersistentBool(this.uiElemId, defaultValue);
-        this.onChangeHandler = onChangeHandler;
-        this.onChangeArg = onChangeArg;
+    #uiElem;
+    #value;
+    #onChangeHandler;
+    #onChangeArg;
 
-        this.uiElem = document.getElementById(this.uiElemId);
-        this.uiElem.checked = this.value.get();
-        this.uiElem.onchange = () => this.set(this.uiElem.checked);
+    constructor(uiElemId, defaultValue, onChangeHandler, onChangeArg) {
+        this.#value = new PersistentBool(uiElemId, defaultValue);
+        this.#onChangeHandler = onChangeHandler;
+        this.#onChangeArg = onChangeArg;
+
+        this.#uiElem = document.getElementById(uiElemId) || {};
+        this.#uiElem.checked = this.#value.get();
+        this.#uiElem.onchange = () => this.set(this.#uiElem.checked);
     }
 
     toggle() {
-        this.set( ! this.uiElem.checked);
+        this.set( ! this.isChecked())
+    }
+
+    isChecked() {
+        return this.#value.get();
     }
 
     set(isOn) {
-        this.value.set(isOn);
-        this.uiElem.checked = isOn;
-        this.onChangeHandler(this.onChangeArg, isOn);
+        this.#value.set(isOn);
+        this.#uiElem.checked = isOn;
+        this.#onChangeHandler(this.#onChangeArg, isOn);
     }
 
     reset() {
-        this.set(false);
+        this.#value.reset();
+        this.set(this.#value.get());
     }
 }
 
@@ -708,7 +723,7 @@ class AsdfViewModel  {
         this.fileInput = document.getElementById("fileInput");
         this.fileInputLabel = document.getElementById("fileInputLabel");
         this.toggles = {
-            "showTime": new PersistentToggle("showTimeToggle", false, this.#showTimeOnChange, this),
+            "showTime": new PersistentToggle("showTimeToggle", true, this.#showTimeOnChange, this),
             "showIds": new PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
             "showInstance": new PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
             "showRelated": new PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
@@ -737,26 +752,36 @@ class AsdfViewModel  {
     }
 
     init() {
-        this.model.init(this.toggles["showIds"].uiElem.checked);
+        this.model.init(this.toggles["showIds"].isChecked());
         this.#addDocumentEventListeners();
         this.#addDividerEventListeners();
         this.#addScrollEventListeners();
         this.#addDiagramEventListeners();
+        this.#initTooltips();
+    }
+
+    #initTooltips() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl, {
+                delay: { show: 750, hide: 100 }
+            });
+        });
     }
 
     clear() {
         this.model.clear();
         location.reload();
-        this.diagramHeadContainer.style.visibility = "hidden";
     }
 
     update() {
+        this.#initSearch();
         this.#invalidateLastSearch();
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
         this.#initPaginator();
         this.#updateToolbar();
-        this.#initShowTime(this.toggles["showTime"].uiElem.checked);
+        this.#initShowTime(this.toggles["showTime"].isChecked());
         this.#updateHead();
         this.#restoreHeadScrollPosition();
         setTimeout(() => {
@@ -778,19 +803,11 @@ class AsdfViewModel  {
 
             if (document.activeElement === vm.diagramSearchInput) {
                 if (event.key === "Enter") { vm.#performSearchSignals(); }
-                if (event.key === "Escape") { vm.#hideSearchInput(); }
+                if (event.key === "Escape") { vm.diagramSearchInput.blur(); }
                 return;
-            }
-            if (vm.diagramSearch.style.visibility == "visible") {
-                if (event.key === "Escape") {
-                    vm.#hideSearchInput();
-                    return;
-                }
             }
 
             keySeq += event.key;
-
-            vm.#hideSearchInput();
 
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
             else if (keySeq.endsWith("ac")) { vm.resetToolbarOnClick(); }
@@ -811,7 +828,7 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "*") { vm.#findOccurence() }
             else if (event.shiftKey && event.key === "#") { vm.#findOccurence(-1) }
             else if (event.shiftKey && event.key === "T") { vm.toggles['showTime'].toggle(); }
-            else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
+            // else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
             else if (event.shiftKey && event.key === "I") { vm.toggles['showInstance'].toggle(); }
             else if (event.shiftKey && event.key === "R") { vm.toggles['showRelated'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.offCanvas.show(); }
@@ -906,6 +923,10 @@ class AsdfViewModel  {
     }
 
     // ----- search -----
+    #initSearch() {
+        this.diagramSearch.style.visibility = this.model.diag ? "visible" : "hidden";
+    }
+
     #searchSignals() {
         this.#showSearchInput();
         this.diagramSearchInput.focus();
@@ -1040,24 +1061,10 @@ class AsdfViewModel  {
 
     // ---- diagram ----
     #updateDiagram() {
-        this.#updateDiagramInfo();
         this.diagramDiv.innerHTML = "";
         this.model.diag.drawSVG(this.diagramDiv, { theme: 'simple' });
         // draws in chunks to make the UI more responsive,
         // emits 'drawComplete' event to diagramContainer if ready
-    }
-
-    #updateDiagramInfo() {
-        const di = document.getElementById("diagramInfo");
-        const filteredActorCount = this.model.diag.actors.filter(actor => this.model.filteredActors.has(actor.name)).length;
-        di.innerHTML = this.model.diag.actors.length + " participants";
-        if (filteredActorCount > 0) {
-            di.innerHTML += " (" + filteredActorCount + " filtered)";
-        }
-        di.innerHTML += "<br>" + this.model.diag.signalCount + " signals";
-        if (this.model.diag.netSignalCount != this.model.diag.signalCount) {
-            di.innerHTML += " (" + this.model.diag.netSignalCount + " shown)";
-        }
     }
 
     #addDiagramEventListeners() {
@@ -1143,6 +1150,7 @@ class AsdfViewModel  {
     // ---- toolbar ----
     #updateToolbar() {
         this.#updateFileInputLabel();
+        // this.#updateFileInfo();
     }
 
     navbarBrandOnClick() {
@@ -1160,9 +1168,25 @@ class AsdfViewModel  {
     }
 
     #updateFileInputLabel() {
-        this.fileInputLabel.textContent = this.model.fileName.get() + ' | ' +
-                                          this.model.fileLastMod.get() + ' | ' +
-                                          this.model.fileSize.get() + ' bytes';
+        let fil = this.fileInputLabel
+        const filteredActorCount = this.model.diag.actors.filter(actor => this.model.filteredActors.has(actor.name)).length;
+        fil.textContent = this.model.fileName.get() + "\n";
+        fil.textContent += this.model.diag.actors.length + " participants";
+        if (filteredActorCount > 0) {
+            fil.textContent += " (" + filteredActorCount + " filtered)";
+        }
+        fil.textContent += "\n" + this.model.diag.signalCount + " signals";
+        if (this.model.diag.netSignalCount != this.model.diag.signalCount) {
+            fil.textContent += " (" + this.model.diag.netSignalCount + " shown)";
+        }
+    }
+
+    #updateFileInfo() {
+        const fi = document.getElementById("fileInfo");
+        const parts = this.model.fileLastMod.get().split(' ', 2);
+        fi.innerHTML = parts[0] + '<br>' + parts[1];
+        // fi.innerHTML = this.model.fileLastMod.get() + '<br>' +
+        //                this.model.fileSize.get() + ' bytes';
     }
 
     #showTimeOnChange(vm, isOn) {
@@ -1293,7 +1317,7 @@ class AsdfViewModel  {
     }
 
     #drawTimestamps() {
-        if ( ! this.toggles["showTime"].uiElem.checked ||
+        if ( ! this.toggles["showTime"].isChecked() ||
              ! this.signal_paths[0]) {
             return;
         }
@@ -1396,7 +1420,7 @@ class AsdfViewModel  {
                 isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
                                       s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
                 cl = 'same-id-signal';
-                if(isOfSameInstance && this.toggles["showInstance"].uiElem.checked) {
+                if(isOfSameInstance && this.toggles["showInstance"].isChecked()) {
                     text.classList.add(cl);
                     circle.classList.add(cl);
                     seqNum.classList.add(cl);
@@ -1410,7 +1434,7 @@ class AsdfViewModel  {
                               (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
                 cl = 'related-signal';
-                if(isRelated && this.toggles["showRelated"].uiElem.checked) {
+                if(isRelated && this.toggles["showRelated"].isChecked()) {
                     text.classList.add(cl);
                     circle.classList.add(cl);
                     seqNum.classList.add(cl);

@@ -8,6 +8,12 @@
     --toolbar-height: 60px;
     --divider-height: 2px;
     --head-height: 59px;
+
+}
+.custom-tooltip {
+    --bs-tooltip-opacity: 1;
+    --bs-tooltip-color: var(--bs-secondary);
+    --bs-tooltip-bg: rgb(237, 237, 237);
 }
 
 @font-face {
@@ -39,6 +45,14 @@ a:hover {
     cursor: default;
 }
 
+.twolined {
+    white-space: pre-wrap; /* Allows multiline text */
+    text-align: left;
+    height: auto; /* Ensure it resizes for content */
+    display: inline-block; /* For proper size adjustment */
+    font-size: 12px;
+}
+
 figcaption {
     font-size: 16px;
     font-weight: bold;
@@ -55,22 +69,6 @@ pre {
     overflow-x: auto;
 }
 
-#toolbar {
-    position: fixed;
-    top: 0;
-    height: var(--toolbar-height);
-    background-color: var(--body-bg-color);
-}
-
-#diagramSearchContainer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 350px;
-    z-index: 10000;
-    background-color: transparent;
-    padding: 15px;
-}
 #diagramSearchInput {
     color: var(--bs-secondary);
     font-family: monospace;
@@ -85,23 +83,40 @@ pre {
     font-family: monospace;
     font-size: 12px;
 }
-
-.info-style {
-    background-color: var(--body-bg-color);
-    color: var(--bs-secondary);
-    font-family: var(--bs-body-font-family);
-    font-weight: var(--bs-body-font-weight);
+/* Change font for all buttons */
+.btn {
+    font-family: monospace;
     font-size: 12px;
-    line-height: 1.2; 
+}
+.btn-light {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f8f9fa;
+    --bs-btn-border-color: #f8f9fa;
+    --bs-btn-hover-color: #000;
+    --bs-btn-hover-bg: var(--highlight-color);
+    --bs-btn-hover-border-color: #c6c7c8;
+    --bs-btn-focus-shadow-rgb: 211,212,213;
+    --bs-btn-active-color: #000;
+    --bs-btn-active-bg: var(--highlight-color);
+    --bs-btn-active-border-color: #babbbc;
+    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    --bs-btn-disabled-color: #000;
+    --bs-btn-disabled-bg: #f8f9fa;
+    --bs-btn-disabled-border-color: #f8f9fa;
+}
+.info {
+    color: black;
+    font-family: monospace, var(--bs-body-font-family);
+    font-weight: light;
+    font-size: 12px;
     border: none;
     outline: none;
     box-shadow: none;
+    white-space: nowrap;
 }
-.help {
-    position: sticky;
-    top: 0;
-    left: 100%;
-    cursor: pointer;
+.info-dense {
+    /* font-size: 11px; */
+    line-height: 1.2;
 }
 .shortcut-key {
     font-family: "Courier New", monospace; /* Monospace font for the keys */
@@ -291,14 +306,14 @@ text.special-signal:hover {
     fill: var(--special-color);
 }
 text.active-signal.special-signal {
-    font-weight: 900;
+    font-weight: bold;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--special-color);
     font-style: italic;
 }
 text.active-signal:not(.special-signal) {
     /* stroke: black; */
-    font-weight: 900;
+    font-weight: bold;
     font-style: italic;
     stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
@@ -353,24 +368,4 @@ text.ts.active-ts {
     opacity: 1;
     fill: black;
     transition: opacity 0s ease;
-}
-
-.btn.btn-asdf {
-    border-color: var(--bs-secondary);
-    color: var(--bs-secondary);
-    border-radius: 10px;
-}
-.btn.btn-asdf:hover {
-    border-color: var(--bs-secondary);
-}
-.btn-check:checked + .btn.btn-asdf {
-    background-color: var(--highlight-color);
-}
-.btn-check:checked + .btn.btn-asdf:hover {
-    text-decoration: line-through;
-}
-.btn-check:not(:checked) + .btn.btn-asdf:hover {
-    border-color: var(--bs-secondary);
-    /* color: var(--bs-secondary); */
-    text-decoration: underline;
 }
