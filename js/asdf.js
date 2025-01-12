@@ -775,6 +775,7 @@ class AsdfViewModel  {
     }
 
     update() {
+        this.#initDivider();
         this.#initSearch();
         this.#invalidateLastSearch();
         if ( ! this.model.diag) { return; }
@@ -813,6 +814,10 @@ class AsdfViewModel  {
 
             if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
             else if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
+            else if (keySeq.endsWith("==")) { vm.#dividerTop(); }
+            else if (keySeq.endsWith("-=")) { vm.#dividerCenter(); }
+            else if (keySeq.endsWith("--")) { vm.#dividerBottom(); }
+            else if (keySeq.endsWith("-d")) { vm.#dividerDefault(); }
             else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (event.key === "j") { vm.#selectNextSignal(); }
             else if (event.key === "k") { vm.#selectPrevSignal(); }
@@ -1215,6 +1220,7 @@ class AsdfViewModel  {
         this.#resetScrollPosition();
         this.#initPaginatorCurrPage(0);
         this.model.reset();
+        this.#dividerDefault();
         this.activeSignal.setBySeqNum(1);
     }
 
@@ -1571,6 +1577,12 @@ class AsdfViewModel  {
     }
 
     // ---- divider -----
+    #initDivider() {
+        if ( ! this.model.diag) { this.#dividerBottom(); }
+        else if ( ! this.wasDiag) { this.#dividerDefault(); }
+        this.wasDiag = !! this.model.diag;
+    }
+
     #addDividerEventListeners() {
         document.onmousemove = (e) => this.#documentOnMouseMove(e);
         document.onmouseup = () => this.#documentOnMouseUp();
@@ -1603,6 +1615,28 @@ class AsdfViewModel  {
         this.isResizing = false;
         document.body.style.cursor = 'default';
         document.body.style.userSelect = "";
+    }
+
+    #setDividerPos(infoHeight) {
+        const diagramHeight = 100 - infoHeight;
+        document.getElementById("diagramArea").style.height = `${diagramHeight}%`;
+        document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+    }
+
+    #dividerDefault() {
+        this.#setDividerPos(15);
+    }
+
+    #dividerTop() {
+        this.#setDividerPos(75);
+    }
+
+    #dividerCenter() {
+        this.#setDividerPos(50);
+    }
+
+    #dividerBottom() {
+        this.#setDividerPos(0);
     }
 }
 
