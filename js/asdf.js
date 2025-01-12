@@ -692,8 +692,8 @@ class HoverGate {
 
 class offCanvasWrapper {
     constructor(docElementId) {
-        const hoc = document.getElementById(docElementId);
-        this.offCanvas = new bootstrap.Offcanvas(hoc);
+        this.docElem = document.getElementById(docElementId);
+        this.offCanvas = new bootstrap.Offcanvas(this.docElem);
     }
 }
 
@@ -818,7 +818,11 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("==")) { vm.#dividerTop(); }
             else if (keySeq.endsWith("-=")) { vm.#dividerCenter(); }
             else if (keySeq.endsWith("--")) { vm.#dividerBottom(); }
-            else if (keySeq.endsWith("-d")) { vm.#dividerDefault(); }
+            else if (keySeq.endsWith("-.")) { vm.#dividerDefault(); }
+            else if (keySeq.endsWith("ti")) { vm.toggles['showInstance'].toggle(); }
+            else if (keySeq.endsWith("tr")) { vm.toggles['showRelated'].toggle(); }
+            else if (keySeq.endsWith("ts")) { vm.toggles['showIds'].toggle(); }
+            else if (keySeq.endsWith("tt")) { vm.toggles['showTime'].toggle(); }
             else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (event.key === "j") { vm.#selectNextSignal(); }
             else if (event.key === "k") { vm.#selectPrevSignal(); }
@@ -835,11 +839,8 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "N") { vm.#showSearchInput(); vm.#gotoPrevHit(); }
             else if (event.shiftKey && event.key === "*") { vm.#findOccurence() }
             else if (event.shiftKey && event.key === "#") { vm.#findOccurence(-1) }
-            else if (event.shiftKey && event.key === "T") { vm.toggles['showTime'].toggle(); }
-            // else if (event.shiftKey && event.key === "S") { vm.toggles['showIds'].toggle(); }
-            else if (event.shiftKey && event.key === "I") { vm.toggles['showInstance'].toggle(); }
-            else if (event.shiftKey && event.key === "R") { vm.toggles['showRelated'].toggle(); }
-            else if (event.shiftKey && event.key === "?") { vm.#help.offCanvas.show(); }
+            else if (event.shiftKey && event.key === "?") { vm.#help.docElem.classList.contains('show') ? vm.#help.offCanvas.hide()
+                                                                                                        : vm.#help.offCanvas.show(); }
             else {
                 setTimeout(() => { keySeq = ""; }, 500);
             }
