@@ -702,6 +702,7 @@ class offCanvasWrapper {
  * View Model: UI and Rendering
  * ============================== */
 class AsdfViewModel  {
+    #isFileInputChange;
     #signal_hits;
     #isLastSearchValid;
     #hoverGate;
@@ -1083,6 +1084,7 @@ class AsdfViewModel  {
         this.#updateDiagramSvgElemLists();
         this.#drawSignalSeqNumCircles();
         this.#drawTimestamps();
+        if (this.#isFileInputChange) { this.activeSignal.setFirst(); this.#isFileInputChange = false; }
         this.#applySignalClick();
         this.#markActors();
         this.#addActorMoveBtns();
@@ -1170,8 +1172,8 @@ class AsdfViewModel  {
 
     fileInputOnChange(event) {
         this.#initPaginatorCurrPage(0);
-        this.activeSignal.setByIdx(0);
         this.model.loadDiagramFromFile(event.target.files[0]);
+        this.#isFileInputChange = true;
     }
 
     #updateFileInputLabel() {
@@ -1186,14 +1188,6 @@ class AsdfViewModel  {
         if (this.model.diag.netSignalCount != this.model.diag.signalCount) {
             fil.textContent += " (" + this.model.diag.netSignalCount + " shown)";
         }
-    }
-
-    #updateFileInfo() {
-        const fi = document.getElementById("fileInfo");
-        const parts = this.model.fileLastMod.get().split(' ', 2);
-        fi.innerHTML = parts[0] + '<br>' + parts[1];
-        // fi.innerHTML = this.model.fileLastMod.get() + '<br>' +
-        //                this.model.fileSize.get() + ' bytes';
     }
 
     #showTimeOnChange(vm, isOn) {
