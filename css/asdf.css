@@ -1,19 +1,14 @@
 :root {
-    --body-bg-color: #fafafa;
-    --highlight-color: rgb(255, 255, 132);
+    --asdf-body-bg-color: #fafafa;
+    --asdf-highlight-color: rgb(255, 255, 132);
     --highlight-color2: rgb(241, 255, 210);
     --highlight-color2: rgb(255, 255, 132);
     --highlight-color3: greenyellow;
-    --special-color: orangered;
-    --toolbar-height: 60px;
-    --divider-height: 2px;
-    --head-height: 59px;
+    --asdf-special-color: orangered;
+    --asdf-toolbar-height: 60px;
+    --asdf-divider-height: 2px;
+    --asdf-head-height: 59px;
 
-}
-.custom-tooltip {
-    --bs-tooltip-opacity: 1;
-    --bs-tooltip-color: var(--bs-secondary);
-    --bs-tooltip-bg: rgb(237, 237, 237);
 }
 
 @font-face {
@@ -29,7 +24,7 @@
 body {
     font-size: 15px;
     line-height: 1.5; 
-    background: var(--body-bg-color);
+    background: var(--asdf-body-bg-color);
     color: var(--bs-secondary);
 }
 
@@ -43,14 +38,6 @@ a:hover {
 }
 .no-hover *:hover {
     cursor: default;
-}
-
-.twolined {
-    white-space: pre-wrap; /* Allows multiline text */
-    text-align: left;
-    height: auto; /* Ensure it resizes for content */
-    display: inline-block; /* For proper size adjustment */
-    font-size: 12px;
 }
 
 figcaption {
@@ -83,26 +70,38 @@ pre {
     font-family: monospace;
     font-size: 12px;
 }
-/* Change font for all buttons */
-.btn {
+
+.btn-asdf {
     font-family: monospace;
     font-size: 12px;
+    --bs-btn-hover-bg: var(--asdf-highlight-color);
+    --bs-btn-active-bg: var(--asdf-highlight-color);
+    --bs-btn-color: var(--bs-secondary);
+    border: none;
 }
-.btn-light {
-    --bs-btn-color: #000;
-    --bs-btn-bg: #f8f9fa;
-    --bs-btn-border-color: #f8f9fa;
-    --bs-btn-hover-color: #000;
-    --bs-btn-hover-bg: var(--highlight-color);
-    --bs-btn-hover-border-color: #c6c7c8;
-    --bs-btn-focus-shadow-rgb: 211,212,213;
-    --bs-btn-active-color: #000;
-    --bs-btn-active-bg: var(--highlight-color);
-    --bs-btn-active-border-color: #babbbc;
-    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-    --bs-btn-disabled-color: #000;
-    --bs-btn-disabled-bg: #f8f9fa;
-    --bs-btn-disabled-border-color: #f8f9fa;
+.btn-check:checked + .btn.btn-asdf {
+    /* font-weight: bold; */
+    /* background-color: var(--asdf-body-bg-color); */
+    border: none;
+}
+.btn-check:checked + .btn.btn-asdf:hover {
+}
+.btn-check:not(:checked) + .btn.btn-asdf:hover {
+    color: #000;
+}
+
+.custom-tooltip {
+    --bs-tooltip-opacity: 1;
+    --bs-tooltip-color: var(--bs-secondary);
+    --bs-tooltip-bg: rgb(237, 237, 237);
+}
+
+.multiline {
+    white-space: pre-wrap;
+    text-align: left;
+    /* height: auto; */
+    /* display: inline-block; */
+    font-size: 12px;
 }
 .info {
     color: var(--bs-secondary);
@@ -117,6 +116,7 @@ pre {
 .dense {
     line-height: 1.2;
 }
+
 .shortcut-key {
     font-family: "Courier New", monospace; /* Monospace font for the keys */
     margin-right: 20px; /* Bigger space between key and definition */
@@ -151,12 +151,12 @@ pre {
     position: sticky; /* Keep it fixed relative to its nearest scrollable ancestor */
     top: 0;
     /* left: 0; */
-    height: var(--head-height);
+    height: var(--asdf-head-height);
     overflow-y: hidden;
     overflow-x: hidden;
     visibility: hidden;
     z-index: 10;
-    background-color: var(--body-bg-color);
+    background-color: var(--asdf-body-bg-color);
 }
 
 #diagramContainer {
@@ -165,26 +165,26 @@ pre {
     font-weight: 300;
     height: 100%;
     position: relative;
-    top: calc(0px - var(--head-height));
+    top: calc(0px - var(--asdf-head-height));
 }
 
 #divider {
-    height: var(--divider-height);
+    height: var(--asdf-divider-height);
     background: #ddd;
     cursor: row-resize;
 }
 
 #addinfoDisplay {
-    height: calc(15vh - var(--divider-height));
+    height: calc(15vh - var(--asdf-divider-height));
     padding: 20px;
-    background: var(--body-bg-color);
+    background: var(--asdf-body-bg-color);
     overflow-y: auto;
     overflow-x: auto;
 }
 
 .content {
-    margin-top: var(--toolbar-height);
-    height: calc(100vh - var(--toolbar-height));
+    margin-top: var(--asdf-toolbar-height);
+    height: calc(100vh - var(--asdf-toolbar-height));
 }
 
 .pagination .page-link {
@@ -265,16 +265,16 @@ path.signal-arrow {
 
 text.signal {
     /* fill:grey; */
-    stroke: var(--body-bg-color); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-body-bg-color); stroke-width: 8px; paint-order: stroke fill;
     cursor: pointer;
 }
 text.signal.same-id-signal:not(.instance-highlight-off) {
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
 text.signal.same-id-signal.special-signal:not(.instance-highlight-off) {
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
-    fill: var(--special-color);
+    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--asdf-special-color);
 }
 text.signal.related-signal:not(.related-highlight-off) {
     stroke: var(--highlight-color2); stroke-width: 8px; paint-order: stroke fill;
@@ -282,12 +282,12 @@ text.signal.related-signal:not(.related-highlight-off) {
 }
 text.signal.related-signal.special-signal:not(.related-highlight-off) {
     stroke: var(--highlight-color2); stroke-width: 8px; paint-order: stroke fill;
-    fill: var(--special-color);
+    fill: var(--asdf-special-color);
 }
 text.signal:hover {
     /* stroke: black; */
     /* stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill; */
-    stroke: var(--highlight-color); stroke-width: 3px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color); stroke-width: 3px; paint-order: stroke fill;
     /* fill: black; */
     font-style: italic;
 }
@@ -296,25 +296,25 @@ body.no-hover text.signal:hover:not(.active-signal) {
     font-style: normal;
 }
 text.special-signal {
-    fill: var(--special-color);
-    color: var(--special-color);
+    fill: var(--asdf-special-color);
+    color: var(--asdf-special-color);
 }
 text.special-signal:hover {
     /* stroke: orangered; */
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
-    fill: var(--special-color);
+    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--asdf-special-color);
 }
 text.active-signal.special-signal {
     font-weight: bold;
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
-    fill: var(--special-color);
+    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    fill: var(--asdf-special-color);
     font-style: italic;
 }
 text.active-signal:not(.special-signal) {
     /* stroke: black; */
     font-weight: bold;
     font-style: italic;
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
 text.seq-num.active-signal-seq-num {
@@ -326,7 +326,7 @@ circle.seq-num.active-signal-circle {
     /* stroke-width: 2; */
 }
 circle.seq-num.same-id-signal:not(.instance-highlight-off) {
-    fill: var(--highlight-color);
+    fill: var(--asdf-highlight-color);
 }
 circle.seq-num.related-signal:not(.related-highlight-off) {
     /* fill: var(--highlight-color2); */
@@ -352,7 +352,7 @@ path.gridline {
 }
 text.ts.active-ts {
     fill: black;
-    stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     /* font-weight: bold; */
 }
 

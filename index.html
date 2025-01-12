@@ -16,7 +16,7 @@
         <a class="navbar-brand pt-0 pb-0" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V &rang;&rang;</a>
 
         <div>
-            <label class="btn btn-sm btn-light twolined dense me-3" for="fileInput" id="fileInputLabel">open</label>
+            <label class="btn btn-sm btn-light btn-asdf multiline dense me-3" for="fileInput" id="fileInputLabel">open</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf"
              onchange="asdfVM.fileInputOnChange(event)" onclick="asdfVM.fileInputOnClick()">
         </div>
@@ -32,22 +32,22 @@
                 -->
 
                 <input type="checkbox" class="btn-check" id="showInstanceToggle">
-                <label class="btn btn-sm btn-light dense" for="showInstanceToggle"
+                <label class="btn btn-sm btn-light btn-asdf dense" for="showInstanceToggle"
                        data-bs-toggle="tooltip"
                        data-bs-custom-class="custom-tooltip"
                        data-bs-placement="bottom"
                        data-bs-title="Highlight signals of the same instance based on their source instance IDs">instance</label>
 
                 <input type="checkbox" class="btn-check" id="showRelatedToggle">
-                <label class="btn btn-sm btn-light dense" for="showRelatedToggle"
+                <label class="btn btn-sm btn-light btn-asdf dense" for="showRelatedToggle"
                        data-bs-toggle="tooltip"
                        data-bs-custom-class="custom-tooltip"
                        data-bs-placement="bottom"
                        data-bs-title="Highlight related signals based on their source and destination instance IDs">related</label>
             </div>
 
-            <button type="button" class="btn btn-light btn-sm dense" onclick="asdfVM.resetToolbarOnClick()">reset</button>
-            <button class="btn btn-sm btn-light dense" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="offcanvasRight">help</button>
+            <button type="button" class="btn btn-light btn-sm btn-asdf dense" onclick="asdfVM.resetToolbarOnClick()">reset</button>
+            <button class="btn btn-sm btn-light btn-asdf dense" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="offcanvasRight">help</button>
         </div>
         </ul>
 
@@ -106,9 +106,9 @@
     &copy; 2024-2025 Tamás Dezső (<a href="http://asdf.hu">asdf.hu</a>)<br><a href="https://github.com/xsnpdngv/ASDF-V">github.com/xsnpdngv/ASDF-V</a></small>
     </p><br>
 
-    <h6>Release Notes - v1.2 (Januray 10, 2025)</h6>
+    <h6>Release Notes - v1.2 (Januray 12, 2025)</h6>
     <ul>
-    <li>Support very big asdf files</li>
+    <li>Support even very big asdf files</li>
     <li>Show event timestamps</li>
     <li>Introduce Vim-like keyboard navigation</li>
     <li>Implement signal search, also inspired by Vim</li>
