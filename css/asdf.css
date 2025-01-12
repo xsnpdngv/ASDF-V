@@ -1,11 +1,9 @@
 :root {
     --asdf-body-bg-color: #fafafa;
     --asdf-highlight-color: rgb(255, 255, 132);
-    --highlight-color2: rgb(241, 255, 210);
-    --highlight-color2: rgb(255, 255, 132);
-    --highlight-color3: greenyellow;
+    --asdf-highlight-color2: rgb(255, 255, 132);
     --asdf-special-color: orangered;
-    --asdf-toolbar-height: 60px;
+    --asdf-toolbar-height: 65px;
     --asdf-divider-height: 2px;
     --asdf-head-height: 59px;
 
@@ -50,10 +48,12 @@ figure {
     padding-bottom: 10px;
 }
 
-pre {
+.addinfoSection {
     font-family: monospace;
     border-radius: 5px;
     overflow-x: auto;
+    padding-bottom: 10px;
+    margin-bottom: 0;
 }
 
 #diagramSearchInput {
@@ -118,24 +118,22 @@ pre {
 }
 
 .shortcut-key {
-    font-family: "Courier New", monospace; /* Monospace font for the keys */
-    margin-right: 20px; /* Bigger space between key and definition */
-    font-weight: bold; /* Make the keys more prominent */
+    font-family: "Courier New", monospace;
+    margin-right: 20px;
+    font-weight: bold;
 }
 .shortcut-list {
     padding-left: 8px;
     list-style-type: none;
     font-family: var(--bs-body-font-family);
-
-    /* color: var(--bs-secondary); */
 }
 .shortcut-item {
-    margin-bottom: 6px; /* Add spacing between each item */
-    font-size: 14px; /* Adjust font size if needed */
+    margin-bottom: 6px;
+    font-size: 14px;
 }
 .shortcut-item span {
-    font-family: "Courier New", monospace; /* Monospace font for the keys */
-    margin-right: 10px; /* Bigger space between the key and definition */
+    font-family: "Courier New", monospace;
+    margin-right: 10px;
     font-weight: bold;
 }
 
@@ -176,7 +174,10 @@ pre {
 
 #addinfoDisplay {
     height: calc(15vh - var(--asdf-divider-height));
-    padding: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 10px;
+    padding-bottom: 0px;
     background: var(--asdf-body-bg-color);
     overflow-y: auto;
     overflow-x: auto;
@@ -184,7 +185,7 @@ pre {
 
 .content {
     margin-top: var(--asdf-toolbar-height);
-    height: calc(100vh - var(--asdf-toolbar-height));
+    height: calc(100vh - var(--asdf-toolbar-height) - 12px);
 }
 
 .pagination .page-link {
@@ -277,11 +278,11 @@ text.signal.same-id-signal.special-signal:not(.instance-highlight-off) {
     fill: var(--asdf-special-color);
 }
 text.signal.related-signal:not(.related-highlight-off) {
-    stroke: var(--highlight-color2); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
 text.signal.related-signal.special-signal:not(.related-highlight-off) {
-    stroke: var(--highlight-color2); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--asdf-special-color);
 }
 text.signal:hover {
