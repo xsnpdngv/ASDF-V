@@ -1165,7 +1165,7 @@ class AsdfViewModel  {
 
     fileInputOnChange(event) {
         this.#initPaginatorCurrPage(0);
-        this.activeSignal.setBySeqNum(1);
+        this.activeSignal.setByIdx(0);
         this.model.loadDiagramFromFile(event.target.files[0]);
     }
 
