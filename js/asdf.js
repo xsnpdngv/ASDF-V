@@ -341,10 +341,10 @@ class PersistentToggle {
     }
 
     toggle() {
-        this.set( ! this.isChecked())
+        this.set( ! this.isOn())
     }
 
-    isChecked() {
+    isOn() {
         return this.#value.get();
     }
 
@@ -752,7 +752,7 @@ class AsdfViewModel  {
     }
 
     init() {
-        this.model.init(this.toggles["showIds"].isChecked());
+        this.model.init(this.toggles["showIds"].isOn());
         this.#addDocumentEventListeners();
         this.#addDividerEventListeners();
         this.#addScrollEventListeners();
@@ -781,7 +781,7 @@ class AsdfViewModel  {
         this.#saveScrollPosition();
         this.#initPaginator();
         this.#updateToolbar();
-        this.#initShowTime(this.toggles["showTime"].isChecked());
+        this.#initShowTime(this.toggles["showTime"].isOn());
         this.#updateHead();
         this.#restoreHeadScrollPosition();
         setTimeout(() => {
@@ -1319,7 +1319,7 @@ class AsdfViewModel  {
     }
 
     #drawTimestamps() {
-        if ( ! this.toggles["showTime"].isChecked() ||
+        if ( ! this.toggles["showTime"].isOn() ||
              ! this.signal_paths[0]) {
             return;
         }
@@ -1422,7 +1422,7 @@ class AsdfViewModel  {
                 isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
                                       s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
                 cl = 'same-id-signal';
-                if(isOfSameInstance && this.toggles["showInstance"].isChecked()) {
+                if(isOfSameInstance && this.toggles["showInstance"].isOn()) {
                     text.classList.add(cl);
                     circle.classList.add(cl);
                     seqNum.classList.add(cl);
@@ -1436,7 +1436,7 @@ class AsdfViewModel  {
                               (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
                 cl = 'related-signal';
-                if(isRelated && this.toggles["showRelated"].isChecked()) {
+                if(isRelated && this.toggles["showRelated"].isOn()) {
                     text.classList.add(cl);
                     circle.classList.add(cl);
                     seqNum.classList.add(cl);
