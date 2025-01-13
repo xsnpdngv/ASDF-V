@@ -1238,7 +1238,7 @@ class AsdfViewModel  {
         this.#resetScrollPosition();
         this.#initPaginatorCurrPage(0);
         this.model.reset();
-        if (this.model.diag) { this.divier.toDefaultPos(); }
+        if (this.model.diag) { this.#divider.toDefaultPos(); }
         this.signalSet.setCursor(1);
     }
 
