@@ -695,6 +695,10 @@ class offCanvasWrapper {
         this.docElem = document.getElementById(docElementId);
         this.offCanvas = new bootstrap.Offcanvas(this.docElem);
     }
+
+    toggle() {
+        this.docElem.classList.contains('show') ? this.offCanvas.hide() : this.offCanvas.show();
+    }
 }
 
 
@@ -813,34 +817,39 @@ class AsdfViewModel  {
 
             document.activeElement.blur();
 
-            if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
-            else if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
-            else if (keySeq.endsWith("==")) { vm.#dividerTop(); }
-            else if (keySeq.endsWith("-=")) { vm.#dividerCenter(); }
-            else if (keySeq.endsWith("--")) { vm.#dividerBottom(); }
-            else if (keySeq.endsWith("-.")) { vm.#dividerDefault(); }
+            if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
+            // view
             else if (keySeq.endsWith("ti")) { vm.toggles['showInstance'].toggle(); }
             else if (keySeq.endsWith("tr")) { vm.toggles['showRelated'].toggle(); }
             else if (keySeq.endsWith("ts")) { vm.toggles['showIds'].toggle(); }
             else if (keySeq.endsWith("tt")) { vm.toggles['showTime'].toggle(); }
-            else if (event.key === "G") { vm.#selectLastSignal(); }
+            else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
+            // movement
             else if (event.key === "j") { vm.#selectNextSignal(); }
             else if (event.key === "k") { vm.#selectPrevSignal(); }
             else if (event.shiftKey && event.key === "J") { vm.#shiftToNextSignal(); }
             else if (event.shiftKey && event.key === "K") { vm.#shiftToPrevSignal(); }
+            else if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
+            else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (keySeq.endsWith("zz")) { vm.#shiftToSelectedSignal(); }
             else if (event.key === "c") { vm.#shiftToSelectedSignal(); }
             else if (event.shiftKey && event.key === "H") { vm.paginatorPageFirst(); }
             else if (event.shiftKey && event.key === "L") { vm.paginatorPageLast(); }
-            else if (event.key === '<' || event.key === "h") { vm.paginatorPagePrev(); }
-            else if (event.key === '>' || event.key === "l") { vm.paginatorPageNext(); }
+            else if (event.key === "<") { vm.paginatorPagePrev(); }
+            else if (event.key === ">") { vm.paginatorPageNext(); }
+            else if (event.key === "h") { vm.paginatorPagePrev(); }
+            else if (event.key === "l") { vm.paginatorPageNext(); }
+            // search
             else if (event.key === "/") { event.preventDefault(); vm.#searchSignals(); }
             else if (event.key === "n") { vm.#showSearchInput(); vm.#gotoNextHit(); }
             else if (event.shiftKey && event.key === "N") { vm.#showSearchInput(); vm.#gotoPrevHit(); }
             else if (event.shiftKey && event.key === "*") { vm.#findOccurence() }
             else if (event.shiftKey && event.key === "#") { vm.#findOccurence(-1) }
-            else if (event.shiftKey && event.key === "?") { vm.#help.docElem.classList.contains('show') ? vm.#help.offCanvas.hide()
-                                                                                                        : vm.#help.offCanvas.show(); }
+            // divider
+            else if (event.shiftKey && event.key === "^") { vm.#dividerTop(); }
+            else if (event.key === "=") { vm.#dividerCenter(); }
+            else if (event.key === "-") { vm.#dividerDefault(); }
+            else if (event.shiftKey && event.key === "_") { vm.#dividerBottom(); }
             else {
                 setTimeout(() => { keySeq = ""; }, 500);
             }
