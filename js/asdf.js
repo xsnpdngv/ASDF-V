@@ -577,12 +577,12 @@ class SignalSet {
     #collection;
 
     constructor(name, collection = []) {
-        this.collection = collection;
+        this.setCollection(collection);
         this.#cursorSeqNum = new PersistentInt(name, -1);
     }
 
     setCollection(collection = []) {
-        this.#collection = collection;
+        this.#collection = Array.isArray(collection) ? collection : [];
     }
 
     setCursor(seqNum) {
@@ -595,7 +595,6 @@ class SignalSet {
 
     setCursorByIdx(idx) {
         if (idx < 0 || idx > this.#collection.length - 1) {
-            console.warn("Attempt to set Active Signal to invalid index");
             return;
         }
         this.setCursor(this.#collection[idx].seqNum);
@@ -1304,7 +1303,7 @@ class AsdfViewModel  {
     }
 
     #paginatorPageCount() {
-        return Math.max(1, Math.ceil(this.model.diag.netSignalCount / this.pageSize));
+        return Math.max(1, Math.ceil((this.model?.diag?.netSignalCount || 0) / this.pageSize)) || 0;
     }
 
     // ---- signal ----
@@ -1491,7 +1490,7 @@ class AsdfViewModel  {
     }
 
     #markTimestamps(refIndex) {
-        this.timestamps.forEach(g => { g.classList.remove('active-ts'); });
+        this.timestamps?.forEach(g => { g.classList.remove('active-ts'); });
         if (refIndex < 0 || refIndex > this.timestamps.length - 1) {
             return;
         }
