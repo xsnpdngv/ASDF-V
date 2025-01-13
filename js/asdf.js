@@ -711,11 +711,11 @@ class AsdfViewModel  {
     #isLastSearchValid;
     #hoverGate;
     #help;
+    #divider;
 
     constructor(model) {
         this.model = model;
         this.model.subscribe(this);
-        this.isResizing = false;
         this.pageSize = 200;
         this.timeOffsetX = 45;
         this.#signal_hits = [];
@@ -747,6 +747,7 @@ class AsdfViewModel  {
         this.pageNextBtn = document.getElementById("pageNext");
         this.pageLastBtn = document.getElementById("pageLast");
         this.searchStats = document.getElementById("searchStats");
+        this.#divider = new AsdfViewModel.Divider("diagramArea", "addinfoDisplay", "divider");
 
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
@@ -759,7 +760,6 @@ class AsdfViewModel  {
     init() {
         this.model.init(this.toggles["showIds"].isOn());
         this.#addDocumentEventListeners();
-        this.#addDividerEventListeners();
         this.#addScrollEventListeners();
         this.#addDiagramEventListeners();
         this.#initTooltips();
@@ -780,7 +780,7 @@ class AsdfViewModel  {
     }
 
     update() {
-        this.#initDivider();
+        this.#positionDivider();
         this.#initSearch();
         this.#invalidateLastSearch();
         if ( ! this.model.diag) { return; }
@@ -850,10 +850,10 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "*") { vm.#findOccurence() }
             else if (event.shiftKey && event.key === "#") { vm.#findOccurence(-1) }
             // divider
-            else if (event.shiftKey && event.key === "^") { vm.#dividerTop(); }
-            else if (event.key === "=") { vm.#dividerCenter(); }
-            else if (event.key === "-") { vm.#dividerDefault(); }
-            else if (event.shiftKey && event.key === "_") { vm.#dividerBottom(); }
+            else if (event.shiftKey && event.key === "^") { vm.#divider.toTop(); }
+            else if (event.key === "=") { vm.#divider.toCenter(); }
+            else if (event.key === "-") { vm.#divider.toDefaultPos(); }
+            else if (event.shiftKey && event.key === "_") { vm.#divider.toBottom(); }
             else {
                 setTimeout(() => { keySeq = ""; }, 500);
             }
@@ -1228,7 +1228,7 @@ class AsdfViewModel  {
         this.#resetScrollPosition();
         this.#initPaginatorCurrPage(0);
         this.model.reset();
-        if (this.model.diag) { this.#dividerDefault(); }
+        if (this.model.diag) { this.divier.toDefaultPos(); }
         this.activeSignal.setBySeqNum(1);
     }
 
@@ -1584,68 +1584,85 @@ class AsdfViewModel  {
         });
     }
 
-    // ---- divider -----
-    #initDivider() {
-        if ( ! this.model.diag) { this.#dividerBottom(); }
-        else if ( ! this.wasDiag) { this.#dividerDefault(); }
+    #positionDivider() {
+        if ( ! this.model.diag) { this.#divider.toBottom(); }
+        else if ( ! this.wasDiag) { this.#divider.toDefaultPos(); }
         this.wasDiag = !! this.model.diag;
     }
 
-    #addDividerEventListeners() {
-        document.onmousemove = (e) => this.#documentOnMouseMove(e);
-        document.onmouseup = () => this.#documentOnMouseUp();
-        document.getElementById("divider").onmousedown = (e) => this.#dividerOnMouseDown(e);
-    }
+    // ---- Divider -----
+    static Divider = class {
+        #upperArea;
+        #lowerArea;
+        #divider;
+        #isResizing;
+        #startY;
+        #startUpperAreaHeight;
 
-    #dividerOnMouseDown(e) {
-        this.isResizing = true;
-        this.startY = e.clientY; 
-        this.startDiagramHeight = document.getElementById("diagramArea").offsetHeight;
-        document.body.style.userSelect = "none";
-        document.body.style.cursor = 'row-resize';
-    }
+        constructor(upperAreaId, lowerAreaId, dividerId) {
+            this.#upperArea = document.getElementById(upperAreaId);
+            this.#lowerArea = document.getElementById(lowerAreaId);
+            this.#divider = document.getElementById(dividerId);
+            this.#addEventListeners();
+            this.isResizing = false;
+        }
 
-    #documentOnMouseMove(e) {
-        if (this.isResizing) {
-            const deltaY = e.clientY - this.startY;
-            const totalHeight = document.body.offsetHeight;
-            const diagramHeight = (this.startDiagramHeight + deltaY) / totalHeight * 100;
-            const infoHeight = 100 - diagramHeight;
+        #addEventListeners() {
+            document.onmousemove = (e) => this.#documentOnMouseMove(e);
+            document.onmouseup = () => this.#documentOnMouseUp();
+            this.#divider.onmousedown = (e) => this.#dividerOnMouseDown(e);
+        }
 
-            if (diagramHeight > 5 && infoHeight > 5) {
-                document.getElementById("diagramArea").style.height = `${diagramHeight}%`;
-                document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
+        #dividerOnMouseDown(e) {
+            this.#isResizing = true;
+            this.#startY = e.clientY; 
+            this.#startUpperAreaHeight = document.getElementById("diagramArea").offsetHeight;
+            document.body.style.userSelect = "none";
+            document.body.style.cursor = 'row-resize';
+        }
+
+        #documentOnMouseMove(e) {
+            if (this.#isResizing) {
+                const deltaY = e.clientY - this.#startY;
+                const totalHeight = document.body.offsetHeight;
+                const upperAreaHeight = (this.#startUpperAreaHeight + deltaY) / totalHeight * 100;
+                const lowerAreaHeight = 100 - upperAreaHeight;
+
+                if (upperAreaHeight > 5 && lowerAreaHeight > 5) {
+                    this.#upperArea.style.height = `${upperAreaHeight}%`;
+                    this.#lowerArea.style.height = `${lowerAreaHeight}%`;
+                }
             }
         }
-    }
 
-    #documentOnMouseUp() {
-        this.isResizing = false;
-        document.body.style.cursor = 'default';
-        document.body.style.userSelect = "";
-    }
+        #documentOnMouseUp() {
+            this.#isResizing = false;
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = "";
+        }
 
-    #setDividerPos(infoHeight) {
-        const diagramHeight = 100 - infoHeight;
-        document.getElementById("diagramArea").style.height = `${diagramHeight}%`;
-        document.getElementById("addinfoDisplay").style.height = `${infoHeight}%`;
-    }
+        #setDividerPos(lowerAreaHeight) {
+            const upperAreaHeight = 100 - lowerAreaHeight;
+            this.#upperArea.style.height = `${upperAreaHeight}%`;
+            this.#lowerArea.style.height = `${lowerAreaHeight}%`;
+        }
 
-    #dividerDefault() {
-        this.#setDividerPos(15);
-    }
+        toDefaultPos() {
+            this.#setDividerPos(15);
+        }
 
-    #dividerTop() {
-        this.#setDividerPos(75);
-    }
+        toTop() {
+            this.#setDividerPos(75);
+        }
 
-    #dividerCenter() {
-        this.#setDividerPos(50);
-    }
+        toCenter() {
+            this.#setDividerPos(50);
+        }
 
-    #dividerBottom() {
-        this.#setDividerPos(0);
-    }
+        toBottom() {
+            this.#setDividerPos(0);
+        }
+    }; // Divider
 }
 
 
