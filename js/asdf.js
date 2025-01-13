@@ -807,6 +807,10 @@ class AsdfViewModel  {
 
             vm.#hoverGate.close();
 
+            if (event.metaKey) {
+                return;
+            }
+
             if (document.activeElement === vm.diagramSearchInput) {
                 if (event.key === "Enter") { vm.#performSearchSignals(); }
                 if (event.key === "Escape") { vm.diagramSearchInput.blur(); }
