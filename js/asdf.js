@@ -568,11 +568,10 @@ class AsdfModel {
     }
 }
 
-
 /* ====================================================================
  * Auxiliary classes to support the View Model
  * ==================================================================== */
-class SignalSet {
+class SignalCursor {
     #cursorSeqNum;
     #collection;
 
@@ -585,27 +584,23 @@ class SignalSet {
         this.#collection = Array.isArray(collection) ? collection : [];
     }
 
-    setCursor(seqNum) {
+    set(seqNum) {
         this.#cursorSeqNum.set(seqNum);
     }
 
-    resetCursor() {
-        this.setCursor(-1);
-    }
-
-    setCursorByIdx(idx) {
+    setByIdx(idx) {
         if (idx < 0 || idx > this.#collection.length - 1) {
             return;
         }
-        this.setCursor(this.#collection[idx].seqNum);
+        this.set(this.#collection[idx].seqNum);
     }
 
-    getCursorIdx() {
-        return this.#indexOf(this.#cursorSeqNum.get());
-    }
-
-    getCursor() {
+    get() {
         return this.#cursorSeqNum.get();
+    }
+
+    getIdx() {
+        return this.#indexOf(this.#cursorSeqNum.get());
     }
 
     #indexOf(seqNum) {
@@ -618,39 +613,43 @@ class SignalSet {
         return idx;
     }
 
-    cursorNext() {
-        this.setCursorByIdx(this.getCursorIdx() + 1);
+    reset() {
+        this.set(-1);
     }
 
-    cursorPrev() {
-        this.setCursorByIdx(this.getCursorIdx() - 1);
+    next() {
+        this.setByIdx(this.getIdx() + 1);
     }
 
-    cursorHome() {
-        this.setCursorByIdx(0);
+    prev() {
+        this.setByIdx(this.getIdx() - 1);
     }
 
-    cursorEnd() {
-        this.setCursorByIdx(this.#collection.length - 1);
+    home() {
+        this.setByIdx(0);
     }
 
-    isCursorAtHome() {
-        return this.getCursorIdx() == 0;
+    end() {
+        this.setByIdx(this.#collection.length - 1);
     }
 
-    isCursorAtEnd() {
-        return this.getCursorIdx() == this.#collection.length - 1;
+    isAtHome() {
+        return this.getIdx() == 0;
+    }
+
+    isAtEnd() {
+        return this.getIdx() == this.#collection.length - 1;
+    }
+
+    isValid() {
+        return this.#isIndexValid(this.getIdx());
     }
 
     #isIndexValid(idx) {
         return 0 <= idx && idx < this.#collection.length;
     }
 
-    isCursorValid() {
-        return this.#isIndexValid(this.getCursorIdx());
-    }
-
-    length() {
+    collectionLength() {
         return this.#collection.length;
     }
 }
@@ -759,8 +758,8 @@ class AsdfViewModel  {
 
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
-        this.signalSet = new SignalSet("selectedSignal", this.diag_signals);
-        this.hitSet = new SignalSet("activeHit", this.#signal_hits);
+        this.activeSignal = new SignalCursor("signals", this.diag_signals);
+        this.currHit = new SignalCursor("hits", this.#signal_hits);
         this.actorOrder = new PersistentArray("actorOrderVM");
         this.currPage = new PersistentInt("currPage", 0);
     }
@@ -870,26 +869,26 @@ class AsdfViewModel  {
 
     // ----- move around -----
     #selectFirstSignal() {
-        this.signalSet.cursorHome();
+        this.activeSignal.home();
         this.#shiftToSelectedSignal();
         this.#applySignalClick();
     }
 
     #selectLastSignal() {
-        this.signalSet.cursorEnd();
+        this.activeSignal.end();
         this.#shiftToSelectedSignal();
         this.#applySignalClick();
     }
 
     #selectNextSignal() {
-        if ( ! this.signalSet.isCursorValid()) {
+        if ( ! this.activeSignal.isValid()) {
             this.#selectFirstSignal();
         } else {
-            if (this.#isSignalOutOfSight(this.signalSet)) {
-                this.signalSet.cursorNext();
+            if (this.#isSignalOutOfSight(this.activeSignal)) {
+                this.activeSignal.next();
                 this.#shiftToSelectedSignal();
             } else {
-                this.signalSet.cursorNext();
+                this.activeSignal.next();
                 this.#rollWindow(+1);
             }
             this.#applySignalClick();
@@ -897,14 +896,14 @@ class AsdfViewModel  {
     }
 
     #selectPrevSignal() {
-        if ( ! this.signalSet.isCursorValid()) {
+        if ( ! this.activeSignal.isValid()) {
             this.#selectLastSignal();
         } else {
-            if (this.#isSignalOutOfSight(this.signalSet)) {
-                this.signalSet.cursorPrev();
+            if (this.#isSignalOutOfSight(this.activeSignal)) {
+                this.activeSignal.prev();
                 this.#shiftToSelectedSignal();
             } else {
-                this.signalSet.cursorPrev();
+                this.activeSignal.prev();
                 this.#rollWindow(-1);
             }
             this.#applySignalClick();
@@ -913,16 +912,16 @@ class AsdfViewModel  {
 
     #isSignalOutOfSight(sigSet) {
         const headHeight = 59;
-        const signalHeight = this.#signalDistance(sigSet.getCursorIdx(), sigSet.getCursorIdx()+1);
-        const sigY = this.signal_paths[sigSet.getCursorIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
+        const signalHeight = this.#signalDistance(sigSet.getIdx(), sigSet.getIdx()+1);
+        const sigY = this.signal_paths[sigSet.getIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
         return sigY - headHeight - signalHeight < 0 ||
                sigY > this.diagramContainer.offsetHeight;
     }
 
     #rollWindow(offset) {
         const headHeight = 59;
-        const margin = 100; // let is be one signal height
-        const sigY = this.signal_paths[this.signalSet.getCursorIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
+        const margin = 100;
+        const sigY = this.signal_paths[this.activeSignal.getIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
         if (offset < 0 && sigY < headHeight + margin ||
             offset > 0 && sigY > this.diagramContainer.offsetHeight - margin) {
             this.#scrollSignals(offset)
@@ -940,15 +939,15 @@ class AsdfViewModel  {
     }
 
     #scrollSignals(offset) {
-        this.diagramContainer.scrollTop += this.#signalDistance(this.signalSet.getCursorIdx(), this.signalSet.getCursorIdx()+offset);
+        this.diagramContainer.scrollTop += this.#signalDistance(this.activeSignal.getIdx(), this.activeSignal.getIdx()+offset);
     }
 
     #shiftToSelectedSignal() {
-        if ( ! this.signalSet.isCursorValid()) {
+        if ( ! this.activeSignal.isValid()) {
             this.diagramContainer.scrollTop = 0;
             return;
         }
-        this.diagramContainer.scrollTop = this.signal_paths[this.signalSet.getCursorIdx()].getPointAtLength(0).y -
+        this.diagramContainer.scrollTop = this.signal_paths[this.activeSignal.getIdx()].getPointAtLength(0).y -
                                           this.diagramContainer.offsetHeight / 2;
     }
 
@@ -975,13 +974,13 @@ class AsdfViewModel  {
         this.diagramSearchInput.blur();
         let searchPattern = this.diagramSearchInput.value;
         if (searchPattern === "") {
-            this.hitSet.resetCursor();
-            this.hitSet.setCollection();
+            this.currHit.reset();
+            this.currHit.setCollection();
             this.#showSearchStats();
             return;
         }
         this.fullDiag = this.model.sideLoadDiagram();
-        this.hitSet.setCollection(this.fullDiag.signals.filter(signal =>
+        this.currHit.setCollection(this.fullDiag.signals.filter(signal =>
                                   signal.type === 'Signal' &&
                                   (signal.message.includes(searchPattern) ||
                                   signal.actorA.name.includes(searchPattern) ||
@@ -1000,7 +999,7 @@ class AsdfViewModel  {
     }
 
     #showSearchStats() {
-        this.searchStats.innerHTML = `${this.hitSet.getCursorIdx() + 1} /<br>${this.hitSet.length()}`;
+        this.searchStats.innerHTML = `${this.currHit.getIdx() + 1} /<br>${this.currHit.collectionLength()}`;
     }
 
     #hideSearchStats() {
@@ -1012,8 +1011,8 @@ class AsdfViewModel  {
             this.#performSearchSignals(dir);
             return;
         }
-        this.signalSet.setCursor(this.hitSet.getCursor());
-        let page = Math.floor(this.#globalIndexOf(this.hitSet.getCursor()) / this.pageSize);
+        this.activeSignal.set(this.currHit.get());
+        let page = Math.floor(this.#globalIndexOf(this.currHit.get()) / this.pageSize);
         if (page >= 0 && page != this.currPage.get()) {
             this.#paginatorSetCurrPage(page);
         }
@@ -1025,45 +1024,45 @@ class AsdfViewModel  {
     }
 
     #gotoNextHit() {
-        if (this.#isLastSearchValid && this.hitSet.length() < 1) {
+        if (this.#isLastSearchValid && this.currHit.collectionLength() < 1) {
             return;
         }
-        this.hitSet.cursorHome();
-        const limit = this.signalSet.isCursorValid() ? this.signalSet.getCursor()
+        this.currHit.home();
+        const limit = this.activeSignal.isValid() ? this.activeSignal.get()
                                                      : this.diag_signals[0].seqNum - 1;
-        while (this.hitSet.getCursor() <= limit) {
-            if (this.hitSet.isCursorAtEnd()) {
-                this.hitSet.cursorHome();
+        while (this.currHit.get() <= limit) {
+            if (this.currHit.isAtEnd()) {
+                this.currHit.home();
                 break;
             }
-            this.hitSet.cursorNext();
+            this.currHit.next();
         }
         this.#gotoCurrHit();
     }
 
     #gotoPrevHit() {
-        if (this.#isLastSearchValid && this.hitSet.length() < 1) {
+        if (this.#isLastSearchValid && this.currHit.collectionLength() < 1) {
             return;
         }
-        this.hitSet.cursorEnd();
-        const limit = this.signalSet.isCursorValid() ? this.signalSet.getCursor()
+        this.currHit.end();
+        const limit = this.activeSignal.isValid() ? this.activeSignal.get()
                                                   : this.diag_signals[this.diag_signals.length-1].seqNum + 1;
-        while (this.hitSet.getCursor() >= limit) {
-            if (this.hitSet.isCursorAtHome()) {
-                this.hitSet.cursorEnd();
+        while (this.currHit.get() >= limit) {
+            if (this.currHit.isAtHome()) {
+                this.currHit.end();
                 break;
             }
-            this.hitSet.cursorPrev();
+            this.currHit.prev();
         }
         this.#gotoCurrHit(-1);
     }
 
     #findOccurence(dir = 1) {
-        if ( ! this.signalSet.isCursorValid()) {
+        if ( ! this.activeSignal.isValid()) {
             return;
         }
         this.#showSearchInput();
-        this.diagramSearchInput.value = this.diag_signals[this.signalSet.getCursorIdx()].message;
+        this.diagramSearchInput.value = this.diag_signals[this.activeSignal.getIdx()].message;
         this.#performSearchSignals(dir);
     }
 
@@ -1109,7 +1108,7 @@ class AsdfViewModel  {
         this.#updateDiagramSvgElemLists();
         this.#drawSignalSeqNumCircles();
         this.#drawTimestamps();
-        if (this.#isFileInputChange) { this.signalSet.cursorHome(); this.#isFileInputChange = false; }
+        if (this.#isFileInputChange) { this.activeSignal.home(); this.#isFileInputChange = false; }
         this.#applySignalClick();
         this.#markActors();
         this.#addActorMoveBtns();
@@ -1132,7 +1131,7 @@ class AsdfViewModel  {
 
         if (this.model.diag) {
             this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
-            this.signalSet.setCollection(this.diag_signals);
+            this.activeSignal.setCollection(this.diag_signals);
         }
     }
 
@@ -1231,7 +1230,7 @@ class AsdfViewModel  {
     }
 
     #markSignalsHandler(vm) {
-        vm.#markSignals(vm.signalSet.getCursorIdx());
+        vm.#markSignals(vm.activeSignal.getIdx());
     }
 
     resetToolbarOnClick() {
@@ -1240,7 +1239,7 @@ class AsdfViewModel  {
         this.#initPaginatorCurrPage(0);
         this.model.reset();
         if (this.model.diag) { this.#divider.toDefaultPos(); }
-        this.signalSet.setCursor(1);
+        this.activeSignal.set(1);
     }
 
     // ---- paginator ----
@@ -1393,18 +1392,18 @@ class AsdfViewModel  {
     }
 
     #signalTextOnClick(index) {
-        if(this.signalSet.getCursorIdx() == index) {
-            this.signalSet.resetCursor();
+        if(this.activeSignal.getIdx() == index) {
+            this.activeSignal.reset();
         } else {
-            this.signalSet.setCursorByIdx(index);
+            this.activeSignal.setByIdx(index);
         }
         this.#applySignalClick();
     }
 
     #applySignalClick() {
         this.#showActiveSignalAddinfo();
-        this.#markSignals(this.signalSet.getCursorIdx());
-        this.#markTimestamps(this.signalSet.getCursorIdx());
+        this.#markSignals(this.activeSignal.getIdx());
+        this.#markTimestamps(this.activeSignal.getIdx());
     }
 
     #showAddinfoContent(index) {
@@ -1425,7 +1424,7 @@ class AsdfViewModel  {
     }
 
     #showActiveSignalAddinfo() {
-        this.#showAddinfoContent(this.signalSet.getCursorIdx());
+        this.#showAddinfoContent(this.activeSignal.getIdx());
     }
 
     #markSignals(refIndex) {
