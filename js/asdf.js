@@ -960,6 +960,7 @@ class AsdfViewModel  {
     #searchSignals() {
         this.#showSearchInput();
         this.diagramSearchInput.focus();
+        this.diagramSearchInput.select();
     }
 
     #showSearchInput() {
