@@ -324,43 +324,6 @@ class PersistentInt {
 }
 
 
-class PersistentToggle {
-    #uiElem;
-    #value;
-    #onChangeHandler;
-    #onChangeArg;
-
-    constructor(uiElemId, defaultValue, onChangeHandler, onChangeArg) {
-        this.#value = new PersistentBool(uiElemId, defaultValue);
-        this.#onChangeHandler = onChangeHandler;
-        this.#onChangeArg = onChangeArg;
-
-        this.#uiElem = document.getElementById(uiElemId) || {};
-        this.#uiElem.checked = this.#value.get();
-        this.#uiElem.onchange = () => this.set(this.#uiElem.checked);
-    }
-
-    toggle() {
-        this.set( ! this.isOn())
-    }
-
-    isOn() {
-        return this.#value.get();
-    }
-
-    set(isOn) {
-        this.#value.set(isOn);
-        this.#uiElem.checked = isOn;
-        this.#onChangeHandler(this.#onChangeArg, isOn);
-    }
-
-    reset() {
-        this.#value.reset();
-        this.set(this.#value.get());
-    }
-}
-
-
 /* ====================================================================
  * ASDF-V implements the Model-View-ViewModel (MVVM) pattern
  *
@@ -568,147 +531,6 @@ class AsdfModel {
     }
 }
 
-/* ====================================================================
- * Auxiliary classes to support the View Model
- * ==================================================================== */
-class SignalCursor {
-    #cursorSeqNum;
-    #collection;
-
-    constructor(name, collection = []) {
-        this.setCollection(collection);
-        this.#cursorSeqNum = new PersistentInt(name, -1);
-    }
-
-    setCollection(collection = []) {
-        this.#collection = Array.isArray(collection) ? collection : [];
-    }
-
-    reset() {
-        this.set(-1);
-        this.setCollection();
-    }
-
-    set(seqNum) {
-        this.#cursorSeqNum.set(seqNum);
-    }
-
-    setByIdx(idx) {
-        if (idx < 0 || idx > this.#collection.length - 1) {
-            return;
-        }
-        this.set(this.#collection[idx].seqNum);
-    }
-
-    get() {
-        return this.#cursorSeqNum.get();
-    }
-
-    getIdx() {
-        return this.#indexOf(this.#cursorSeqNum.get());
-    }
-
-    #indexOf(seqNum) {
-        let idx = this.#collection.length;
-        while ( idx --> 0 ) {
-            if (seqNum == this.#collection[idx].seqNum) {
-                break;
-            }
-        }
-        return idx;
-    }
-
-    next() {
-        this.setByIdx(this.getIdx() + 1);
-    }
-
-    prev() {
-        this.setByIdx(this.getIdx() - 1);
-    }
-
-    home() {
-        this.setByIdx(0);
-    }
-
-    end() {
-        this.setByIdx(this.#collection.length - 1);
-    }
-
-    isAtHome() {
-        return this.getIdx() == 0;
-    }
-
-    isAtEnd() {
-        return this.getIdx() == this.#collection.length - 1;
-    }
-
-    isValid() {
-        return this.#isIndexValid(this.getIdx());
-    }
-
-    #isIndexValid(idx) {
-        return 0 <= idx && idx < this.#collection.length;
-    }
-
-    collectionLength() {
-        return this.#collection.length;
-    }
-}
-
-
-class HoverGate {
-    #isOpen;
-    #callbacks;
-
-    constructor() {
-        this.#isOpen = true;
-        this.#callbacks = [];
-    }
-
-    subscribe(observer) {
-        this.#callbacks.push(observer);
-    }
-
-    #notify() {
-        this.#callbacks.forEach(callback => callback());
-    }
-
-    open() {
-        this.#isOpen = true;
-        document.body.classList.remove('no-hover');
-        this.#notify();
-    }
-
-    close() {
-        this.#isOpen = false;
-        document.body.classList.add('no-hover');
-        this.#addRestorer();
-        this.#notify();
-    }
-
-    isOpen() {
-        return this.#isOpen;
-    }
-
-    #addRestorer() {
-        ['mousemove', 'click', 'wheel'].forEach(event => {
-            window.addEventListener(event, () => this.open(), { once: true });
-        });
-    }
-}
-
-
-class OffCanvasWrapper {
-    constructor(docElementId) {
-        this.docElem = document.getElementById(docElementId);
-        this.offCanvas = new bootstrap.Offcanvas(this.docElem);
-    }
-
-    toggle() {
-        this.docElem.classList.contains('show') ? this.offCanvas.hide() : this.offCanvas.show();
-    }
-}
-
 
 /* ==============================
  * View Model: UI and Rendering
@@ -728,18 +550,18 @@ class AsdfViewModel  {
         this.timeOffsetX = 45;
         this.#signal_hits = [];
         this.#isLastSearchValid = false;
-        this.#hoverGate = new HoverGate();
+        this.#hoverGate = new AsdfViewModel.HoverGate();
         this.#hoverGate.subscribe(() => this.#showActiveSignalAddinfo());
-        this.#help = new OffCanvasWrapper("helpOffcanvas");
+        this.#help = new AsdfViewModel.OffCanvasWrapper("helpOffcanvas");
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
         this.fileInputLabel = document.getElementById("fileInputLabel");
         this.toggles = {
-            "showTime": new PersistentToggle("showTimeToggle", true, this.#showTimeOnChange, this),
-            "showIds": new PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
-            "showInstance": new PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
-            "showRelated": new PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
+            "showTime": new AsdfViewModel.PersistentToggle("showTimeToggle", true, this.#showTimeOnChange, this),
+            "showIds": new AsdfViewModel.PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
+            "showInstance": new AsdfViewModel.PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
+            "showRelated": new AsdfViewModel.PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
         }
 
         // placeholders
@@ -759,8 +581,8 @@ class AsdfViewModel  {
 
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
-        this.activeSignal = new SignalCursor("signals", this.diag_signals);
-        this.currHit = new SignalCursor("hits", this.#signal_hits);
+        this.activeSignal = new AsdfViewModel.SignalCursor("signals", this.diag_signals);
+        this.currHit = new AsdfViewModel.SignalCursor("hits", this.#signal_hits);
         this.actorOrder = new PersistentArray("actorOrderVM");
         this.currPage = new PersistentInt("currPage", 0);
     }
@@ -1600,6 +1422,134 @@ class AsdfViewModel  {
         this.wasDiag = !! this.model.diag;
     }
 
+
+    // ====== auxiliary inner classes ======
+
+
+    // ---- SignalCursor ----
+    static SignalCursor = class {
+        #cursorSeqNum;
+        #collection;
+
+        constructor(name, collection = []) {
+            this.setCollection(collection);
+            this.#cursorSeqNum = new PersistentInt(name, -1);
+        }
+
+        setCollection(collection = []) {
+            this.#collection = Array.isArray(collection) ? collection : [];
+        }
+
+        reset() {
+            this.set(-1);
+            this.setCollection();
+        }
+
+        set(seqNum) {
+            this.#cursorSeqNum.set(seqNum);
+        }
+
+        setByIdx(idx) {
+            if (idx < 0 || idx > this.#collection.length - 1) {
+                return;
+            }
+            this.set(this.#collection[idx].seqNum);
+        }
+
+        get() {
+            return this.#cursorSeqNum.get();
+        }
+
+        getIdx() {
+            return this.#indexOf(this.#cursorSeqNum.get());
+        }
+
+        #indexOf(seqNum) {
+            let idx = this.#collection.length;
+            while ( idx --> 0 ) {
+                if (seqNum == this.#collection[idx].seqNum) {
+                    break;
+                }
+            }
+            return idx;
+        }
+
+        next() {
+            this.setByIdx(this.getIdx() + 1);
+        }
+
+        prev() {
+            this.setByIdx(this.getIdx() - 1);
+        }
+
+        home() {
+            this.setByIdx(0);
+        }
+
+        end() {
+            this.setByIdx(this.#collection.length - 1);
+        }
+
+        isAtHome() {
+            return this.getIdx() == 0;
+        }
+
+        isAtEnd() {
+            return this.getIdx() == this.#collection.length - 1;
+        }
+
+        isValid() {
+            return this.#isIndexValid(this.getIdx());
+        }
+
+        #isIndexValid(idx) {
+            return 0 <= idx && idx < this.#collection.length;
+        }
+
+        collectionLength() {
+            return this.#collection.length;
+        }
+    }; // SignalCursor
+
+
+    // ---- PersistentToggle ----
+    static PersistentToggle = class {
+        #uiElem;
+        #value;
+        #onChangeHandler;
+        #onChangeArg;
+
+        constructor(uiElemId, defaultValue, onChangeHandler, onChangeArg) {
+            this.#value = new PersistentBool(uiElemId, defaultValue);
+            this.#onChangeHandler = onChangeHandler;
+            this.#onChangeArg = onChangeArg;
+
+            this.#uiElem = document.getElementById(uiElemId) || {};
+            this.#uiElem.checked = this.#value.get();
+            this.#uiElem.onchange = () => this.set(this.#uiElem.checked);
+        }
+
+        toggle() {
+            this.set( ! this.isOn())
+        }
+
+        isOn() {
+            return this.#value.get();
+        }
+
+        set(isOn) {
+            this.#value.set(isOn);
+            this.#uiElem.checked = isOn;
+            this.#onChangeHandler(this.#onChangeArg, isOn);
+        }
+
+        reset() {
+            this.#value.reset();
+            this.set(this.#value.get());
+        }
+    }; // PersistentToggle
+
+
     // ---- Divider -----
     static Divider = class {
         #upperArea;
@@ -1673,8 +1623,63 @@ class AsdfViewModel  {
             this.#setDividerPos(0);
         }
     }; // Divider
-}
 
+
+    // ---- HoverGate ----
+    static HoverGate = class HoverGate {
+        #isOpen;
+        #callbacks;
+
+        constructor() {
+            this.#isOpen = true;
+            this.#callbacks = [];
+        }
+
+        subscribe(observer) {
+            this.#callbacks.push(observer);
+        }
+
+        #notify() {
+            this.#callbacks.forEach(callback => callback());
+        }
+
+        open() {
+            this.#isOpen = true;
+            document.body.classList.remove('no-hover');
+            this.#notify();
+        }
+
+        close() {
+            this.#isOpen = false;
+            document.body.classList.add('no-hover');
+            this.#addRestorer();
+            this.#notify();
+        }
+
+        isOpen() {
+            return this.#isOpen;
+        }
+
+        #addRestorer() {
+            ['mousemove', 'click', 'wheel'].forEach(event => {
+                window.addEventListener(event, () => this.open(), { once: true });
+            });
+        }
+    }; // HoverGate
+
+
+    // ---- OffCanvasWrapper ----
+    static OffCanvasWrapper = class {
+        constructor(docElementId) {
+            this.docElem = document.getElementById(docElementId);
+            this.offCanvas = new bootstrap.Offcanvas(this.docElem);
+        }
+
+        toggle() {
+            this.docElem.classList.contains('show') ? this.offCanvas.hide() : this.offCanvas.show();
+        }
+    }; // OffCanvasWrapper
+}
 
 /* ============================
  * Application Initialization
