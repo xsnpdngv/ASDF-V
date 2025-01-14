@@ -584,6 +584,11 @@ class SignalCursor {
         this.#collection = Array.isArray(collection) ? collection : [];
     }
 
+    reset() {
+        this.set(-1);
+        this.setCollection();
+    }
+
     set(seqNum) {
         this.#cursorSeqNum.set(seqNum);
     }
@@ -611,10 +616,6 @@ class SignalCursor {
             }
         }
         return idx;
-    }
-
-    reset() {
-        this.set(-1);
     }
 
     next() {
@@ -975,7 +976,6 @@ class AsdfViewModel  {
         let searchPattern = this.diagramSearchInput.value;
         if (searchPattern === "") {
             this.currHit.reset();
-            this.currHit.setCollection();
             this.#showSearchStats();
             return;
         }
@@ -1393,7 +1393,7 @@ class AsdfViewModel  {
 
     #signalTextOnClick(index) {
         if(this.activeSignal.getIdx() == index) {
-            this.activeSignal.reset();
+            this.activeSignal.set(-1);
         } else {
             this.activeSignal.setByIdx(index);
         }
