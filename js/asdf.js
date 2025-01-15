@@ -704,188 +704,6 @@ class AsdfViewModel  {
         });
     }
 
-    // ---- SignalNavigator ----
-    static SignalNavigator = class SignalNavigator {
-        static #HEAD_HEIGHT = 59;
-        static #MARGIN = 100;
-        #signalPathClassName = "";
-        #signalCursor;
-        #signalSelectAction = () => {};
-        #gui = {};
-
-        constructor(signalPathClassName, signalCursor, guiElemIds, signalSelectAction = () => {}) {
-            this.#signalPathClassName = signalPathClassName;
-            this.#signalCursor = signalCursor;
-            this.#gui.diagramContainer = document.getElementById(guiElemIds?.diagramContainerId);
-            this.#signalSelectAction = signalSelectAction;
-        }
-
-        #signalPaths() {
-            return document.querySelectorAll(this.#signalPathClassName);
-        }
-
-        toCursor() {
-            if ( ! this.#signalCursor.isValid()) {
-                this.#gui.diagramContainer.scrollTop = 0;
-                return;
-            }
-            this.#gui.diagramContainer.scrollTop = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y -
-                                                   this.#gui.diagramContainer.offsetHeight / 2;
-        }
-
-        toFirst() {
-            this.#signalCursor.home();
-            this.toCursor();
-            this.#signalSelectAction();
-        }
-
-        toLast() {
-            this.#signalCursor.end();
-            this.toCursor();
-            this.#signalSelectAction();
-        }
-
-        toNext(isShift = false) {
-            if ( ! this.#signalCursor.isValid()) {
-                this.toFirst();
-                return;
-            }
-            if (this.#isCursorOutOfSight(this.#signalCursor)) {
-                this.#signalCursor.next();
-                this.toCursor();
-            } else {
-                isShift ? this.#scrollSignals(+1) : this.#rollWindow(+1);
-                this.#signalCursor.next();
-            }
-            this.#signalSelectAction();
-        }
-
-        toPrev(isShift = false) {
-            if ( ! this.#signalCursor.isValid()) {
-                this.toLast();
-                return;
-            }
-            if (this.#isCursorOutOfSight()) {
-                this.#signalCursor.prev();
-                this.toCursor();
-            } else {
-                isShift ? this.#scrollSignals(-1) : this.#rollWindow(-1);
-                this.#signalCursor.prev();
-            }
-            this.#signalSelectAction();
-        }
-
-        shiftToNext() {
-            this.toNext(true);
-        }
-
-        shiftToPrev() {
-            this.toPrev(true);
-        }
-
-        #isCursorOutOfSight() {
-            const signalHeight = this.#signalDistance(this.#signalCursor.getIdx(), this.#signalCursor.getIdx()+1);
-            const sigY = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y - this.#gui.diagramContainer.scrollTop;
-            return sigY - SignalNavigator.#HEAD_HEIGHT - signalHeight < 0 ||
-                   sigY > this.#gui.diagramContainer.offsetHeight;
-        }
-
-        #rollWindow(offset) {
-            const sigY = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y - this.#gui.diagramContainer.scrollTop;
-            if (offset < 0 && sigY < SignalNavigator.#HEAD_HEIGHT + SignalNavigator.#MARGIN ||
-                offset > 0 && sigY > this.#gui.diagramContainer.offsetHeight - SignalNavigator.#MARGIN) {
-                this.#scrollSignals(offset)
-            }
-        }
-
-        #scrollSignals(offset) {
-            this.#gui.diagramContainer.scrollTop += this.#signalDistance(this.#signalCursor.getIdx(), this.#signalCursor.getIdx()+offset);
-        }
-
-        #signalDistance(i, j) {
-            if (i < 0 || i >= this.#signalPaths().length-1 ||
-                j < 0 || j >= this.#signalPaths().length-1) {
-                return 0;
-            }
-            return this.#signalPaths()[j].getPointAtLength(0).y -
-                   this.#signalPaths()[i].getPointAtLength(0).y;
-        }
-    };
-
-
-    // ----- CursorDisplay -----
-    static CursorDisplay = class {
-        #cursor;
-        #displayElem;
-
-        constructor(cursor, displayElemId) {
-            this.#displayElem = document.getElementById(displayElemId);
-            this.#cursor = cursor instanceof AsdfViewModel.SignalCursor ? cursor : null;
-        }
-
-        show() {
-            this.#displayElem.innerHTML = `${this.#cursor.getIdx() + 1} /<br>${this.#cursor.collectionLength()}`;
-        }
-
-        hide() {
-            this.#displayElem.innerHTML = "";
-        }
-    }; // CursorDisplay
-
-
-    // ---- Search ----
-    static Search = class {
-        #searchElem;
-        #searchInputElem;
-
-        constructor(searchElemId, searchInputElemId) {
-            this.#searchElem = document.getElementById(searchElemId);
-            this.#searchInputElem = document.getElementById(searchInputElemId);
-        }
-
-        show() {
-            this.#searchElem.style.visibility = "visible";
-        }
-
-        hide() {
-            this.#searchElem.style.visibility = "hidden";
-        }
-
-        blur() {
-            this.#searchInputElem.blur();
-        }
-
-        isActive() {
-            return document.activeElement === this.#searchInputElem;
-        }
-
-        trigger() {
-            this.show();
-            this.#searchInputElem.focus();
-            this.#searchInputElem.select();
-        }
-
-        setPattern(pattern = "") {
-            this.#searchInputElem.value = pattern;
-        }
-
-        getResults(searchSet, pattern = "") {
-            this.#searchInputElem.blur();
-            let searchPattern = pattern === "" ? this.#searchInputElem.value : pattern;
-            if (searchPattern === "") {
-                return [];
-            }
-            return searchSet.filter(signal =>
-                                    signal.type === 'Signal' &&
-                                    (signal.message.includes(searchPattern) ||
-                                    signal.actorA.name.includes(searchPattern) ||
-                                    signal.actorB.name.includes(searchPattern) ||
-                                    (signal.meta && signal.meta.includes(searchPattern)) ||
-                                    (signal.addinfo && signal.addinfo.includes(searchPattern))));
-        }
-    }; // Search
-
-
     #performSearchSignals(dir = 1) {
         this.hitCursor.reset();
         this.#searchDiag = this.model.sideLoadDiagram();
@@ -898,10 +716,6 @@ class AsdfViewModel  {
         this.#searchDiag = null;
         this.hitCursorDisplay.hide();
     }
-
-
-    // NEW CLASS for signal highlight rendering
-
 
     #gotoCurrHit(dir = 1) {
         if ( ! this.#searchDiag) {
@@ -1136,111 +950,6 @@ class AsdfViewModel  {
         if (this.model.diag) { this.#divider.toDefaultPos(); }
         this.signalCursor.set(1);
     }
-
-    // ---- Paginator ----
-    static Paginator = class {
-        #gui;
-        #model;
-        #pageSize;
-        #currPage;
-
-        constructor(model, guiElemIds = {}) {
-            this.#model = model;
-            this.#gui = {};
-            this.#gui.container = document.getElementById(guiElemIds?.containerId);
-            this.#gui.pageFirstBtn = document.getElementById(guiElemIds?.pageFirstBtnId);
-            this.#gui.pagePrevBtn = document.getElementById(guiElemIds?.pagePrevBtnId);
-            this.#gui.pageNextBtn = document.getElementById(guiElemIds?.pageNextBtnId);
-            this.#gui.pageLastBtn = document.getElementById(guiElemIds?.pageLastBtnId);
-            this.#gui.pageInfo = document.getElementById(guiElemIds?.pageInfoId);
-            this.#gui.pageFirstBtn.addEventListener("click", () => this.firstPage());
-            this.#gui.pagePrevBtn.addEventListener("click", () => this.prevPage());
-            this.#gui.pageNextBtn.addEventListener("click", () => this.nextPage());
-            this.#gui.pageLastBtn.addEventListener("click", () => this.lastPage());
-            this.#currPage = new PersistentInt(guiElemIds?.containerId + "_CurrPage", 0);
-            this.#pageSize = 200;
-        }
-
-        init() {
-            this.#currPage.set(0);
-            this.#model.initRelevantSignals(0, this.#pageSize);
-        }
-
-        setPageSize(pageSize) {
-            this.#pageSize = pageSize;
-        }
-
-        show() {
-            this.#gui.container.style.visibility = "visible";
-        }
-
-        hide() {
-            this.#gui.container.style.visibility = "hidden";
-        }
-
-        assess() {
-            if (this.#currPage.value >= this.length()) {
-                this.lastPage();
-            }
-            if (this.#currPage.value == 0) {
-                this.#gui.pageFirstBtn.classList.add("disabled");
-                this.#gui.pagePrevBtn.classList.add("disabled");
-            } else {
-                this.#gui.pageFirstBtn.classList.remove("disabled");
-                this.#gui.pagePrevBtn.classList.remove("disabled");
-            }
-            if (this.isLastPage()) {
-                this.#gui.pageLastBtn.classList.add("disabled");
-                this.#gui.pageNextBtn.classList.add("disabled");
-            } else {
-                this.#gui.pageLastBtn.classList.remove("disabled");
-                this.#gui.pageNextBtn.classList.remove("disabled");
-            }
-            this.#updateInfo();
-            this.length() > 1 ? this.show() : this.hide();
-        }
-
-        #updateInfo() {
-            this.#gui.pageInfo.innerHTML = (this.#currPage.value + 1) + "/" + this.length();
-        }
-
-        setCurrPage(pageIdx) {
-            this.#currPage.set(pageIdx);
-            this.#model.setRelevantSignals(pageIdx * this.#pageSize - (pageIdx > 0), this.#pageSize + (pageIdx > 0));
-        }
-
-        length() {
-            return Math.max(1, Math.ceil((this.#model?.diag?.netSignalCount || 0) / this.#pageSize)) || 0;
-        }
-
-        nextPage() {
-            this.setCurrPage(this.#currPage.value + (this.#currPage.value < this.length()-1));
-        }
-
-        prevPage() {
-            this.setCurrPage(this.#currPage.value - (this.#currPage.value > 0));
-        }
-
-        firstPage() {
-            this.setCurrPage(0);
-        }
-
-        lastPage() {
-            this.setCurrPage(this.length()-1);
-        }
-
-        isLastPage() {
-            return this.#currPage.value == this.length()-1;
-        }
-
-        goToPageOfSignal(signalIdx) {
-            let pageIdx = Math.floor(signalIdx + 1 / this.#pageSize);
-            if (0 <= pageIdx && pageIdx < this.length() && pageIdx != this.#currPage.value) {
-                this.setCurrPage(pageIdx);
-            }
-        }
-    };
-
 
     // ---- signal ----
     #drawSignalSeqNumCircles() {
@@ -1540,94 +1249,6 @@ class AsdfViewModel  {
     // ====== auxiliary inner classes ======
 
 
-    // ---- SignalCursor ----
-    static SignalCursor = class {
-        #cursorSeqNum;
-        #collection;
-
-        constructor(name, collection = []) {
-            this.setCollection(collection);
-            this.#cursorSeqNum = new PersistentInt(name, -1);
-            this.seqNum = this.#cursorSeqNum.value;
-        }
-
-        setCollection(collection = []) {
-            this.#collection = Array.isArray(collection) ? collection : [];
-        }
-
-        reset() {
-            this.set(-1);
-            this.setCollection();
-        }
-
-        set(seqNum) {
-            this.#cursorSeqNum.set(seqNum);
-            this.seqNum = seqNum;
-        }
-
-        setByIdx(idx) {
-            if (idx < 0 || idx > this.#collection.length - 1) {
-                return;
-            }
-            this.set(this.#collection[idx].seqNum);
-        }
-
-        get() {
-            return this.#cursorSeqNum.value;
-        }
-
-        getIdx() {
-            return this.#indexOf(this.#cursorSeqNum.value);
-        }
-
-        #indexOf(seqNum) {
-            let idx = this.#collection.length;
-            while ( idx --> 0 ) {
-                if (seqNum == this.#collection[idx].seqNum) {
-                    break;
-                }
-            }
-            return idx;
-        }
-
-        next() {
-            this.setByIdx(this.getIdx() + 1);
-        }
-
-        prev() {
-            this.setByIdx(this.getIdx() - 1);
-        }
-
-        home() {
-            this.setByIdx(0);
-        }
-
-        end() {
-            this.setByIdx(this.#collection.length - 1);
-        }
-
-        isAtHome() {
-            return this.getIdx() == 0;
-        }
-
-        isAtEnd() {
-            return this.getIdx() == this.#collection.length - 1;
-        }
-
-        isValid() {
-            return this.#isIndexValid(this.getIdx());
-        }
-
-        #isIndexValid(idx) {
-            return 0 <= idx && idx < this.#collection.length;
-        }
-
-        collectionLength() {
-            return this.#collection.length;
-        }
-    }; // SignalCursor
-
-
     // ---- PersistentToggle ----
     static PersistentToggle = class {
         #guiElem;
@@ -1741,6 +1362,380 @@ class AsdfViewModel  {
     }; // Divider
 
 
+    // ---- SignalCursor ----
+    static SignalCursor = class {
+        #cursorSeqNum;
+        #collection;
+
+        constructor(name, collection = []) {
+            this.setCollection(collection);
+            this.#cursorSeqNum = new PersistentInt(name, -1);
+            this.seqNum = this.#cursorSeqNum.value;
+        }
+
+        setCollection(collection = []) {
+            this.#collection = Array.isArray(collection) ? collection : [];
+        }
+
+        reset() {
+            this.set(-1);
+            this.setCollection();
+        }
+
+        set(seqNum) {
+            this.#cursorSeqNum.set(seqNum);
+            this.seqNum = seqNum;
+        }
+
+        setByIdx(idx) {
+            if (idx < 0 || idx > this.#collection.length - 1) {
+                return;
+            }
+            this.set(this.#collection[idx].seqNum);
+        }
+
+        get() {
+            return this.#cursorSeqNum.value;
+        }
+
+        getIdx() {
+            return this.#indexOf(this.#cursorSeqNum.value);
+        }
+
+        #indexOf(seqNum) {
+            let idx = this.#collection.length;
+            while ( idx --> 0 ) {
+                if (seqNum == this.#collection[idx].seqNum) {
+                    break;
+                }
+            }
+            return idx;
+        }
+
+        next() {
+            this.setByIdx(this.getIdx() + 1);
+        }
+
+        prev() {
+            this.setByIdx(this.getIdx() - 1);
+        }
+
+        home() {
+            this.setByIdx(0);
+        }
+
+        end() {
+            this.setByIdx(this.#collection.length - 1);
+        }
+
+        isAtHome() {
+            return this.getIdx() == 0;
+        }
+
+        isAtEnd() {
+            return this.getIdx() == this.#collection.length - 1;
+        }
+
+        isValid() {
+            return this.#isIndexValid(this.getIdx());
+        }
+
+        #isIndexValid(idx) {
+            return 0 <= idx && idx < this.#collection.length;
+        }
+
+        collectionLength() {
+            return this.#collection.length;
+        }
+    }; // SignalCursor
+
+
+    // ---- SignalNavigator ----
+    static SignalNavigator = class SignalNavigator {
+        static #HEAD_HEIGHT = 59;
+        static #MARGIN = 100;
+        #signalPathClassName = "";
+        #signalCursor;
+        #signalSelectAction = () => {};
+        #gui = {};
+
+        constructor(signalPathClassName, signalCursor, guiElemIds, signalSelectAction = () => {}) {
+            this.#signalPathClassName = signalPathClassName;
+            this.#signalCursor = signalCursor;
+            this.#gui.diagramContainer = document.getElementById(guiElemIds?.diagramContainerId);
+            this.#signalSelectAction = signalSelectAction;
+        }
+
+        #signalPaths() {
+            return document.querySelectorAll(this.#signalPathClassName);
+        }
+
+        toCursor() {
+            if ( ! this.#signalCursor.isValid()) {
+                this.#gui.diagramContainer.scrollTop = 0;
+                return;
+            }
+            this.#gui.diagramContainer.scrollTop = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y -
+                                                   this.#gui.diagramContainer.offsetHeight / 2;
+        }
+
+        toFirst() {
+            this.#signalCursor.home();
+            this.toCursor();
+            this.#signalSelectAction();
+        }
+
+        toLast() {
+            this.#signalCursor.end();
+            this.toCursor();
+            this.#signalSelectAction();
+        }
+
+        toNext(isShift = false) {
+            if ( ! this.#signalCursor.isValid()) {
+                this.toFirst();
+                return;
+            }
+            if (this.#isCursorOutOfSight(this.#signalCursor)) {
+                this.#signalCursor.next();
+                this.toCursor();
+            } else {
+                isShift ? this.#scrollSignals(+1) : this.#rollWindow(+1);
+                this.#signalCursor.next();
+            }
+            this.#signalSelectAction();
+        }
+
+        toPrev(isShift = false) {
+            if ( ! this.#signalCursor.isValid()) {
+                this.toLast();
+                return;
+            }
+            if (this.#isCursorOutOfSight()) {
+                this.#signalCursor.prev();
+                this.toCursor();
+            } else {
+                isShift ? this.#scrollSignals(-1) : this.#rollWindow(-1);
+                this.#signalCursor.prev();
+            }
+            this.#signalSelectAction();
+        }
+
+        shiftToNext() {
+            this.toNext(true);
+        }
+
+        shiftToPrev() {
+            this.toPrev(true);
+        }
+
+        #isCursorOutOfSight() {
+            const signalHeight = this.#signalDistance(this.#signalCursor.getIdx(), this.#signalCursor.getIdx()+1);
+            const sigY = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y - this.#gui.diagramContainer.scrollTop;
+            return sigY - SignalNavigator.#HEAD_HEIGHT - signalHeight < 0 ||
+                   sigY > this.#gui.diagramContainer.offsetHeight;
+        }
+
+        #rollWindow(offset) {
+            const sigY = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y - this.#gui.diagramContainer.scrollTop;
+            if (offset < 0 && sigY < SignalNavigator.#HEAD_HEIGHT + SignalNavigator.#MARGIN ||
+                offset > 0 && sigY > this.#gui.diagramContainer.offsetHeight - SignalNavigator.#MARGIN) {
+                this.#scrollSignals(offset)
+            }
+        }
+
+        #scrollSignals(offset) {
+            this.#gui.diagramContainer.scrollTop += this.#signalDistance(this.#signalCursor.getIdx(), this.#signalCursor.getIdx()+offset);
+        }
+
+        #signalDistance(i, j) {
+            if (i < 0 || i >= this.#signalPaths().length-1 ||
+                j < 0 || j >= this.#signalPaths().length-1) {
+                return 0;
+            }
+            return this.#signalPaths()[j].getPointAtLength(0).y -
+                   this.#signalPaths()[i].getPointAtLength(0).y;
+        }
+    }; // SignalNavigator
+
+
+    // ---- Paginator ----
+    static Paginator = class {
+        #gui;
+        #model;
+        #pageSize;
+        #currPage;
+
+        constructor(model, guiElemIds = {}) {
+            this.#model = model;
+            this.#gui = {};
+            this.#gui.container = document.getElementById(guiElemIds?.containerId);
+            this.#gui.pageFirstBtn = document.getElementById(guiElemIds?.pageFirstBtnId);
+            this.#gui.pagePrevBtn = document.getElementById(guiElemIds?.pagePrevBtnId);
+            this.#gui.pageNextBtn = document.getElementById(guiElemIds?.pageNextBtnId);
+            this.#gui.pageLastBtn = document.getElementById(guiElemIds?.pageLastBtnId);
+            this.#gui.pageInfo = document.getElementById(guiElemIds?.pageInfoId);
+            this.#gui.pageFirstBtn.addEventListener("click", () => this.firstPage());
+            this.#gui.pagePrevBtn.addEventListener("click", () => this.prevPage());
+            this.#gui.pageNextBtn.addEventListener("click", () => this.nextPage());
+            this.#gui.pageLastBtn.addEventListener("click", () => this.lastPage());
+            this.#currPage = new PersistentInt(guiElemIds?.containerId + "_CurrPage", 0);
+            this.#pageSize = 200;
+        }
+
+        init() {
+            this.#currPage.set(0);
+            this.#model.initRelevantSignals(0, this.#pageSize);
+        }
+
+        setPageSize(pageSize) {
+            this.#pageSize = pageSize;
+        }
+
+        show() {
+            this.#gui.container.style.visibility = "visible";
+        }
+
+        hide() {
+            this.#gui.container.style.visibility = "hidden";
+        }
+
+        assess() {
+            if (this.#currPage.value >= this.length()) {
+                this.lastPage();
+            }
+            if (this.#currPage.value == 0) {
+                this.#gui.pageFirstBtn.classList.add("disabled");
+                this.#gui.pagePrevBtn.classList.add("disabled");
+            } else {
+                this.#gui.pageFirstBtn.classList.remove("disabled");
+                this.#gui.pagePrevBtn.classList.remove("disabled");
+            }
+            if (this.isLastPage()) {
+                this.#gui.pageLastBtn.classList.add("disabled");
+                this.#gui.pageNextBtn.classList.add("disabled");
+            } else {
+                this.#gui.pageLastBtn.classList.remove("disabled");
+                this.#gui.pageNextBtn.classList.remove("disabled");
+            }
+            this.#updateInfo();
+            this.length() > 1 ? this.show() : this.hide();
+        }
+
+        #updateInfo() {
+            this.#gui.pageInfo.innerHTML = (this.#currPage.value + 1) + "/" + this.length();
+        }
+
+        setCurrPage(pageIdx) {
+            this.#currPage.set(pageIdx);
+            this.#model.setRelevantSignals(pageIdx * this.#pageSize - (pageIdx > 0), this.#pageSize + (pageIdx > 0));
+        }
+
+        length() {
+            return Math.max(1, Math.ceil((this.#model?.diag?.netSignalCount || 0) / this.#pageSize)) || 0;
+        }
+
+        nextPage() {
+            this.setCurrPage(this.#currPage.value + (this.#currPage.value < this.length()-1));
+        }
+
+        prevPage() {
+            this.setCurrPage(this.#currPage.value - (this.#currPage.value > 0));
+        }
+
+        firstPage() {
+            this.setCurrPage(0);
+        }
+
+        lastPage() {
+            this.setCurrPage(this.length()-1);
+        }
+
+        isLastPage() {
+            return this.#currPage.value == this.length()-1;
+        }
+
+        goToPageOfSignal(signalIdx) {
+            let pageIdx = Math.floor(signalIdx + 1 / this.#pageSize);
+            if (0 <= pageIdx && pageIdx < this.length() && pageIdx != this.#currPage.value) {
+                this.setCurrPage(pageIdx);
+            }
+        }
+    }; // Paginator
+
+
+    // ----- CursorDisplay -----
+    static CursorDisplay = class {
+        #cursor;
+        #displayElem;
+
+        constructor(cursor, displayElemId) {
+            this.#displayElem = document.getElementById(displayElemId);
+            this.#cursor = cursor instanceof AsdfViewModel.SignalCursor ? cursor : null;
+        }
+
+        show() {
+            this.#displayElem.innerHTML = `${this.#cursor.getIdx() + 1} /<br>${this.#cursor.collectionLength()}`;
+        }
+
+        hide() {
+            this.#displayElem.innerHTML = "";
+        }
+    }; // CursorDisplay
+
+
+    // ---- Search ----
+    static Search = class {
+        #searchElem;
+        #searchInputElem;
+
+        constructor(searchElemId, searchInputElemId) {
+            this.#searchElem = document.getElementById(searchElemId);
+            this.#searchInputElem = document.getElementById(searchInputElemId);
+        }
+
+        show() {
+            this.#searchElem.style.visibility = "visible";
+        }
+
+        hide() {
+            this.#searchElem.style.visibility = "hidden";
+        }
+
+        blur() {
+            this.#searchInputElem.blur();
+        }
+
+        isActive() {
+            return document.activeElement === this.#searchInputElem;
+        }
+
+        trigger() {
+            this.show();
+            this.#searchInputElem.focus();
+            this.#searchInputElem.select();
+        }
+
+        setPattern(pattern = "") {
+            this.#searchInputElem.value = pattern;
+        }
+
+        getResults(searchSet, pattern = "") {
+            this.#searchInputElem.blur();
+            let searchPattern = pattern === "" ? this.#searchInputElem.value : pattern;
+            if (searchPattern === "") {
+                return [];
+            }
+            return searchSet.filter(signal =>
+                                    signal.type === 'Signal' &&
+                                    (signal.message.includes(searchPattern) ||
+                                    signal.actorA.name.includes(searchPattern) ||
+                                    signal.actorB.name.includes(searchPattern) ||
+                                    (signal.meta && signal.meta.includes(searchPattern)) ||
+                                    (signal.addinfo && signal.addinfo.includes(searchPattern))));
+        }
+    }; // Search
+
     // ---- HoverGate ----
     static HoverGate = class HoverGate {
         #isOpen;
@@ -1796,6 +1791,7 @@ class AsdfViewModel  {
         }
     }; // OffCanvasWrapper
 }
+
 
 /* ============================
  * Application Initialization
