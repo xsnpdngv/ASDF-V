@@ -552,6 +552,7 @@ class AsdfViewModel  {
     #signal_hits;
     #hoverGate;
     #help;
+    #signalNavigator;
     #divider;
     #search;
     #searchDiag;
@@ -578,7 +579,6 @@ class AsdfViewModel  {
             "showRelated": new AsdfViewModel.PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
         }
 
-        // placeholders
         this.diagramHeadContainer = document.getElementById("diagramHeadContainer");
         this.diagramHeadDiv = document.getElementById("diagramHead");
         this.diagramContainer = document.getElementById("diagramContainer");
@@ -591,13 +591,14 @@ class AsdfViewModel  {
                                                                 pageNextBtnId: "pageNext",
                                                                 pageLastBtnId: "pageLast",
                                                                 pageInfoId: "pageInfo" });
-
-        // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
         this.signalCursor = new AsdfViewModel.SignalCursor("signals", this.diag_signals);
         this.hitCursor = new AsdfViewModel.SignalCursor("hits", this.#signal_hits);
         this.hitCursorDisplay = new AsdfViewModel.CursorDisplay(this.hitCursor, "searchStats");
         this.actorOrder = new PersistentArray("actorOrderVM");
+        this.#signalNavigator = new AsdfViewModel.SignalNavigator('path.signal-arrow', this.signalCursor,
+                                                                  { diagramContainerId: "diagramContainer" },
+                                                                  () => this.#applySignalClick());
     }
 
     init() {
@@ -624,8 +625,8 @@ class AsdfViewModel  {
 
     update() {
         this.#positionDivider();
-        this.model.diag ? this.#search.show() : this.#search.hide();
         this.#invalidateLastSearch();
+        this.model.diag ? this.#search.show() : this.#search.hide();
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
         this.#paginator.assess();
@@ -635,7 +636,7 @@ class AsdfViewModel  {
         this.#restoreHeadScrollPosition();
         setTimeout(() => {
             this.#updateDiagram();
-            this.#shiftToSelectedSignal();
+            this.#signalNavigator.toCursor();
         }, 0); // let head render before
     }
 
@@ -672,14 +673,14 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("tt")) { vm.toggles['showTime'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
             // movement
-            else if (event.key === "j") { vm.#selectNextSignal(); }
-            else if (event.key === "k") { vm.#selectPrevSignal(); }
-            else if (event.shiftKey && event.key === "J") { vm.#shiftToNextSignal(); }
-            else if (event.shiftKey && event.key === "K") { vm.#shiftToPrevSignal(); }
-            else if (keySeq.endsWith("gg")) { vm.#selectFirstSignal(); }
-            else if (event.key === "G") { vm.#selectLastSignal(); }
-            else if (keySeq.endsWith("zz")) { vm.#shiftToSelectedSignal(); }
-            else if (event.key === "c") { vm.#shiftToSelectedSignal(); }
+            else if (event.key === "j") { vm.#signalNavigator.toNext(); }
+            else if (event.key === "k") { vm.#signalNavigator.toPrev(); }
+            else if (event.shiftKey && event.key === "J") { vm.#signalNavigator.shiftToNext(); }
+            else if (event.shiftKey && event.key === "K") { vm.#signalNavigator.shiftToPrev(); }
+            else if (keySeq.endsWith("gg")) { vm.#signalNavigator.toFirst(); }
+            else if (event.key === "G") { vm.#signalNavigator.toLast(); }
+            else if (keySeq.endsWith("zz")) { vm.#signalNavigator.toCursor(); }
+            else if (event.key === "c") { vm.#signalNavigator.toCursor(); }
             else if (event.shiftKey && event.key === "H") { vm.#paginator.firstPage(); }
             else if (event.shiftKey && event.key === "L") { vm.#paginator.lastPage(); }
             else if (event.key === "<") { vm.#paginator.prevPage(); }
@@ -703,89 +704,114 @@ class AsdfViewModel  {
         });
     }
 
-    // ----- move around -----
-    #selectFirstSignal() {
-        this.signalCursor.home();
-        this.#shiftToSelectedSignal();
-        this.#applySignalClick();
-    }
+    // ---- SignalNavigator ----
+    static SignalNavigator = class SignalNavigator {
+        static #HEAD_HEIGHT = 59;
+        static #MARGIN = 100;
+        #signalPathClassName = "";
+        #signalCursor;
+        #signalSelectAction = () => {};
+        #gui = {};
 
-    #selectLastSignal() {
-        this.signalCursor.end();
-        this.#shiftToSelectedSignal();
-        this.#applySignalClick();
-    }
+        constructor(signalPathClassName, signalCursor, guiElemIds, signalSelectAction = () => {}) {
+            this.#signalPathClassName = signalPathClassName;
+            this.#signalCursor = signalCursor;
+            this.#gui.diagramContainer = document.getElementById(guiElemIds?.diagramContainerId);
+            this.#signalSelectAction = signalSelectAction;
+        }
 
-    #selectNextSignal() {
-        if ( ! this.signalCursor.isValid()) {
-            this.#selectFirstSignal();
-        } else {
-            if (this.#isSignalOutOfSight(this.signalCursor)) {
-                this.signalCursor.next();
-                this.#shiftToSelectedSignal();
-            } else {
-                this.signalCursor.next();
-                this.#rollWindow(+1);
+        #signalPaths() {
+            return document.querySelectorAll(this.#signalPathClassName);
+        }
+
+        toCursor() {
+            if ( ! this.#signalCursor.isValid()) {
+                this.#gui.diagramContainer.scrollTop = 0;
+                return;
             }
-            this.#applySignalClick();
+            this.#gui.diagramContainer.scrollTop = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y -
+                                                   this.#gui.diagramContainer.offsetHeight / 2;
         }
-    }
 
-    #selectPrevSignal() {
-        if ( ! this.signalCursor.isValid()) {
-            this.#selectLastSignal();
-        } else {
-            if (this.#isSignalOutOfSight(this.signalCursor)) {
-                this.signalCursor.prev();
-                this.#shiftToSelectedSignal();
-            } else {
-                this.signalCursor.prev();
-                this.#rollWindow(-1);
+        toFirst() {
+            this.#signalCursor.home();
+            this.toCursor();
+            this.#signalSelectAction();
+        }
+
+        toLast() {
+            this.#signalCursor.end();
+            this.toCursor();
+            this.#signalSelectAction();
+        }
+
+        toNext(isShift = false) {
+            if ( ! this.#signalCursor.isValid()) {
+                this.toFirst();
+                return;
             }
-            this.#applySignalClick();
+            if (this.#isCursorOutOfSight(this.#signalCursor)) {
+                this.#signalCursor.next();
+                this.toCursor();
+            } else {
+                isShift ? this.#scrollSignals(+1) : this.#rollWindow(+1);
+                this.#signalCursor.next();
+            }
+            this.#signalSelectAction();
         }
-    }
 
-    #isSignalOutOfSight(sigSet) {
-        const headHeight = 59;
-        const signalHeight = this.#signalDistance(sigSet.getIdx(), sigSet.getIdx()+1);
-        const sigY = this.signal_paths[sigSet.getIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
-        return sigY - headHeight - signalHeight < 0 ||
-               sigY > this.diagramContainer.offsetHeight;
-    }
-
-    #rollWindow(offset) {
-        const headHeight = 59;
-        const margin = 100;
-        const sigY = this.signal_paths[this.signalCursor.getIdx()].getPointAtLength(0).y - this.diagramContainer.scrollTop;
-        if (offset < 0 && sigY < headHeight + margin ||
-            offset > 0 && sigY > this.diagramContainer.offsetHeight - margin) {
-            this.#scrollSignals(offset)
+        toPrev(isShift = false) {
+            if ( ! this.#signalCursor.isValid()) {
+                this.toLast();
+                return;
+            }
+            if (this.#isCursorOutOfSight()) {
+                this.#signalCursor.prev();
+                this.toCursor();
+            } else {
+                isShift ? this.#scrollSignals(-1) : this.#rollWindow(-1);
+                this.#signalCursor.prev();
+            }
+            this.#signalSelectAction();
         }
-    }
 
-    #shiftToNextSignal() {
-        this.#selectNextSignal();
-        this.#scrollSignals(+1);
-    }
-
-    #shiftToPrevSignal() {
-        this.#selectPrevSignal();
-        this.#scrollSignals(-1);
-    }
-
-    #scrollSignals(offset) {
-        this.diagramContainer.scrollTop += this.#signalDistance(this.signalCursor.getIdx(), this.signalCursor.getIdx()+offset);
-    }
-
-    #shiftToSelectedSignal() {
-        if ( ! this.signalCursor.isValid()) {
-            this.diagramContainer.scrollTop = 0;
-            return;
+        shiftToNext() {
+            this.toNext(true);
         }
-        this.diagramContainer.scrollTop = this.signal_paths[this.signalCursor.getIdx()].getPointAtLength(0).y -
-                                          this.diagramContainer.offsetHeight / 2;
-    }
+
+        shiftToPrev() {
+            this.toPrev(true);
+        }
+
+        #isCursorOutOfSight() {
+            const signalHeight = this.#signalDistance(this.#signalCursor.getIdx(), this.#signalCursor.getIdx()+1);
+            const sigY = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y - this.#gui.diagramContainer.scrollTop;
+            return sigY - SignalNavigator.#HEAD_HEIGHT - signalHeight < 0 ||
+                   sigY > this.#gui.diagramContainer.offsetHeight;
+        }
+
+        #rollWindow(offset) {
+            const sigY = this.#signalPaths()[this.#signalCursor.getIdx()].getPointAtLength(0).y - this.#gui.diagramContainer.scrollTop;
+            if (offset < 0 && sigY < SignalNavigator.#HEAD_HEIGHT + SignalNavigator.#MARGIN ||
+                offset > 0 && sigY > this.#gui.diagramContainer.offsetHeight - SignalNavigator.#MARGIN) {
+                this.#scrollSignals(offset)
+            }
+        }
+
+        #scrollSignals(offset) {
+            this.#gui.diagramContainer.scrollTop += this.#signalDistance(this.#signalCursor.getIdx(), this.#signalCursor.getIdx()+offset);
+        }
+
+        #signalDistance(i, j) {
+            if (i < 0 || i >= this.#signalPaths().length-1 ||
+                j < 0 || j >= this.#signalPaths().length-1) {
+                return 0;
+            }
+            return this.#signalPaths()[j].getPointAtLength(0).y -
+                   this.#signalPaths()[i].getPointAtLength(0).y;
+        }
+    };
+
 
     // ----- CursorDisplay -----
     static CursorDisplay = class {
@@ -886,7 +912,7 @@ class AsdfViewModel  {
         this.#paginator.goToPageOfSignal(this.#globalIndexOf(this.hitCursor.seqNum, this.#searchDiag?.signals));
         this.hitCursorDisplay.show();
         setTimeout(() => {
-            this.#shiftToSelectedSignal();
+            this.#signalNavigator.toCursor();
             this.#applySignalClick();
         }, 0); // let paging happen before
     }
