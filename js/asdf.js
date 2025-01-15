@@ -555,6 +555,7 @@ class AsdfViewModel  {
     #divider;
     #search;
     #searchDiag;
+    #paginator;
 
     constructor(model) {
         this.model = model;
@@ -582,13 +583,14 @@ class AsdfViewModel  {
         this.diagramHeadDiv = document.getElementById("diagramHead");
         this.diagramContainer = document.getElementById("diagramContainer");
         this.diagramDiv = document.getElementById("diagram");
-        this.paginator = document.getElementById("paginator");
-        this.pageFirstBtn = document.getElementById("pageFirst");
-        this.pagePrevBtn = document.getElementById("pagePrev");
-        this.pageNextBtn = document.getElementById("pageNext");
-        this.pageLastBtn = document.getElementById("pageLast");
         this.#divider = new AsdfViewModel.Divider("diagramArea", "addinfoDisplay", "divider");
         this.#search = new AsdfViewModel.Search("diagramSearch", "diagramSearchInput");
+        this.#paginator = new AsdfViewModel.Paginator( model, { containerId: "paginator",
+                                                                pageFirstBtnId: "pageFirst",
+                                                                pagePrevBtnId: "pagePrev",
+                                                                pageNextBtnId: "pageNext",
+                                                                pageLastBtnId: "pageLast",
+                                                                pageInfoId: "pageInfo" });
 
         // view state
         this.diag_signals = []; // helper array of signals of original diagram (without notes)
@@ -596,7 +598,6 @@ class AsdfViewModel  {
         this.hitCursor = new AsdfViewModel.SignalCursor("hits", this.#signal_hits);
         this.hitCursorDisplay = new AsdfViewModel.CursorDisplay(this.hitCursor, "searchStats");
         this.actorOrder = new PersistentArray("actorOrderVM");
-        this.currPage = new PersistentInt("currPage", 0);
     }
 
     init() {
@@ -623,11 +624,11 @@ class AsdfViewModel  {
 
     update() {
         this.#positionDivider();
-        this.#initSearch();
+        this.model.diag ? this.#search.show() : this.#search.hide();
         this.#invalidateLastSearch();
         if ( ! this.model.diag) { return; }
         this.#saveScrollPosition();
-        this.#initPaginator();
+        this.#paginator.assess();
         this.#updateToolbar();
         this.#initShowTime(this.toggles["showTime"].isOn());
         this.#updateHead();
@@ -679,12 +680,12 @@ class AsdfViewModel  {
             else if (event.key === "G") { vm.#selectLastSignal(); }
             else if (keySeq.endsWith("zz")) { vm.#shiftToSelectedSignal(); }
             else if (event.key === "c") { vm.#shiftToSelectedSignal(); }
-            else if (event.shiftKey && event.key === "H") { vm.paginatorPageFirst(); }
-            else if (event.shiftKey && event.key === "L") { vm.paginatorPageLast(); }
-            else if (event.key === "<") { vm.paginatorPagePrev(); }
-            else if (event.key === ">") { vm.paginatorPageNext(); }
-            else if (event.key === "h") { vm.paginatorPagePrev(); }
-            else if (event.key === "l") { vm.paginatorPageNext(); }
+            else if (event.shiftKey && event.key === "H") { vm.#paginator.firstPage(); }
+            else if (event.shiftKey && event.key === "L") { vm.#paginator.lastPage(); }
+            else if (event.key === "<") { vm.#paginator.prevPage(); }
+            else if (event.key === ">") { vm.#paginator.nextPage(); }
+            else if (event.key === "h") { vm.#paginator.prevPage(); }
+            else if (event.key === "l") { vm.#paginator.nextPage(); }
             // search
             else if (event.key === "/") { event.preventDefault(); vm.#search.trigger(); }
             else if (event.key === "n") { vm.#search.show(); vm.#gotoNextHit(); }
@@ -858,9 +859,6 @@ class AsdfViewModel  {
         }
     }; // Search
 
-    #initSearch() {
-        this.model.diag ? this.#search.show() : this.#search.hide();
-    }
 
     #performSearchSignals(dir = 1) {
         this.hitCursor.reset();
@@ -885,10 +883,7 @@ class AsdfViewModel  {
             return;
         }
         this.signalCursor.set(this.hitCursor.get());
-        let page = Math.floor(this.#globalIndexOf(this.hitCursor.get(), this.#searchDiag?.signals) / this.pageSize);
-        if (page >= 0 && page != this.currPage.get()) {
-            this.#paginatorSetCurrPage(page);
-        }
+        this.#paginator.goToPageOfSignal(this.#globalIndexOf(this.hitCursor.seqNum, this.#searchDiag?.signals));
         this.hitCursorDisplay.show();
         setTimeout(() => {
             this.#shiftToSelectedSignal();
@@ -901,7 +896,7 @@ class AsdfViewModel  {
             return;
         }
         this.hitCursor.home();
-        const limit = this.signalCursor.isValid() ? this.signalCursor.get()
+        const limit = this.signalCursor.isValid() ? this.signalCursor.seqNum
                                                   : this.diag_signals[0].seqNum - 1;
         while (this.hitCursor.get() <= limit) {
             if (this.hitCursor.isAtEnd()) {
@@ -918,9 +913,9 @@ class AsdfViewModel  {
             return;
         }
         this.hitCursor.end();
-        const limit = this.signalCursor.isValid() ? this.signalCursor.get()
+        const limit = this.signalCursor.isValid() ? this.signalCursor.seqNum
                                                   : this.diag_signals[this.diag_signals.length-1].seqNum + 1;
-        while (this.hitCursor.get() >= limit) {
+        while (this.hitCursor.seqNum >= limit) {
             if (this.hitCursor.isAtHome()) {
                 this.hitCursor.end();
                 break;
@@ -1067,7 +1062,8 @@ class AsdfViewModel  {
     }
 
     fileInputOnChange(event) {
-        this.#initPaginatorCurrPage(0);
+        this.#paginator.init();
+        this.diagramContainer.scrollTop = 0;
         this.model.loadDiagramFromFile(event.target.files[0]);
         this.#isFileInputChange = true;
     }
@@ -1108,75 +1104,117 @@ class AsdfViewModel  {
     resetToolbarOnClick() {
         Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
         this.#resetScrollPosition();
-        this.#initPaginatorCurrPage(0);
+        this.#paginator.init();
+        this.diagramContainer.scrollTop = 0;
         this.model.reset();
         if (this.model.diag) { this.#divider.toDefaultPos(); }
         this.signalCursor.set(1);
     }
 
-    // ---- paginator ----
-    #initPaginator() {
-        this.paginator.style.visibility = 
-            this.model.diag.signalCount > this.pageSize ? "visible" : "hidden";
-        this.#paginatorAssess();
-        this.#paginatorUpdateInfo();
-    }
+    // ---- Paginator ----
+    static Paginator = class {
+        #gui;
+        #model;
+        #pageSize;
+        #currPage;
 
-    #paginatorAssess() {
-        if (this.currPage.get() >= this.#paginatorPageCount()) {
-            this.#paginatorSetCurrPage(this.#paginatorPageCount() - 1);
+        constructor(model, guiElemIds = {}) {
+            this.#model = model;
+            this.#gui = {};
+            this.#gui.container = document.getElementById(guiElemIds?.containerId);
+            this.#gui.pageFirstBtn = document.getElementById(guiElemIds?.pageFirstBtnId);
+            this.#gui.pagePrevBtn = document.getElementById(guiElemIds?.pagePrevBtnId);
+            this.#gui.pageNextBtn = document.getElementById(guiElemIds?.pageNextBtnId);
+            this.#gui.pageLastBtn = document.getElementById(guiElemIds?.pageLastBtnId);
+            this.#gui.pageInfo = document.getElementById(guiElemIds?.pageInfoId);
+            this.#gui.pageFirstBtn.addEventListener("click", () => this.firstPage());
+            this.#gui.pagePrevBtn.addEventListener("click", () => this.prevPage());
+            this.#gui.pageNextBtn.addEventListener("click", () => this.nextPage());
+            this.#gui.pageLastBtn.addEventListener("click", () => this.lastPage());
+            this.#currPage = new PersistentInt(guiElemIds?.containerId + "_CurrPage", 0);
+            this.#pageSize = 200;
         }
-        if (this.currPage.get() == 0) {
-            this.pageFirstBtn.classList.add("disabled");
-            this.pagePrevBtn.classList.add("disabled");
-        } else {
-            this.pageFirstBtn.classList.remove("disabled");
-            this.pagePrevBtn.classList.remove("disabled");
+
+        init() {
+            this.#currPage.set(0);
+            this.#model.initRelevantSignals(0, this.#pageSize);
         }
-        if (this.currPage.get() == this.#paginatorPageCount() - 1) {
-            this.pageLastBtn.classList.add("disabled");
-            this.pageNextBtn.classList.add("disabled");
-        } else {
-            this.pageLastBtn.classList.remove("disabled");
-            this.pageNextBtn.classList.remove("disabled");
+
+        setPageSize(pageSize) {
+            this.#pageSize = pageSize;
         }
-    }
 
-    #paginatorUpdateInfo() {
-        const pageInfo = document.getElementById("pageInfo");
-        pageInfo.innerHTML = (this.currPage.get() + 1) + "/" + this.#paginatorPageCount();
-    }
+        show() {
+            this.#gui.container.style.visibility = "visible";
+        }
 
-    #initPaginatorCurrPage(page) {
-        this.currPage.set(page);
-        this.diagramContainer.scrollTop = 0;
-        this.model.initRelevantSignals(0, this.pageSize);
-    }
+        hide() {
+            this.#gui.container.style.visibility = "hidden";
+        }
 
-    #paginatorSetCurrPage(page) {
-        this.currPage.set(page);
-        this.model.setRelevantSignals(page * this.pageSize - (page > 0), this.pageSize + (page > 0));
-    }
+        assess() {
+            if (this.#currPage.value >= this.length()) {
+                this.lastPage();
+            }
+            if (this.#currPage.value == 0) {
+                this.#gui.pageFirstBtn.classList.add("disabled");
+                this.#gui.pagePrevBtn.classList.add("disabled");
+            } else {
+                this.#gui.pageFirstBtn.classList.remove("disabled");
+                this.#gui.pagePrevBtn.classList.remove("disabled");
+            }
+            if (this.isLastPage()) {
+                this.#gui.pageLastBtn.classList.add("disabled");
+                this.#gui.pageNextBtn.classList.add("disabled");
+            } else {
+                this.#gui.pageLastBtn.classList.remove("disabled");
+                this.#gui.pageNextBtn.classList.remove("disabled");
+            }
+            this.#updateInfo();
+            this.length() > 1 ? this.show() : this.hide();
+        }
 
-    paginatorPageFirst() {
-        this.#paginatorSetCurrPage(0);
-    }
+        #updateInfo() {
+            this.#gui.pageInfo.innerHTML = (this.#currPage.value + 1) + "/" + this.length();
+        }
 
-    paginatorPagePrev() {
-        this.#paginatorSetCurrPage(this.currPage.get() - (this.currPage.get() > 0));
-    }
+        setCurrPage(pageIdx) {
+            this.#currPage.set(pageIdx);
+            this.#model.setRelevantSignals(pageIdx * this.#pageSize - (pageIdx > 0), this.#pageSize + (pageIdx > 0));
+        }
 
-    paginatorPageNext() {
-        this.#paginatorSetCurrPage(this.currPage.get() + (this.currPage.get() < this.#paginatorPageCount() - 1));
-    }
+        length() {
+            return Math.max(1, Math.ceil((this.#model?.diag?.netSignalCount || 0) / this.#pageSize)) || 0;
+        }
 
-    paginatorPageLast() {
-        this.#paginatorSetCurrPage(this.#paginatorPageCount() - 1);
-    }
+        nextPage() {
+            this.setCurrPage(this.#currPage.value + (this.#currPage.value < this.length()-1));
+        }
 
-    #paginatorPageCount() {
-        return Math.max(1, Math.ceil((this.model?.diag?.netSignalCount || 0) / this.pageSize)) || 0;
-    }
+        prevPage() {
+            this.setCurrPage(this.#currPage.value - (this.#currPage.value > 0));
+        }
+
+        firstPage() {
+            this.setCurrPage(0);
+        }
+
+        lastPage() {
+            this.setCurrPage(this.length()-1);
+        }
+
+        isLastPage() {
+            return this.#currPage.value == this.length()-1;
+        }
+
+        goToPageOfSignal(signalIdx) {
+            let pageIdx = Math.floor(signalIdx + 1 / this.#pageSize);
+            if (0 <= pageIdx && pageIdx < this.length() && pageIdx != this.#currPage.value) {
+                this.setCurrPage(pageIdx);
+            }
+        }
+    };
+
 
     // ---- signal ----
     #drawSignalSeqNumCircles() {
@@ -1484,6 +1522,7 @@ class AsdfViewModel  {
         constructor(name, collection = []) {
             this.setCollection(collection);
             this.#cursorSeqNum = new PersistentInt(name, -1);
+            this.seqNum = this.#cursorSeqNum.value;
         }
 
         setCollection(collection = []) {
@@ -1497,6 +1536,7 @@ class AsdfViewModel  {
 
         set(seqNum) {
             this.#cursorSeqNum.set(seqNum);
+            this.seqNum = seqNum;
         }
 
         setByIdx(idx) {
@@ -1507,11 +1547,11 @@ class AsdfViewModel  {
         }
 
         get() {
-            return this.#cursorSeqNum.get();
+            return this.#cursorSeqNum.value;
         }
 
         getIdx() {
-            return this.#indexOf(this.#cursorSeqNum.get());
+            return this.#indexOf(this.#cursorSeqNum.value);
         }
 
         #indexOf(seqNum) {
@@ -1564,19 +1604,19 @@ class AsdfViewModel  {
 
     // ---- PersistentToggle ----
     static PersistentToggle = class {
-        #uiElem;
+        #guiElem;
         #value;
         #onChangeHandler;
         #onChangeArg;
 
-        constructor(uiElemId, defaultValue, onChangeHandler, onChangeArg) {
-            this.#value = new PersistentBool(uiElemId, defaultValue);
+        constructor(guiElemId, defaultValue, onChangeHandler, onChangeArg) {
+            this.#value = new PersistentBool(guiElemId, defaultValue);
             this.#onChangeHandler = onChangeHandler;
             this.#onChangeArg = onChangeArg;
 
-            this.#uiElem = document.getElementById(uiElemId) || {};
-            this.#uiElem.checked = this.#value.get();
-            this.#uiElem.onchange = () => this.set(this.#uiElem.checked);
+            this.#guiElem = document.getElementById(guiElemId) || {};
+            this.#guiElem.checked = this.#value.get();
+            this.#guiElem.onchange = () => this.set(this.#guiElem.checked);
         }
 
         toggle() {
@@ -1589,7 +1629,7 @@ class AsdfViewModel  {
 
         set(isOn) {
             this.#value.set(isOn);
-            this.#uiElem.checked = isOn;
+            this.#guiElem.checked = isOn;
             this.#onChangeHandler(this.#onChangeArg, isOn);
         }
 
