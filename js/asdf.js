@@ -571,7 +571,6 @@ class AsdfViewModel  {
     #paginator;
     #search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
                                          searchInputElId: "diagramSearchInput" });
-    #searchDiag = null;
     #searchHitCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SearchHitCursor", []);
     #searchHitCursorDisplay = new AsdfViewModel.CursorDisplay(this.#searchHitCursor, "searchStats");
     #searchHitNavigator = {};
@@ -703,109 +702,6 @@ class AsdfViewModel  {
             }
         });
     }
-
-    static SearchHitNavigator = class {
-        #search;
-        #sigCursor;
-        #hitCursor;
-        #getSearchSet;
-        #searchSet = null;
-        #display;
-        #pager;
-        #sigNav;
-        #sigSelAct = () => {};
-
-        constructor(search, searchHitCursor, searchHitDisplay, getSearchSet, paginator, signalCursor, signalNavigator, signalSelectAction = () => {}) {
-            this.#search = search;
-            this.#sigCursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
-            this.#hitCursor = searchHitCursor instanceof AsdfViewModel.SignalCursor ? searchHitCursor : null;
-            this.#display = searchHitDisplay instanceof AsdfViewModel.CursorDisplay ? searchHitDisplay : null;
-            this.#getSearchSet = getSearchSet;
-            this.#pager = paginator instanceof AsdfViewModel.Paginator ? paginator : null;
-            this.#sigNav = signalNavigator instanceof AsdfViewModel.SignalNavigator ? signalNavigator : null;
-            this.#sigSelAct = signalSelectAction;
-        }
-
-        performSearchSignals(dir = 1) {
-            this.#hitCursor.reset();
-            this.#searchSet = this.#getSearchSet();
-            this.#hitCursor.setCollection(this.#search.getResults(this.#searchSet));
-            this.#display.show();
-            dir < 0 ? this.gotoPrevHit() : this.gotoNextHit();
-        }
-
-        invalidateLastSearch() {
-            this.#searchSet = null;
-            this.#display.hide();
-        }
-
-        gotoCurrHit(dir = 1) {
-            if ( ! this.#searchSet) {
-                this.performSearchSignals(dir);
-                return;
-            }
-            this.#sigCursor.set(this.#hitCursor.seqNum);
-            this.#pager.goToPageOfSignal(this.#globalIndexOf(this.#hitCursor.seqNum, this.#searchSet));
-            this.#display.show();
-            setTimeout(() => {
-                this.#sigNav.toCursor();
-                this.#sigSelAct();
-            }, 0); // let paging happen before
-        }
-
-        gotoNextHit() {
-            if (this.#searchSet && this.#hitCursor.collectionLength() < 1) {
-                return;
-            }
-            this.#hitCursor.home();
-            const limit = this.#sigCursor.isValid() ? this.#sigCursor.seqNum
-                                                    : (this.#sigCursor.getHomeSignal()?.seqNum || 0) - 1;
-            while (this.#hitCursor.get() <= limit) {
-                if (this.#hitCursor.isAtEnd()) {
-                    this.#hitCursor.home();
-                    break;
-                }
-                this.#hitCursor.next();
-            }
-            this.gotoCurrHit();
-        }
-
-        gotoPrevHit() {
-            if (this.#searchSet && this.#hitCursor.collectionLength() < 1) {
-                return;
-            }
-            this.#hitCursor.end();
-            const limit = this.#sigCursor.isValid() ? this.#sigCursor.seqNum
-                                                    : (this.#sigCursor.getEndSignal()?.seqNum || 0) + 1;
-            while (this.#hitCursor.seqNum >= limit) {
-                if (this.#hitCursor.isAtHome()) {
-                    this.#hitCursor.end();
-                    break;
-                }
-                this.#hitCursor.prev();
-            }
-            this.gotoCurrHit(-1);
-        }
-
-        findOccurrence(dir = 1) {
-            if ( ! this.#sigCursor.isValid()) {
-                return;
-            }
-            this.#search.show();
-            this.#search.setPattern(this.#sigCursor.getSignal().message);
-            this.performSearchSignals(dir);
-        }
-
-        #globalIndexOf(seqNum, signals = []) {
-            let idx = signals.length;
-            while ( idx --> 0 ) {
-                if (seqNum == signals[idx].seqNum) {
-                    break;
-                }
-            }
-            return idx;
-        }
-    }; // SearchHitNavigator
 
 
     // ---- diagram head ----
@@ -1761,6 +1657,111 @@ class AsdfViewModel  {
                                     (signal.addinfo && signal.addinfo.includes(searchPattern))));
         }
     }; // Search
+
+
+    // ---- SearchHitNavigator ----
+    static SearchHitNavigator = class {
+        #search;
+        #sigCursor;
+        #hitCursor;
+        #getSearchSet;
+        #searchSet = null;
+        #display;
+        #pager;
+        #sigNav;
+        #sigSelAct = () => {};
+
+        constructor(search, searchHitCursor, searchHitDisplay, getSearchSet, paginator, signalCursor, signalNavigator, signalSelectAction = () => {}) {
+            this.#search = search;
+            this.#sigCursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
+            this.#hitCursor = searchHitCursor instanceof AsdfViewModel.SignalCursor ? searchHitCursor : null;
+            this.#display = searchHitDisplay instanceof AsdfViewModel.CursorDisplay ? searchHitDisplay : null;
+            this.#getSearchSet = getSearchSet;
+            this.#pager = paginator instanceof AsdfViewModel.Paginator ? paginator : null;
+            this.#sigNav = signalNavigator instanceof AsdfViewModel.SignalNavigator ? signalNavigator : null;
+            this.#sigSelAct = signalSelectAction;
+        }
+
+        performSearchSignals(dir = 1) {
+            this.#hitCursor.reset();
+            this.#searchSet = this.#getSearchSet();
+            this.#hitCursor.setCollection(this.#search.getResults(this.#searchSet));
+            this.#display.show();
+            dir < 0 ? this.gotoPrevHit() : this.gotoNextHit();
+        }
+
+        invalidateLastSearch() {
+            this.#searchSet = null;
+            this.#display.hide();
+        }
+
+        gotoCurrHit(dir = 1) {
+            if ( ! this.#searchSet) {
+                this.performSearchSignals(dir);
+                return;
+            }
+            this.#sigCursor.set(this.#hitCursor.seqNum);
+            this.#pager.goToPageOfSignal(this.#globalIndexOf(this.#hitCursor.seqNum, this.#searchSet));
+            this.#display.show();
+            setTimeout(() => {
+                this.#sigNav.toCursor();
+                this.#sigSelAct();
+            }, 0); // let paging happen before
+        }
+
+        gotoNextHit() {
+            if (this.#searchSet && this.#hitCursor.collectionLength() < 1) {
+                return;
+            }
+            this.#hitCursor.home();
+            const limit = this.#sigCursor.isValid() ? this.#sigCursor.seqNum
+                                                    : (this.#sigCursor.getHomeSignal()?.seqNum || 0) - 1;
+            while (this.#hitCursor.get() <= limit) {
+                if (this.#hitCursor.isAtEnd()) {
+                    this.#hitCursor.home();
+                    break;
+                }
+                this.#hitCursor.next();
+            }
+            this.gotoCurrHit();
+        }
+
+        gotoPrevHit() {
+            if (this.#searchSet && this.#hitCursor.collectionLength() < 1) {
+                return;
+            }
+            this.#hitCursor.end();
+            const limit = this.#sigCursor.isValid() ? this.#sigCursor.seqNum
+                                                    : (this.#sigCursor.getEndSignal()?.seqNum || 0) + 1;
+            while (this.#hitCursor.seqNum >= limit) {
+                if (this.#hitCursor.isAtHome()) {
+                    this.#hitCursor.end();
+                    break;
+                }
+                this.#hitCursor.prev();
+            }
+            this.gotoCurrHit(-1);
+        }
+
+        findOccurrence(dir = 1) {
+            if ( ! this.#sigCursor.isValid()) {
+                return;
+            }
+            this.#search.show();
+            this.#search.setPattern(this.#sigCursor.getSignal().message);
+            this.performSearchSignals(dir);
+        }
+
+        #globalIndexOf(seqNum, signals = []) {
+            let idx = signals.length;
+            while ( idx --> 0 ) {
+                if (seqNum == signals[idx].seqNum) {
+                    break;
+                }
+            }
+            return idx;
+        }
+    }; // SearchHitNavigator
 
 
     // ---- HoverGate ----
