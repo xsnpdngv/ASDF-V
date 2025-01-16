@@ -162,10 +162,6 @@ class PersistentArray {
         }
     }
 
-    getAll() {
-        return this.array;
-    }
-
     set(index, value) {
         if (index >= 0 && index < this.array.length) {
             this.array[index] = value;
@@ -353,16 +349,16 @@ class PersistentInt {
  * Model: Data and Business Logic
  * ================================ */
 class AsdfModel {
-    fileName = new PersistentString("fileName", "");
-    fileSize = new PersistentInt("fileSize", 0);
-    fileLastMod = new PersistentString("fileLastMod", "");
+    fileName = new PersistentString("AsdfModel-FileName", "");
+    fileSize = new PersistentInt("AsdfModel-FileSize", 0);
+    fileLastMod = new PersistentString("AsdfModel-FileLastMod", "");
     diag = null;
-    filteredActors = new PersistentSet("filteredActors");
-    actorOrder = new PersistentArray("actorOrder");
-    #diagSrcPreamble = new PersistentString("diagSrcPreamble", "");
-    #diagSrc = new PersistentString("diagTxt");
-    #relevantSignalStart = new PersistentInt("signalStart", 0);
-    #relevantSignalCount = new PersistentInt("signalCount", 1000);
+    filteredActors = new PersistentSet("AsdfModel-FilteredActors");
+    #actorOrder = new PersistentArray("AsdfModel-ActorOrder");
+    #diagSrcPreamble = new PersistentString("AsdfModel-DiagSrcPreamble", "");
+    #diagSrc = new PersistentString("AsdfModel-DiagSrc");
+    #relevantSignalStart = new PersistentInt("AsdfModel-SignalStart", 0);
+    #relevantSignalCount = new PersistentInt("AsdfModel-SignalCount", 1000);
     #isShowIds = false;
     #observers = [];
 
@@ -427,7 +423,7 @@ class AsdfModel {
         if (this.#diagSrc.length() > 0) {
             this.diag = Diagram.parse(this.#diagSrc.get());
             this.diag.netSignalCount = this.diag.signals.length;
-            if (this.#arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
+            if (this.#arraysHaveSameElements(this.#actorOrder.array, this.diag.actors.map(element => element.name))) {
                 let src = [this.#diagSrcPreamble.get(), this.#diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
@@ -474,8 +470,8 @@ class AsdfModel {
     }
 
     setActorOrder(actorOrder) {
-        this.actorOrder.setArray(actorOrder);
-        this.#setPreamble( this.#printArrayElementsAsParticipants(this.actorOrder.getArray()) );
+        this.#actorOrder.setArray(actorOrder);
+        this.#setPreamble( this.#printArrayElementsAsParticipants(this.#actorOrder.array) );
     }
 
     #countActorSignals() {
@@ -547,64 +543,57 @@ class AsdfModel {
  * View Model: UI and Rendering
  * ============================== */
 class AsdfViewModel  {
-    #isFileInputChange;
-    #signal_hits;
-    #hoverGate;
-    #help;
-    #signalNavigator;
-    #divider;
-    #search;
-    #searchDiag;
+    static #TIMESTAMP_WIDTH = 45;
+
+    #model = {}; // direct access to the model
+    #diag_signals = []; // helper array of signals of original diagram (without notes)
+    #actorOrder = new PersistentArray("AsdfViewModel-ActorOrder");
+
+    #diagramHeadContainer = document.getElementById("diagramHeadContainer");
+    #diagramHeadDiv = document.getElementById("diagramHead");
+    #diagramContainer = document.getElementById("diagramContainer");
+    #diagramDiv = document.getElementById("diagram");
+    #fileInputLabel = document.getElementById("fileInputLabel");
+    #isInputFileChange = false;
+
+    #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor", this.#diag_signals);
+    #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal-arrow', this.#signalCursor,
+                                                         { diagramContainerId: "diagramContainer" },
+                                                         () => this.#applySignalClick());
+
+    #toggles = {
+        "showTime": new AsdfViewModel.PersistentToggle({toggleId: "showTimeToggle"}, true, this.#showTimeOnChange, this),
+        "showIds": new AsdfViewModel.PersistentToggle({toggleId: "showIdsToggle"}, false, this.#showIdsOnChange, this),
+        "showInstance": new AsdfViewModel.PersistentToggle({toggleId: "showInstanceToggle"}, false, this.#markSignalsHandler, this),
+        "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this)
+    }
+    #help = new AsdfViewModel.OffCanvas("helpOffcanvas");
     #paginator;
+    #search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
+                                         searchInputElId: "diagramSearchInput" });
+    #searchDiag = null;
+    #searchHitCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SearchHitCursor", []);
+    #searchHitCursorDisplay = new AsdfViewModel.CursorDisplay(this.#searchHitCursor, "searchStats");
+
+    #divider = new AsdfViewModel.Divider({ upperAreaId: "diagramArea",
+                                           lowerAreaId: "addinfoDisplay",
+                                           dividerId: "divider"});
+    #hoverGate = new AsdfViewModel.HoverGate();
 
     constructor(model) {
-        this.model = model;
-        this.model.subscribe(this);
-        this.pageSize = 200;
-        this.timeOffsetX = 45;
-        this.#signal_hits = [];
-        this.#hoverGate = new AsdfViewModel.HoverGate();
+        this.#model = model;
+        this.#model.subscribe(this);
         this.#hoverGate.subscribe(() => this.#showActiveSignalAddinfo());
-        this.#help = new AsdfViewModel.OffCanvas("helpOffcanvas");
-        this.#searchDiag = null;
-
-        // toolbar
-        this.fileInput = document.getElementById("fileInput");
-        this.fileInputLabel = document.getElementById("fileInputLabel");
-        this.toggles = {
-            "showTime": new AsdfViewModel.PersistentToggle({toggleId: "showTimeToggle"}, true, this.#showTimeOnChange, this),
-            "showIds": new AsdfViewModel.PersistentToggle({toggleId: "showIdsToggle"}, false, this.#showIdsOnChange, this),
-            "showInstance": new AsdfViewModel.PersistentToggle({toggleId: "showInstanceToggle"}, false, this.#markSignalsHandler, this),
-            "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this)
-        }
-
-        this.diagramHeadContainer = document.getElementById("diagramHeadContainer");
-        this.diagramHeadDiv = document.getElementById("diagramHead");
-        this.diagramContainer = document.getElementById("diagramContainer");
-        this.diagramDiv = document.getElementById("diagram");
-        this.#divider = new AsdfViewModel.Divider({ upperAreaId: "diagramArea",
-                                                    lowerAreaId: "addinfoDisplay",
-                                                    dividerId: "divider"});
-        this.#search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
-                                                  searchInputElId: "diagramSearchInput" });
         this.#paginator = new AsdfViewModel.Paginator( model, { containerId: "paginator",
                                                                 pageFirstBtnId: "pageFirst",
                                                                 pagePrevBtnId: "pagePrev",
                                                                 pageNextBtnId: "pageNext",
                                                                 pageLastBtnId: "pageLast",
                                                                 pageInfoId: "pageInfo" });
-        this.diag_signals = []; // helper array of signals of original diagram (without notes)
-        this.signalCursor = new AsdfViewModel.SignalCursor("signals", this.diag_signals);
-        this.hitCursor = new AsdfViewModel.SignalCursor("hits", this.#signal_hits);
-        this.hitCursorDisplay = new AsdfViewModel.CursorDisplay(this.hitCursor, "searchStats");
-        this.actorOrder = new PersistentArray("actorOrderVM");
-        this.#signalNavigator = new AsdfViewModel.SignalNavigator('path.signal-arrow', this.signalCursor,
-                                                                  { diagramContainerId: "diagramContainer" },
-                                                                  () => this.#applySignalClick());
     }
 
     init() {
-        this.model.init(this.toggles["showIds"].isOn());
+        this.#model.init(this.#toggles["showIds"].isOn());
         this.#addDocumentEventListeners();
         this.#addScrollEventListeners();
         this.#addDiagramEventListeners();
@@ -621,19 +610,19 @@ class AsdfViewModel  {
     }
 
     clear() {
-        this.model.clear();
+        this.#model.clear();
         location.reload();
     }
 
     update() {
         this.#positionDivider();
         this.#invalidateLastSearch();
-        this.model.diag ? this.#search.show() : this.#search.hide();
-        if ( ! this.model.diag) { return; }
+        this.#model.diag ? this.#search.show() : this.#search.hide();
+        if ( ! this.#model.diag) { return; }
         this.#saveScrollPosition();
         this.#paginator.assess();
         this.#updateToolbar();
-        this.#initShowTime(this.toggles["showTime"].isOn());
+        this.#initShowTime(this.#toggles["showTime"].isOn());
         this.#updateHead();
         this.#restoreHeadScrollPosition();
         setTimeout(() => {
@@ -669,10 +658,10 @@ class AsdfViewModel  {
 
             if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
             // view
-            else if (keySeq.endsWith("ti")) { vm.toggles['showInstance'].toggle(); }
-            else if (keySeq.endsWith("tr")) { vm.toggles['showRelated'].toggle(); }
-            else if (keySeq.endsWith("ts")) { vm.toggles['showIds'].toggle(); }
-            else if (keySeq.endsWith("tt")) { vm.toggles['showTime'].toggle(); }
+            else if (keySeq.endsWith("ti")) { vm.#toggles['showInstance'].toggle(); }
+            else if (keySeq.endsWith("tr")) { vm.#toggles['showRelated'].toggle(); }
+            else if (keySeq.endsWith("ts")) { vm.#toggles['showIds'].toggle(); }
+            else if (keySeq.endsWith("tt")) { vm.#toggles['showTime'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
             // movement
             else if (event.key === "j") { vm.#signalNavigator.toNext(); }
@@ -707,16 +696,16 @@ class AsdfViewModel  {
     }
 
     #performSearchSignals(dir = 1) {
-        this.hitCursor.reset();
-        this.#searchDiag = this.model.sideLoadDiagram();
-        this.hitCursor.setCollection(this.#search.getResults(this.#searchDiag?.signals));
-        this.hitCursorDisplay.show();
+        this.#searchHitCursor.reset();
+        this.#searchDiag = this.#model.sideLoadDiagram();
+        this.#searchHitCursor.setCollection(this.#search.getResults(this.#searchDiag?.signals));
+        this.#searchHitCursorDisplay.show();
         dir < 0 ? this.#gotoPrevHit() : this.#gotoNextHit();
     }
 
     #invalidateLastSearch() {
         this.#searchDiag = null;
-        this.hitCursorDisplay.hide();
+        this.#searchHitCursorDisplay.hide();
     }
 
     #gotoCurrHit(dir = 1) {
@@ -724,9 +713,9 @@ class AsdfViewModel  {
             this.#performSearchSignals(dir);
             return;
         }
-        this.signalCursor.set(this.hitCursor.get());
-        this.#paginator.goToPageOfSignal(this.#globalIndexOf(this.hitCursor.seqNum, this.#searchDiag?.signals));
-        this.hitCursorDisplay.show();
+        this.#signalCursor.set(this.#searchHitCursor.get());
+        this.#paginator.goToPageOfSignal(this.#globalIndexOf(this.#searchHitCursor.seqNum, this.#searchDiag?.signals));
+        this.#searchHitCursorDisplay.show();
         setTimeout(() => {
             this.#signalNavigator.toCursor();
             this.#applySignalClick();
@@ -734,45 +723,45 @@ class AsdfViewModel  {
     }
 
     #gotoNextHit() {
-        if (this.#searchDiag && this.hitCursor.collectionLength() < 1) {
+        if (this.#searchDiag && this.#searchHitCursor.collectionLength() < 1) {
             return;
         }
-        this.hitCursor.home();
-        const limit = this.signalCursor.isValid() ? this.signalCursor.seqNum
-                                                  : this.diag_signals[0].seqNum - 1;
-        while (this.hitCursor.get() <= limit) {
-            if (this.hitCursor.isAtEnd()) {
-                this.hitCursor.home();
+        this.#searchHitCursor.home();
+        const limit = this.#signalCursor.isValid() ? this.#signalCursor.seqNum
+                                                  : this.#diag_signals[0].seqNum - 1;
+        while (this.#searchHitCursor.get() <= limit) {
+            if (this.#searchHitCursor.isAtEnd()) {
+                this.#searchHitCursor.home();
                 break;
             }
-            this.hitCursor.next();
+            this.#searchHitCursor.next();
         }
         this.#gotoCurrHit();
     }
 
     #gotoPrevHit() {
-        if (this.#searchDiag && this.hitCursor.collectionLength() < 1) {
+        if (this.#searchDiag && this.#searchHitCursor.collectionLength() < 1) {
             return;
         }
-        this.hitCursor.end();
-        const limit = this.signalCursor.isValid() ? this.signalCursor.seqNum
-                                                  : this.diag_signals[this.diag_signals.length-1].seqNum + 1;
-        while (this.hitCursor.seqNum >= limit) {
-            if (this.hitCursor.isAtHome()) {
-                this.hitCursor.end();
+        this.#searchHitCursor.end();
+        const limit = this.#signalCursor.isValid() ? this.#signalCursor.seqNum
+                                                  : this.#diag_signals[this.#diag_signals.length-1].seqNum + 1;
+        while (this.#searchHitCursor.seqNum >= limit) {
+            if (this.#searchHitCursor.isAtHome()) {
+                this.#searchHitCursor.end();
                 break;
             }
-            this.hitCursor.prev();
+            this.#searchHitCursor.prev();
         }
         this.#gotoCurrHit(-1);
     }
 
     #findOccurrence(dir = 1) {
-        if ( ! this.signalCursor.isValid()) {
+        if ( ! this.#signalCursor.isValid()) {
             return;
         }
         this.#search.show();
-        this.#search.setPattern(this.diag_signals[this.signalCursor.getIdx()].message);
+        this.#search.setPattern(this.#diag_signals[this.#signalCursor.getIdx()].message);
         this.#performSearchSignals(dir);
     }
 
@@ -788,9 +777,9 @@ class AsdfViewModel  {
 
     // ---- diagram head ----
     #updateHead() {
-        this.diagramHeadContainer.style.visibility = "visible";
-        this.diagramHeadDiv.innerHTML = "";
-        this.model.diag.drawHeader(this.diagramHeadDiv);
+        this.#diagramHeadContainer.style.visibility = "visible";
+        this.#diagramHeadDiv.innerHTML = "";
+        this.#model.diag.drawHeader(this.#diagramHeadDiv);
         this.#updateHeadSvgElemLists();
         this.#markHeadActors();
     }
@@ -802,14 +791,14 @@ class AsdfViewModel  {
 
     // ---- diagram ----
     #updateDiagram() {
-        this.diagramDiv.innerHTML = "";
-        this.model.diag.drawSVG(this.diagramDiv, { theme: 'simple' });
+        this.#diagramDiv.innerHTML = "";
+        this.#model.diag.drawSVG(this.#diagramDiv, { theme: 'simple' });
         // draws in chunks to make the UI more responsive,
         // emits 'drawComplete' event to diagramContainer if ready
     }
 
     #addDiagramEventListeners() {
-        this.diagramDiv.addEventListener("drawComplete", (event) => this.#diagramOnDrawComplete(event));
+        this.#diagramDiv.addEventListener("drawComplete", (event) => this.#diagramOnDrawComplete(event));
     }
 
     #diagramOnDrawComplete(event) {
@@ -817,7 +806,7 @@ class AsdfViewModel  {
         this.#updateDiagramSvgElemLists();
         this.#drawSignalSeqNumCircles();
         this.#drawTimestamps();
-        if (this.#isFileInputChange) { this.signalCursor.home(); this.#isFileInputChange = false; }
+        if (this.#isInputFileChange) { this.#signalCursor.home(); this.#isInputFileChange = false; }
         this.#applySignalClick();
         this.#markActors();
         this.#addActorMoveBtns();
@@ -838,29 +827,29 @@ class AsdfViewModel  {
         this.timestamps = document.querySelectorAll('text.ts');
         this.gridlines = document.querySelectorAll('path.gridline');
 
-        if (this.model.diag) {
-            this.diag_signals = this.model.diag.signals.filter(item => item.type === 'Signal');
-            this.signalCursor.setCollection(this.diag_signals);
+        if (this.#model.diag) {
+            this.#diag_signals = this.#model.diag.signals.filter(item => item.type === 'Signal');
+            this.#signalCursor.setCollection(this.#diag_signals);
         }
     }
 
     // ---- scroll ----
     #addScrollEventListeners() {
-        this.diagramContainer.onscroll = () => this.#syncScroll();
+        this.#diagramContainer.onscroll = () => this.#syncScroll();
     }
 
     #syncScroll() {
-        this.diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
+        this.#diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
     }
 
     #resetScrollPosition() {
-        const c = this.diagramContainer;
+        const c = this.#diagramContainer;
         c.scrollLeft = 0;
         c.scrollTop = 0;
     }
 
     #saveScrollPosition() {
-        const c = this.diagramContainer;
+        const c = this.#diagramContainer;
         this.scrollLeft = c.scrollLeft;
         this.scrollTop = c.scrollTop;
         this.scrollWidth = c.scrollWidth;
@@ -870,11 +859,11 @@ class AsdfViewModel  {
     }
 
     #restoreHeadScrollPosition() {
-        this.diagramHeadContainer.scrollLeft = this.scrollLeft;
+        this.#diagramHeadContainer.scrollLeft = this.scrollLeft;
     }
 
     #restoreDiagramScrollPosition() {
-        const c = this.diagramContainer;
+        const c = this.#diagramContainer;
         c.scrollLeft = this.scrollLeft;
         c.scrollTop  = this.scrollTop == 0 ? 0 : (this.scrollTop + this.clientHeight / 2) * 
                                                  (c.scrollHeight / this.scrollHeight) - c.clientHeight / 2;
@@ -896,22 +885,22 @@ class AsdfViewModel  {
 
     fileInputOnChange(event) {
         this.#paginator.init();
-        this.diagramContainer.scrollTop = 0;
-        this.model.loadDiagramFromFile(event.target.files[0]);
-        this.#isFileInputChange = true;
+        this.#diagramContainer.scrollTop = 0;
+        this.#model.loadDiagramFromFile(event.target.files[0]);
+        this.#isInputFileChange = true;
     }
 
     #updateFileInputLabel() {
-        let fil = this.fileInputLabel
-        const filteredActorCount = this.model.diag.actors.filter(actor => this.model.filteredActors.has(actor.name)).length;
-        fil.textContent = this.model.fileName.get() + "\n";
-        fil.textContent += this.model.diag.actors.length + " participants";
+        let fil = this.#fileInputLabel
+        const filteredActorCount = this.#model.diag.actors.filter(actor => this.#model.filteredActors.has(actor.name)).length;
+        fil.textContent = this.#model.fileName.get() + "\n";
+        fil.textContent += this.#model.diag.actors.length + " participants";
         if (filteredActorCount > 0) {
             fil.textContent += " (" + filteredActorCount + " filtered)";
         }
-        fil.textContent += "\n" + this.model.diag.signalCount + " signals";
-        if (this.model.diag.netSignalCount != this.model.diag.signalCount) {
-            fil.textContent += " (" + this.model.diag.netSignalCount + " shown)";
+        fil.textContent += "\n" + this.#model.diag.signalCount + " signals";
+        if (this.#model.diag.netSignalCount != this.#model.diag.signalCount) {
+            fil.textContent += " (" + this.#model.diag.netSignalCount + " shown)";
         }
     }
 
@@ -921,27 +910,27 @@ class AsdfViewModel  {
     }
 
     #initShowTime(isOn) {
-        if (this.model.diag) {
-            this.model.diag.setOffsetX(isOn ? this.timeOffsetX : 0);
+        if (this.#model.diag) {
+            this.#model.diag.setOffsetX(isOn ? AsdfViewModel.#TIMESTAMP_WIDTH : 0);
         }
     }
 
     #showIdsOnChange(vm, isOn) {
-        vm.model.includeIdsInSignalMsgs(isOn);
+        vm.#model.includeIdsInSignalMsgs(isOn);
     }
 
     #markSignalsHandler(vm) {
-        vm.#markSignals(vm.signalCursor.getIdx());
+        vm.#markSignals(vm.#signalCursor.getIdx());
     }
 
     resetToolbarOnClick() {
-        Object.entries(this.toggles).forEach(([key, value]) => { value.reset(); });
+        Object.entries(this.#toggles).forEach(([key, value]) => { value.reset(); });
         this.#resetScrollPosition();
         this.#paginator.init();
-        this.diagramContainer.scrollTop = 0;
-        this.model.reset();
-        if (this.model.diag) { this.#divider.toDefaultPos(); }
-        this.signalCursor.set(1);
+        this.#diagramContainer.scrollTop = 0;
+        this.#model.reset();
+        if (this.#model.diag) { this.#divider.toDefaultPos(); }
+        this.#signalCursor.set(1);
     }
 
     // ---- signal ----
@@ -969,7 +958,7 @@ class AsdfViewModel  {
             text.setAttribute("fill", "black");
             text.setAttribute("font-size", "11px");
             text.setAttribute("class", "seq-num");
-            text.textContent = this.diag_signals[index].seqNum;
+            text.textContent = this.#diag_signals[index].seqNum;
 
             // Append them to the SVG element
             path.parentNode.appendChild(circle);
@@ -981,7 +970,7 @@ class AsdfViewModel  {
     }
 
     #drawTimestamps() {
-        if ( ! this.toggles["showTime"].isOn() ||
+        if ( ! this.#toggles["showTime"].isOn() ||
              ! this.signal_paths[0]) {
             return;
         }
@@ -998,8 +987,8 @@ class AsdfViewModel  {
             const start = path.getPointAtLength(0);
 
             let currTS = ""
-            if (this.diag_signals[index].addinfoHead.timestamp) {
-                currTS = this.diag_signals[index].addinfoHead.timestamp.split('T')[1];
+            if (this.#diag_signals[index].addinfoHead.timestamp) {
+                currTS = this.#diag_signals[index].addinfoHead.timestamp.split('T')[1];
             }
 
             // Create an SVG text element
@@ -1030,18 +1019,18 @@ class AsdfViewModel  {
     }
 
     #signalTextOnClick(index) {
-        if(this.signalCursor.getIdx() == index) {
-            this.signalCursor.set(-1);
+        if(this.#signalCursor.getIdx() == index) {
+            this.#signalCursor.set(-1);
         } else {
-            this.signalCursor.setByIdx(index);
+            this.#signalCursor.setByIdx(index);
         }
         this.#applySignalClick();
     }
 
     #applySignalClick() {
         this.#showActiveSignalAddinfo();
-        this.#markSignals(this.signalCursor.getIdx());
-        this.#markTimestamps(this.signalCursor.getIdx());
+        this.#markSignals(this.#signalCursor.getIdx());
+        this.#markTimestamps(this.#signalCursor.getIdx());
     }
 
     #showAddinfoContent(index) {
@@ -1053,8 +1042,8 @@ class AsdfViewModel  {
         addinfo.textContent = "";
         if (index < 0)
             return;
-        if (index < this.diag_signals.length) {
-            const s = this.diag_signals[index];
+        if (index < this.#diag_signals.length) {
+            const s = this.#diag_signals[index];
             notation.textContent = `${s.seqNum}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
             meta.textContent = s.meta;
             addinfo.textContent = s.addinfo;
@@ -1062,14 +1051,14 @@ class AsdfViewModel  {
     }
 
     #showActiveSignalAddinfo() {
-        this.#showAddinfoContent(this.signalCursor.getIdx());
+        this.#showAddinfoContent(this.#signalCursor.getIdx());
     }
 
     #markSignals(refIndex) {
-        let refSig = 0 <= refIndex && refIndex < this.diag_signals.length
-                     ? this.diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null,
-                                                                        "dstInstanceId": null } };
-        this.diag_signals.forEach((s, i) => {
+        let refSig = 0 <= refIndex && refIndex < this.#diag_signals.length
+                     ? this.#diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null,
+                                                                         "dstInstanceId": null } };
+        this.#diag_signals.forEach((s, i) => {
 
             let text = this.signal_texts[i];
             let circle = this.seqNum_circles[i];
@@ -1084,7 +1073,7 @@ class AsdfViewModel  {
                 isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
                                       s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
                 cl = 'same-id-signal';
-                if(isOfSameInstance && this.toggles["showInstance"].isOn()) {
+                if(isOfSameInstance && this.#toggles["showInstance"].isOn()) {
                     text.classList.add(cl);
                     circle.classList.add(cl);
                     seqNum.classList.add(cl);
@@ -1098,7 +1087,7 @@ class AsdfViewModel  {
                               (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
                 cl = 'related-signal';
-                if(isRelated && this.toggles["showRelated"].isOn()) {
+                if(isRelated && this.#toggles["showRelated"].isOn()) {
                     text.classList.add(cl);
                     circle.classList.add(cl);
                     seqNum.classList.add(cl);
@@ -1137,10 +1126,10 @@ class AsdfViewModel  {
 
     // ---- actor ----
     #addActorEventListeners() {
-        this.actorOrder.clear();
-        this.model.diag.actors.forEach((a, i) => {
-            this.actorOrder.add(a.name);
-            if (a.signalCount > 0 || this.model.filteredActors.has(a.name)) {
+        this.#actorOrder.clear();
+        this.#model.diag.actors.forEach((a, i) => {
+            this.#actorOrder.add(a.name);
+            if (a.signalCount > 0 || this.#model.filteredActors.has(a.name)) {
                 this.head_actor_texts[i].onclick = () => this.#actorTextOnClick(i);
                 this.actor_texts[2*i].onclick = () => this.#actorTextOnClick(i);
                 this.actor_texts[2*i+1].onclick = () => this.#actorTextOnClick(i);
@@ -1149,7 +1138,7 @@ class AsdfViewModel  {
     }
 
     #actorTextOnClick(index) {
-        this.model.toggleActor(index);
+        this.#model.toggleActor(index);
     }
 
     #addActorMoveBtns() {
@@ -1166,7 +1155,7 @@ class AsdfViewModel  {
             if(index > 0) {
                 elem.parentNode.appendChild( this.#createMoveBtn(index, rectX-8, rectY+11, 'left') );
             }
-            if(index < this.model.diag.actors.length - 1) {
+            if(index < this.#model.diag.actors.length - 1) {
                 const rectWidth = parseFloat(elem.getAttribute('width'));
                 elem.parentNode.appendChild( this.#createMoveBtn(index, rectX+rectWidth-8, rectY+11, 'right') );
             }
@@ -1188,18 +1177,14 @@ class AsdfViewModel  {
     }
 
     #actorMoveBtnOnClick(index, dir) {
-        if(dir == 'left') {
-            this.actorOrder.move(index, index - 1);
-        } else if (dir == 'right') {
-            this.actorOrder.move(index, index + 1);
-        }
-        this.model.setActorOrder(this.actorOrder.getArray());
+        this.#actorOrder.move(index, index + (dir == 'left' ? -1 : +1));
+        this.#model.setActorOrder(this.#actorOrder.array);
     }
 
     #markHeadActors() {
-        this.model.diag.actors.forEach((a, i) => {
+        this.#model.diag.actors.forEach((a, i) => {
             let cl = 'filtered-actor';
-            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
+            if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
                 this.head_actor_boxes[i].classList.add(cl);
                 this.head_actor_texts[i].classList.add(cl);
             }
@@ -1212,9 +1197,9 @@ class AsdfViewModel  {
     }
 
     #markActors() {
-        this.model.diag.actors.forEach((a, i) => {
+        this.#model.diag.actors.forEach((a, i) => {
             let cl = 'filtered-actor';
-            if (this.model.filteredActors.has(this.model.diag.actors[i].name)) {
+            if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
                 this.actor_boxes[2*i].classList.add(cl);
                 this.actor_boxes[2*i+1].classList.add(cl);
                 this.actor_texts[2*i].classList.add(cl);
@@ -1233,9 +1218,9 @@ class AsdfViewModel  {
     }
 
     #positionDivider() {
-        if ( ! this.model.diag) { this.#divider.toBottom(); }
+        if ( ! this.#model.diag) { this.#divider.toBottom(); }
         else if ( ! this.wasDiag) { this.#divider.toDefaultPos(); }
-        this.wasDiag = !! this.model.diag;
+        this.wasDiag = !! this.#model.diag;
     }
 
 
