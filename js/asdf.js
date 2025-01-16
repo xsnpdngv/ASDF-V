@@ -844,15 +844,6 @@ class AsdfViewModel  {
         }
     }
 
-    #signalDistance(i, j) {
-        if (i < 0 || i >= this.signal_paths.length-1 ||
-            j < 0 || j >= this.signal_paths.length-1) {
-            return 0;
-        }
-        return this.signal_paths[j].getPointAtLength(0).y -
-               this.signal_paths[i].getPointAtLength(0).y;
-    }
-
     // ---- scroll ----
     #addScrollEventListeners() {
         this.diagramContainer.onscroll = () => this.#syncScroll();
