@@ -566,25 +566,28 @@ class AsdfViewModel  {
         this.#signal_hits = [];
         this.#hoverGate = new AsdfViewModel.HoverGate();
         this.#hoverGate.subscribe(() => this.#showActiveSignalAddinfo());
-        this.#help = new AsdfViewModel.OffCanvasWrapper("helpOffcanvas");
+        this.#help = new AsdfViewModel.OffCanvas("helpOffcanvas");
         this.#searchDiag = null;
 
         // toolbar
         this.fileInput = document.getElementById("fileInput");
         this.fileInputLabel = document.getElementById("fileInputLabel");
         this.toggles = {
-            "showTime": new AsdfViewModel.PersistentToggle("showTimeToggle", true, this.#showTimeOnChange, this),
-            "showIds": new AsdfViewModel.PersistentToggle("showIdsToggle", false, this.#showIdsOnChange, this),
-            "showInstance": new AsdfViewModel.PersistentToggle("showInstanceToggle", false, this.#markSignalsHandler, this),
-            "showRelated": new AsdfViewModel.PersistentToggle("showRelatedToggle", false, this.#markSignalsHandler, this)
+            "showTime": new AsdfViewModel.PersistentToggle({toggleId: "showTimeToggle"}, true, this.#showTimeOnChange, this),
+            "showIds": new AsdfViewModel.PersistentToggle({toggleId: "showIdsToggle"}, false, this.#showIdsOnChange, this),
+            "showInstance": new AsdfViewModel.PersistentToggle({toggleId: "showInstanceToggle"}, false, this.#markSignalsHandler, this),
+            "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this)
         }
 
         this.diagramHeadContainer = document.getElementById("diagramHeadContainer");
         this.diagramHeadDiv = document.getElementById("diagramHead");
         this.diagramContainer = document.getElementById("diagramContainer");
         this.diagramDiv = document.getElementById("diagram");
-        this.#divider = new AsdfViewModel.Divider("diagramArea", "addinfoDisplay", "divider");
-        this.#search = new AsdfViewModel.Search("diagramSearch", "diagramSearchInput");
+        this.#divider = new AsdfViewModel.Divider({ upperAreaId: "diagramArea",
+                                                    lowerAreaId: "addinfoDisplay",
+                                                    dividerId: "divider"});
+        this.#search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
+                                                  searchInputElId: "diagramSearchInput" });
         this.#paginator = new AsdfViewModel.Paginator( model, { containerId: "paginator",
                                                                 pageFirstBtnId: "pageFirst",
                                                                 pagePrevBtnId: "pagePrev",
@@ -1251,19 +1254,18 @@ class AsdfViewModel  {
 
     // ---- PersistentToggle ----
     static PersistentToggle = class {
-        #guiElem;
-        #value;
-        #onChangeHandler;
-        #onChangeArg;
+        #gui = {};
+        #value = {};
+        #onChangeHandler = () => {};
+        #onChangeArg = null;
 
-        constructor(guiElemId, defaultValue, onChangeHandler, onChangeArg) {
-            this.#value = new PersistentBool(guiElemId, defaultValue);
+        constructor(guiIds, defaultValue, onChangeHandler = () => {}, onChangeArg = null) {
+            this.#value = new PersistentBool(guiIds?.toggleId, defaultValue);
             this.#onChangeHandler = onChangeHandler;
             this.#onChangeArg = onChangeArg;
-
-            this.#guiElem = document.getElementById(guiElemId) || {};
-            this.#guiElem.checked = this.#value.get();
-            this.#guiElem.onchange = () => this.set(this.#guiElem.checked);
+            this.#gui.toggle = document.getElementById(guiIds?.toggleId) || {};
+            this.#gui.toggle.checked = this.#value.get();
+            this.#gui.toggle.onchange = () => this.set(this.#gui.toggle.checked);
         }
 
         toggle() {
@@ -1276,7 +1278,7 @@ class AsdfViewModel  {
 
         set(isOn) {
             this.#value.set(isOn);
-            this.#guiElem.checked = isOn;
+            this.#gui.toggle.checked = isOn;
             this.#onChangeHandler(this.#onChangeArg, isOn);
         }
 
@@ -1289,25 +1291,22 @@ class AsdfViewModel  {
 
     // ---- Divider -----
     static Divider = class {
-        #upperArea;
-        #lowerArea;
-        #divider;
-        #isResizing;
-        #startY;
-        #startUpperAreaHeight;
+        #gui = {};
+        #isResizing = false;
+        #startY = 0;
+        #startUpperAreaHeight = 0;
 
-        constructor(upperAreaId, lowerAreaId, dividerId) {
-            this.#upperArea = document.getElementById(upperAreaId);
-            this.#lowerArea = document.getElementById(lowerAreaId);
-            this.#divider = document.getElementById(dividerId);
+        constructor(guiIds) {
+            this.#gui.upperArea = document.getElementById(guiIds?.upperAreaId) || {};
+            this.#gui.lowerArea = document.getElementById(guiIds?.lowerAreaId) || {};
+            this.#gui.divider = document.getElementById(guiIds?.dividerId) || {};
             this.#addEventListeners();
-            this.isResizing = false;
         }
 
         #addEventListeners() {
             document.onmousemove = (e) => this.#documentOnMouseMove(e);
             document.onmouseup = () => this.#documentOnMouseUp();
-            this.#divider.onmousedown = (e) => this.#dividerOnMouseDown(e);
+            this.#gui.divider.onmousedown = (e) => this.#dividerOnMouseDown(e);
         }
 
         #dividerOnMouseDown(e) {
@@ -1326,8 +1325,8 @@ class AsdfViewModel  {
                 const lowerAreaHeight = 100 - upperAreaHeight;
 
                 if (upperAreaHeight > 5 && lowerAreaHeight > 5) {
-                    this.#upperArea.style.height = `${upperAreaHeight}%`;
-                    this.#lowerArea.style.height = `${lowerAreaHeight}%`;
+                    this.#gui.upperArea.style.height = `${upperAreaHeight}%`;
+                    this.#gui.lowerArea.style.height = `${lowerAreaHeight}%`;
                 }
             }
         }
@@ -1340,8 +1339,8 @@ class AsdfViewModel  {
 
         #setDividerPos(lowerAreaHeight) {
             const upperAreaHeight = 100 - lowerAreaHeight;
-            this.#upperArea.style.height = `${upperAreaHeight}%`;
-            this.#lowerArea.style.height = `${lowerAreaHeight}%`;
+            this.#gui.upperArea.style.height = `${upperAreaHeight}%`;
+            this.#gui.lowerArea.style.height = `${lowerAreaHeight}%`;
         }
 
         toDefaultPos() {
@@ -1364,8 +1363,9 @@ class AsdfViewModel  {
 
     // ---- SignalCursor ----
     static SignalCursor = class {
-        #cursorSeqNum;
-        #collection;
+        seqNum = -1;
+        #cursorSeqNum = null;
+        #collection = [];
 
         constructor(name, collection = []) {
             this.setCollection(collection);
@@ -1455,13 +1455,13 @@ class AsdfViewModel  {
         static #HEAD_HEIGHT = 59;
         static #MARGIN = 100;
         #signalPathClassName = "";
-        #signalCursor;
+        #signalCursor = {};
         #signalSelectAction = () => {};
         #gui = {};
 
         constructor(signalPathClassName, signalCursor, guiElemIds, signalSelectAction = () => {}) {
             this.#signalPathClassName = signalPathClassName;
-            this.#signalCursor = signalCursor;
+            this.#signalCursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
             this.#gui.diagramContainer = document.getElementById(guiElemIds?.diagramContainerId);
             this.#signalSelectAction = signalSelectAction;
         }
@@ -1561,26 +1561,23 @@ class AsdfViewModel  {
 
     // ---- Paginator ----
     static Paginator = class {
-        #gui;
-        #model;
-        #pageSize;
-        #currPage;
+        #gui = {};
+        #model = {};
+        #pageSize = 200;
+        #currPage = new PersistentInt("PaginatorCurrPage", 0);
 
         constructor(model, guiElemIds = {}) {
             this.#model = model;
-            this.#gui = {};
-            this.#gui.container = document.getElementById(guiElemIds?.containerId);
-            this.#gui.pageFirstBtn = document.getElementById(guiElemIds?.pageFirstBtnId);
-            this.#gui.pagePrevBtn = document.getElementById(guiElemIds?.pagePrevBtnId);
-            this.#gui.pageNextBtn = document.getElementById(guiElemIds?.pageNextBtnId);
-            this.#gui.pageLastBtn = document.getElementById(guiElemIds?.pageLastBtnId);
-            this.#gui.pageInfo = document.getElementById(guiElemIds?.pageInfoId);
+            this.#gui.container = document.getElementById(guiElemIds?.containerId) || {};
+            this.#gui.pageFirstBtn = document.getElementById(guiElemIds?.pageFirstBtnId) || {};
+            this.#gui.pagePrevBtn = document.getElementById(guiElemIds?.pagePrevBtnId) || {};
+            this.#gui.pageNextBtn = document.getElementById(guiElemIds?.pageNextBtnId) || {};
+            this.#gui.pageLastBtn = document.getElementById(guiElemIds?.pageLastBtnId) || {};
+            this.#gui.pageInfo = document.getElementById(guiElemIds?.pageInfoId) || {};
             this.#gui.pageFirstBtn.addEventListener("click", () => this.firstPage());
             this.#gui.pagePrevBtn.addEventListener("click", () => this.prevPage());
             this.#gui.pageNextBtn.addEventListener("click", () => this.nextPage());
             this.#gui.pageLastBtn.addEventListener("click", () => this.lastPage());
-            this.#currPage = new PersistentInt(guiElemIds?.containerId + "_CurrPage", 0);
-            this.#pageSize = 200;
         }
 
         init() {
@@ -1590,6 +1587,7 @@ class AsdfViewModel  {
 
         setPageSize(pageSize) {
             this.#pageSize = pageSize;
+            this.assess();
         }
 
         show() {
@@ -1656,7 +1654,7 @@ class AsdfViewModel  {
         }
 
         goToPageOfSignal(signalIdx) {
-            let pageIdx = Math.floor(signalIdx + 1 / this.#pageSize);
+            let pageIdx = Math.floor(signalIdx / this.#pageSize);
             if (0 <= pageIdx && pageIdx < this.length() && pageIdx != this.#currPage.value) {
                 this.setCurrPage(pageIdx);
             }
@@ -1666,63 +1664,62 @@ class AsdfViewModel  {
 
     // ----- CursorDisplay -----
     static CursorDisplay = class {
-        #cursor;
-        #displayElem;
+        #cursor = {};
+        #gui = {};
 
-        constructor(cursor, displayElemId) {
-            this.#displayElem = document.getElementById(displayElemId);
+        constructor(cursor, displayElId) {
+            this.#gui.display = document.getElementById(displayElId) || {};
             this.#cursor = cursor instanceof AsdfViewModel.SignalCursor ? cursor : null;
         }
 
         show() {
-            this.#displayElem.innerHTML = `${this.#cursor.getIdx() + 1} /<br>${this.#cursor.collectionLength()}`;
+            this.#gui.display.innerHTML = `${this.#cursor.getIdx() + 1} /<br>${this.#cursor.collectionLength()}`;
         }
 
         hide() {
-            this.#displayElem.innerHTML = "";
+            this.#gui.display.innerHTML = "";
         }
     }; // CursorDisplay
 
 
     // ---- Search ----
     static Search = class {
-        #searchElem;
-        #searchInputElem;
+        #gui = {}
 
-        constructor(searchElemId, searchInputElemId) {
-            this.#searchElem = document.getElementById(searchElemId);
-            this.#searchInputElem = document.getElementById(searchInputElemId);
+        constructor(guiElIds) {
+            this.#gui.search = document.getElementById(guiElIds?.searchElId) || {};
+            this.#gui.searchInput = document.getElementById(guiElIds?.searchInputElId) || {};
         }
 
         show() {
-            this.#searchElem.style.visibility = "visible";
+            this.#gui.search.style.visibility = "visible";
         }
 
         hide() {
-            this.#searchElem.style.visibility = "hidden";
+            this.#gui.search.style.visibility = "hidden";
         }
 
         blur() {
-            this.#searchInputElem.blur();
+            this.#gui.searchInput.blur();
         }
 
         isActive() {
-            return document.activeElement === this.#searchInputElem;
+            return document.activeElement === this.#gui.searchInput;
         }
 
         trigger() {
             this.show();
-            this.#searchInputElem.focus();
-            this.#searchInputElem.select();
+            this.#gui.searchInput.focus();
+            this.#gui.searchInput.select();
         }
 
         setPattern(pattern = "") {
-            this.#searchInputElem.value = pattern;
+            this.#gui.searchInput.value = pattern;
         }
 
         getResults(searchSet, pattern = "") {
-            this.#searchInputElem.blur();
-            let searchPattern = pattern === "" ? this.#searchInputElem.value : pattern;
+            this.#gui.searchInput.blur();
+            let searchPattern = pattern === "" ? this.#gui.searchInput.value : pattern;
             if (searchPattern === "") {
                 return [];
             }
@@ -1736,15 +1733,13 @@ class AsdfViewModel  {
         }
     }; // Search
 
+
     // ---- HoverGate ----
     static HoverGate = class HoverGate {
-        #isOpen;
-        #callbacks;
+        #isOpen = true;
+        #callbacks = [];
 
-        constructor() {
-            this.#isOpen = true;
-            this.#callbacks = [];
-        }
+        constructor() {}
 
         subscribe(observer) {
             this.#callbacks.push(observer);
@@ -1779,17 +1774,20 @@ class AsdfViewModel  {
     }; // HoverGate
 
 
-    // ---- OffCanvasWrapper ----
-    static OffCanvasWrapper = class {
-        constructor(docElementId) {
-            this.docElem = document.getElementById(docElementId);
-            this.offCanvas = new bootstrap.Offcanvas(this.docElem);
+    // ---- OffCanvas
+    static OffCanvas = class {
+        #gui = {};
+        #offCanvas = {};
+
+        constructor(guiElId) {
+            this.#gui.doc = document.getElementById(guiElId);
+            this.#offCanvas = new bootstrap.Offcanvas(this.#gui.doc);
         }
 
         toggle() {
-            this.docElem.classList.contains('show') ? this.offCanvas.hide() : this.offCanvas.show();
+            this.#gui.doc.classList.contains('show') ? this.#offCanvas.hide() : this.#offCanvas.show();
         }
-    }; // OffCanvasWrapper
+    }; // OffCanvas
 }
 
 
