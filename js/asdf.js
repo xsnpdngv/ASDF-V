@@ -353,51 +353,50 @@ class PersistentInt {
  * Model: Data and Business Logic
  * ================================ */
 class AsdfModel {
-    constructor() {
-        this.fileName = new PersistentString("fileName", "");
-        this.fileSize = new PersistentInt("fileSize", 0);
-        this.fileLastMod = new PersistentString("fileLastMod", "");
-        this.diagSrcPreamble = new PersistentString("diagSrcPreamble", "");
-        this.diagSrc = new PersistentString("diagTxt");
-        this.diag = null;
-        this.filteredActors = new PersistentSet("filteredActors");
-        this.actorOrder = new PersistentArray("actorOrder");
-        this.isShowIds = false;
-        this.relevantSignalStart = new PersistentInt("signalStart", 0);
-        this.relevantSignalCount = new PersistentInt("signalCount", 1000);
-        this.observers = [];
-    }
+    fileName = new PersistentString("fileName", "");
+    fileSize = new PersistentInt("fileSize", 0);
+    fileLastMod = new PersistentString("fileLastMod", "");
+    diag = null;
+    filteredActors = new PersistentSet("filteredActors");
+    actorOrder = new PersistentArray("actorOrder");
+    #diagSrcPreamble = new PersistentString("diagSrcPreamble", "");
+    #diagSrc = new PersistentString("diagTxt");
+    #relevantSignalStart = new PersistentInt("signalStart", 0);
+    #relevantSignalCount = new PersistentInt("signalCount", 1000);
+    #isShowIds = false;
+    #observers = [];
+
+    constructor() {}
 
     subscribe(observer) {
-        this.observers.push(observer);
+        this.#observers.push(observer);
     }
 
     #notify() {
-        this.observers.forEach(observer => observer.update());
+        this.#observers.forEach(observer => observer.update());
     }
 
     init(isShowIds = false) {
-        this.isShowIds = isShowIds;
-        this.loadDiagramFromSrc();
+        this.#isShowIds = isShowIds;
+        this.#loadDiagramFromSrc();
     }
 
     clear() {
         this.file = null;
-        this.diagSrc.set("");
+        this.#diagSrc.set("");
         this.diag = null;
     }
 
     reset() {
-        this.diagSrcPreamble.set("");
+        this.#diagSrcPreamble.set("");
         this.filteredActors.clear();
-        this.setRelevantSignals(0, this.relevantSignalCount.get());
-        this.isShowIds = false;
-        this.loadDiagramFromSrc();
+        this.setRelevantSignals(0, this.#relevantSignalCount.get());
+        this.#isShowIds = false;
+        this.#loadDiagramFromSrc();
     }
 
     loadDiagramFromFile(file) {
         let model = this;
-
         model.fileName.set(file.name);
         model.fileSize.set(file.size);
         const lastMod = new Date(file.lastModified);
@@ -412,31 +411,31 @@ class AsdfModel {
 
         const reader = new FileReader();
         reader.onload = function(e) {
-            model.diagSrc.set(e.target.result);
-            model.loadDiagramFromSrc();
+            model.#diagSrc.set(e.target.result);
+            model.#loadDiagramFromSrc();
         };
         reader.readAsText(file);
     }
 
     sideLoadDiagram() {
-        let diag = Diagram.parse(this.diagSrc.get());
+        let diag = Diagram.parse(this.#diagSrc.get());
         this.#removeSignalsOfFilteredActors(diag);
         return diag;
     }
 
-    loadDiagramFromSrc() {
-        if (this.diagSrc.length() > 0) {
-            this.diag = Diagram.parse(this.diagSrc.get());
+    #loadDiagramFromSrc() {
+        if (this.#diagSrc.length() > 0) {
+            this.diag = Diagram.parse(this.#diagSrc.get());
             this.diag.netSignalCount = this.diag.signals.length;
             if (this.#arraysHaveSameElements(this.actorOrder.getArray(), this.diag.actors.map(element => element.name))) {
-                let src = [this.diagSrcPreamble.get(), this.diagSrc.get()].join('\n\n');
+                let src = [this.#diagSrcPreamble.get(), this.#diagSrc.get()].join('\n\n');
                 this.diag = Diagram.parse(src);
             }
             this.#removeSignalsOfFilteredActors(this.diag);
             this.#removeIrrelevantSignals();
             this.#countActorSignals();
-            if (this.isShowIds) {
-                this.includeIdsInSignalMsgs(this.isShowIds, false);
+            if (this.#isShowIds) {
+                this.includeIdsInSignalMsgs(this.#isShowIds, false);
             }
             delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
         }
@@ -444,7 +443,7 @@ class AsdfModel {
     }
 
     includeIdsInSignalMsgs(isOn, isToNotify = true) {
-        this.isShowIds = isOn;
+        this.#isShowIds = isOn;
         if ( ! this.diag) { return; }
         if (isOn) {
             this.diag.signals.forEach(s => {
@@ -471,7 +470,7 @@ class AsdfModel {
         } else {
             this.filteredActors.add(a.name);
         }
-        this.loadDiagramFromSrc();
+        this.#loadDiagramFromSrc();
     }
 
     setActorOrder(actorOrder) {
@@ -496,8 +495,8 @@ class AsdfModel {
     }
 
     #setPreamble(preamble) {
-        this.diagSrcPreamble.set(preamble);
-        this.loadDiagramFromSrc();
+        this.#diagSrcPreamble.set(preamble);
+        this.#loadDiagramFromSrc();
     }
 
     #removeSignalsOfFilteredActors(diag) {
@@ -517,18 +516,18 @@ class AsdfModel {
     }
 
     initRelevantSignals(start, count) {
-        this.relevantSignalStart.set(start);
-        this.relevantSignalCount.set(count);
+        this.#relevantSignalStart.set(start);
+        this.#relevantSignalCount.set(count);
     }
 
     setRelevantSignals(start, count) {
         this.initRelevantSignals(start, count);
-        this.loadDiagramFromSrc();
+        this.#loadDiagramFromSrc();
     }
 
     #removeIrrelevantSignals() {
-        this.diag.signals.splice(0, this.relevantSignalStart.get());
-        this.diag.signals.splice(this.relevantSignalCount.get());
+        this.diag.signals.splice(0, this.#relevantSignalStart.get());
+        this.diag.signals.splice(this.#relevantSignalCount.get());
     }
 
     #arraysHaveSameElements(arr1, arr2) {
