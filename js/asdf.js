@@ -349,16 +349,16 @@ class PersistentInt {
  * Model: Data and Business Logic
  * ================================ */
 class AsdfModel {
-    fileName = new PersistentString("AsdfModel-FileName", "");
-    fileSize = new PersistentInt("AsdfModel-FileSize", 0);
-    fileLastMod = new PersistentString("AsdfModel-FileLastMod", "");
+    fileName = new PersistentString("AsdfModel: fileName", "");
+    fileSize = new PersistentInt("AsdfModel: fileSize", 0);
+    fileLastMod = new PersistentString("AsdfModel: fileLastMod", "");
     diag = null;
-    filteredActors = new PersistentSet("AsdfModel-FilteredActors");
-    #actorOrder = new PersistentArray("AsdfModel-ActorOrder");
-    #diagSrcPreamble = new PersistentString("AsdfModel-DiagSrcPreamble", "");
-    #diagSrc = new PersistentString("AsdfModel-DiagSrc");
-    #relevantSignalStart = new PersistentInt("AsdfModel-SignalStart", 0);
-    #relevantSignalCount = new PersistentInt("AsdfModel-SignalCount", 1000);
+    filteredActors = new PersistentSet("AsdfModel: filteredActors");
+    #actorOrder = new PersistentArray("AsdfModel: actorOrder");
+    #diagSrcPreamble = new PersistentString("AsdfModel: diagSrcPreamble", "");
+    #diagSrc = new PersistentString("AsdfModel: diagSrc");
+    #relevantSignalStart = new PersistentInt("AsdfModel: signalStart", 0);
+    #relevantSignalCount = new PersistentInt("AsdfModel: signalCount", 1000);
     #isShowIds = false;
     #observers = [];
 
@@ -547,7 +547,7 @@ class AsdfViewModel  {
 
     #model = {}; // direct access to the model
     #diag_signals = []; // helper array of signals of original diagram (without notes)
-    #actorOrder = new PersistentArray("AsdfViewModel-ActorOrder");
+    #actorOrder = new PersistentArray("AsdfViewModel: actorOrder");
 
     #diagramHeadContainer = document.getElementById("diagramHeadContainer");
     #diagramHeadDiv = document.getElementById("diagramHead");
@@ -556,7 +556,7 @@ class AsdfViewModel  {
     #fileInputLabel = document.getElementById("fileInputLabel");
     #isInputFileChange = false;
 
-    #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor", this.#diag_signals);
+    #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: signalCursor", this.#diag_signals);
     #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal-arrow', this.#signalCursor,
                                                          { diagramContainerId: "diagramContainer" },
                                                          () => this.#applySignalClick());
@@ -571,7 +571,7 @@ class AsdfViewModel  {
     #paginator;
     #search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
                                          searchInputElId: "diagramSearchInput" });
-    #searchHitCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SearchHitCursor", []);
+    #searchHitCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: searchHitCursor", []);
     #searchHitCursorDisplay = new AsdfViewModel.CursorDisplay(this.#searchHitCursor, "searchStats");
     #searchHitNavigator = {};
 
@@ -1164,7 +1164,7 @@ class AsdfViewModel  {
         #onChangeArg = null;
 
         constructor(guiIds, defaultValue, onChangeHandler = () => {}, onChangeArg = null) {
-            this.#value = new PersistentBool(guiIds?.toggleId, defaultValue);
+            this.#value = new PersistentBool("AsdfViewModel-PersistentToggle: " + guiIds?.toggleId, defaultValue);
             this.#onChangeHandler = onChangeHandler;
             this.#onChangeArg = onChangeArg;
             this.#gui.toggle = document.getElementById(guiIds?.toggleId) || {};
@@ -1485,7 +1485,7 @@ class AsdfViewModel  {
         #gui = {};
         #model = {};
         #pageSize = 200;
-        #currPage = new PersistentInt("PaginatorCurrPage", 0);
+        #currPage = new PersistentInt("AsdfViewModel-Paginator: currPage", 0);
 
         constructor(model, guiElemIds = {}) {
             this.#model = model;
