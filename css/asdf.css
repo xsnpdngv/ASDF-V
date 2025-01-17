@@ -225,7 +225,7 @@ text.head-actor.orphan:hover {
     text-decoration: none;
 }
 text.actor.filtered,
-text.head-actor-text.filtered-actor {
+text.head-actor.filtered {
     fill: lightgrey;
     text-decoration: line-through;
 }
