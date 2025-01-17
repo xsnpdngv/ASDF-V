@@ -354,7 +354,6 @@ class AsdfModel {
     fileLastMod = new PersistentString("AsdfModel: fileLastMod", "");
     diag = null;
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
-    #diagClone;
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
     #diagSrcPreamble = new PersistentString("AsdfModel: diagSrcPreamble", "");
     #diagSrc = new PersistentString("AsdfModel: diagSrc");
@@ -710,13 +709,7 @@ class AsdfViewModel  {
         this.#diagramHeadContainer.style.visibility = "visible";
         this.#diagramHeadDiv.innerHTML = "";
         this.#model.diag.drawHeader(this.#diagramHeadDiv);
-        this.#updateHeadSvgElemLists();
         this.#markHeadActors();
-    }
-
-    #updateHeadSvgElemLists() {
-        this.head_actor_boxes = document.querySelectorAll('rect.head-actor');
-        this.head_actor_texts = document.querySelectorAll('text.head-actor');
     }
 
     // ---- diagram ----
@@ -733,7 +726,7 @@ class AsdfViewModel  {
 
     #diagramOnDrawComplete(event) {
         this.#restoreDiagramScrollPosition();
-        this.#updateDiagramSvgElemLists();
+        this.#updateDiagSignals();
         this.#signalRenderer.draw();
         this.#sendCursorHomeOnInputFileChange();
         this.#applySignalClick();
@@ -743,23 +736,10 @@ class AsdfViewModel  {
         this.#addActorEventListeners();
     }
 
-    #updateDiagramSvgElemLists() {
-        this.head_actor_boxes = document.querySelectorAll('rect.head-actor');
-        this.head_actor_texts = document.querySelectorAll('text.head-actor');
-        this.signal_paths = document.querySelectorAll('path.signal');
-        this.signal_texts = document.querySelectorAll('text.signal');
-        this.actor_paths = document.querySelectorAll('path.actor');
-        this.actor_boxes = document.querySelectorAll('rect.actor');
-        this.actor_texts = document.querySelectorAll('text.actor');
-        this.seqNum_circles = document.querySelectorAll('circle.seq-num');
-        this.seqNum_texts = document.querySelectorAll('text.seq-num');
-        this.timestamps = document.querySelectorAll('text.ts');
-        this.gridlines = document.querySelectorAll('path.gridline');
+    #updateDiagSignals() {
 
-        if (this.#model.diag) {
-            this.#diag_signals = this.#model.diag.signals.filter(item => item.type === 'Signal');
-            this.#signalCursor.setCollection(this.#diag_signals);
-        }
+        this.#diag_signals = this.#model.diag.signals.filter(item => item.type === 'Signal');
+        this.#signalCursor.setCollection(this.#diag_signals);
     }
 
     // ---- scroll ----
@@ -867,7 +847,8 @@ class AsdfViewModel  {
     }
 
     #addSignalEventListeners() {
-        this.signal_texts.forEach((txt, index) => {
+        const arrowTexts = document.querySelectorAll('text.signal');
+        arrowTexts.forEach((txt, index) => {
             txt.onclick = () => this.#signalTextOnClick(index);
             txt.onmouseenter = () => { if (this.#hoverGate.isOpen()) { this.#showAddinfoContent(index); } };
             txt.onmouseleave = () => { if (this.#hoverGate.isOpen()) { this.#showActiveSignalAddinfo(); } };
@@ -911,13 +892,16 @@ class AsdfViewModel  {
 
     // ---- actor ----
     #addActorEventListeners() {
+        const headActorTexts = document.querySelectorAll('text.head-actor');
+        const actorTexts = document.querySelectorAll('text.actor');
+
         this.#actorOrder.clear();
         this.#model.diag.actors.forEach((a, i) => {
             this.#actorOrder.add(a.name);
             if (a.signalCount > 0 || this.#model.filteredActors.has(a.name)) {
-                this.head_actor_texts[i].onclick = () => this.#actorTextOnClick(i);
-                this.actor_texts[2*i].onclick = () => this.#actorTextOnClick(i);
-                this.actor_texts[2*i+1].onclick = () => this.#actorTextOnClick(i);
+                headActorTexts[i].onclick = () => this.#actorTextOnClick(i);
+                actorTexts[2*i].onclick = () => this.#actorTextOnClick(i);
+                actorTexts[2*i+1].onclick = () => this.#actorTextOnClick(i);
             }
         });
     }
@@ -967,37 +951,44 @@ class AsdfViewModel  {
     }
 
     #markHeadActors() {
+        const headActorBoxes = document.querySelectorAll('rect.head-actor');
+        const headActorTexts = document.querySelectorAll('text.head-actor');
+
         this.#model.diag.actors.forEach((a, i) => {
             let cl = 'filtered';
             if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
-                this.head_actor_boxes[i].classList.add(cl);
-                this.head_actor_texts[i].classList.add(cl);
+                headActorBoxes[i].classList.add(cl);
+                headActorTexts[i].classList.add(cl);
             }
             cl = 'orphan';
             if (a.signalCount == 0) {
-                this.head_actor_boxes[i].classList.add(cl);
-                this.head_actor_texts[i].classList.add(cl);
+                headActorBoxes[i].classList.add(cl);
+                headActorTexts[i].classList.add(cl);
             }
         });
     }
 
     #markActors() {
+        const actorPaths = document.querySelectorAll('path.actor');
+        const actorBoxes = document.querySelectorAll('rect.actor');
+        const actorTexts = document.querySelectorAll('text.actor');
+
         this.#model.diag.actors.forEach((a, i) => {
             let cl = 'filtered';
             if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
-                this.actor_boxes[2*i].classList.add(cl);
-                this.actor_boxes[2*i+1].classList.add(cl);
-                this.actor_texts[2*i].classList.add(cl);
-                this.actor_texts[2*i+1].classList.add(cl);
-                this.actor_paths[i].classList.add(cl);
+                actorBoxes[2*i].classList.add(cl);
+                actorBoxes[2*i+1].classList.add(cl);
+                actorTexts[2*i].classList.add(cl);
+                actorTexts[2*i+1].classList.add(cl);
+                actorPaths[i].classList.add(cl);
             }
             cl = 'orphan';
             if (a.signalCount == 0) {
-                this.actor_boxes[2*i].classList.add(cl);
-                this.actor_boxes[2*i+1].classList.add(cl);
-                this.actor_texts[2*i].classList.add(cl);
-                this.actor_texts[2*i+1].classList.add(cl);
-                this.actor_paths[i].classList.add(cl);
+                actorBoxes[2*i].classList.add(cl);
+                actorBoxes[2*i+1].classList.add(cl);
+                actorTexts[2*i].classList.add(cl);
+                actorTexts[2*i+1].classList.add(cl);
+                actorPaths[i].classList.add(cl);
             }
         });
     }
