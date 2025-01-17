@@ -421,12 +421,14 @@ class AsdfModel {
 
     #loadDiagramFromSrc() {
         if (this.#diagSrc.length() > 0) {
-            this.diag = Diagram.parse(this.#diagSrc.get());
-            this.diag.netSignalCount = this.diag.signals.length;
-            if (this.#arraysHaveSameElements(this.#actorOrder.array, this.diag.actors.map(element => element.name))) {
-                let src = [this.#diagSrcPreamble.get(), this.#diagSrc.get()].join('\n\n');
-                this.diag = Diagram.parse(src);
+            let src = [this.#diagSrcPreamble.value, this.#diagSrc.value].join('\n\n');
+            this.diag = Diagram.parse(src);
+            if (this.#actorOrder.length() > 0 &&
+                 ! this.#arraysHaveSameElements(this.#actorOrder.array, this.diag.actors.map(element => element.name))) {
+                this.#actorOrder.clear();
+                this.diag = Diagram.parse(this.#diagSrc.value);
             }
+            this.diag.netSignalCount = this.diag.signals.length;
             this.#removeSignalsOfFilteredActors(this.diag);
             this.#removeIrrelevantSignals();
             this.#countActorSignals();
@@ -1262,23 +1264,25 @@ class AsdfViewModel  {
 
         drawSeqNumCircles() {
             const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
+            const signals = this.#cursor.getCollection();
+
             arrowPaths.forEach((path, index) => {
                 const start = path.getPointAtLength(0);
 
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("cx", start.x);
-                circle.setAttribute("cy", start.y);
-                circle.setAttribute("r", SignalRenderer.#SEQNUM_CIRCLE_RADIUS);
-                circle.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
+                circle.setAttributeNS(null, "cx", start.x);
+                circle.setAttributeNS(null, "cy", start.y);
+                circle.setAttributeNS(null, "r", SignalRenderer.#SEQNUM_CIRCLE_RADIUS);
+                circle.setAttributeNS(null, "class", SignalRenderer.#SEQNUM_CLASSNAME);
                 path.parentNode.appendChild(circle);
 
                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", start.x);
-                text.setAttribute("y", start.y);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("dy", "0.35em");
-                text.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
-                text.textContent = this.#cursor.getCollection()[index].seqNum;
+                text.setAttributeNS(null, "x", start.x);
+                text.setAttributeNS(null, "y", start.y);
+                text.setAttributeNS(null, "text-anchor", "middle");
+                text.setAttributeNS(null, "dy", "0.35em");
+                text.setAttributeNS(null, "class", SignalRenderer.#SEQNUM_CLASSNAME);
+                text.textContent = signals[index].seqNum;
                 path.parentNode.appendChild(text);
             });
         }
@@ -1286,6 +1290,7 @@ class AsdfViewModel  {
         drawTimestamps() {
             const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
             const actorPaths = document.querySelectorAll("path." + this.#selectors.actor);
+            const signals = this.#cursor.getCollection();
 
             if (arrowPaths.length < 1) {
                 return;
@@ -1305,7 +1310,7 @@ class AsdfViewModel  {
                 ts.setAttribute("x", 0);
                 ts.setAttribute("y", start.y-6);
                 ts.setAttribute("class", SignalRenderer.#TIMESTAMP_CLASSNAME);
-                ts.textContent = this.#cursor.getSignalByIdx(index)?.addinfoHead?.timestamp.split('T')[1] || "";
+                ts.textContent = signals[index]?.addinfoHead?.timestamp.split('T')[1] || "";
                 svg.appendChild(ts);
 
                 const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1323,8 +1328,10 @@ class AsdfViewModel  {
             let refIndex = this.#cursor.getIdx();
             let refSig = this.#cursor.getSignal() || { "addinfoHead": { "srcInstanceId": null,
                                                                         "dstInstanceId": null } };
-            this.#cursor.getCollection().forEach((s, i) => {
+            const isShowInstance = this.#toggles["showInstance"].isOn();
+            const isShowRelated = this.#toggles["showRelated"].isOn();
 
+            this.#cursor.getCollection().forEach((s, i) => {
                 let text = arrowTexts[i];
                 let circle = seqNumCircles[i];
                 let seqNum = seqNumTexts[i];
@@ -1332,52 +1339,36 @@ class AsdfViewModel  {
                 let isOfSameInstance = false;
                 let isRelated = false;
                 let cl = '';
+                let method = '';
 
                 if(s.addinfoHead.srcInstanceId) {
-
-                    isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
-                                        s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
                     cl = 'instance';
-                    if (isOfSameInstance && this.#toggles["showInstance"].isOn()) {
-                        text.classList.add(cl);
-                        circle.classList.add(cl);
-                        seqNum.classList.add(cl);
-                    } else {
-                        text.classList.remove(cl);
-                        circle.classList.remove(cl);
-                        seqNum.classList.remove(cl);
-                    }
+                    isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
+                                       s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
+                    method = (isOfSameInstance && isShowInstance) ? 'add' : 'remove';
+                    text.classList[method](cl);
+                    circle.classList[method](cl);
+                    seqNum.classList[method](cl);
 
+                    cl = 'related';
                     isRelated = refSig.addinfoHead.srcInstanceId &&
                                 (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
                                 s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
-                    cl = 'related';
-                    if (isRelated && this.#toggles["showRelated"].isOn()) {
-                        text.classList.add(cl);
-                        circle.classList.add(cl);
-                        seqNum.classList.add(cl);
-                    } else {
-                        text.classList.remove(cl);
-                        circle.classList.remove(cl);
-                        seqNum.classList.remove(cl);
-                    }
+                    method = (isRelated && isShowRelated) ? 'add' : 'remove';
+                    text.classList[method](cl);
+                    circle.classList[method](cl);
+                    seqNum.classList[method](cl);
                 }
 
-                if (s.addinfoHead) {
-                    if (s.addinfoHead.isSpecial || s.addinfoHead.size <= 0) {
-                        text.classList.add("special");
-                    }
+                if (s?.addinfoHead && (s.addinfoHead?.isSpecial || s.addinfoHead?.size <= 0)) {
+                    text.classList.add("special");
                 }
 
-                if (i === refIndex) {
-                    text.classList.add('active');
-                    circle.classList.add('active');
-                    seqNum.classList.add('active');
-                } else {
-                    text.classList.remove('active');
-                    circle.classList.remove('active');
-                    seqNum.classList.remove('active');
-                }
+                cl = 'active';
+                method = (i === refIndex) ? 'add' : 'remove';
+                text.classList[method](cl);
+                circle.classList[method](cl);
+                seqNum.classList[method](cl);
             });
         }
 
