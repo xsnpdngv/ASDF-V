@@ -859,169 +859,6 @@ class AsdfViewModel  {
     }
 
     // ---- signal ----
-    static SignalRenderer = class SignalRenderer {
-        static #TIMESTAMP_CLASSNAME = "ts";
-        static #GRIDLINE_CLASSNAME = "gridline";
-        static #SEQNUM_CLASSNAME = "seq-num";
-        static #SEQNUM_CIRCLE_RADIUS = 13;
-        #selectors = { signal: "", actor: "" };
-        #arrowPaths = [];  // the lines of the singal arrows in the svg
-        #actorPaths = [];  // the vertical lines of participants
-        #cursor = {};
-        #toggles = [];
-
-        constructor(selectors, signalCursor, toggles) {
-            this.#selectors = selectors;
-            this.#cursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
-            this.#toggles = toggles;
-        }
-
-        render() {
-            this.draw();
-            this.mark();
-        }
-
-        draw() {
-            this.drawSeqNumCircles();
-            this.drawTimestamps();
-        }
-
-        mark() {
-            this.markArrowTexts();
-            this.markTimestamps();
-        }
-
-        drawSeqNumCircles() {
-            const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
-            arrowPaths.forEach((path, index) => {
-                const start = path.getPointAtLength(0);
-
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("cx", start.x);
-                circle.setAttribute("cy", start.y);
-                circle.setAttribute("r", SignalRenderer.#SEQNUM_CIRCLE_RADIUS);
-                circle.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
-                path.parentNode.appendChild(circle);
-
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", start.x);
-                text.setAttribute("y", start.y);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("dy", "0.35em");
-                text.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
-                text.textContent = this.#cursor.getCollection()[index].seqNum;
-                path.parentNode.appendChild(text);
-            });
-        }
-
-        drawTimestamps() {
-            const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
-            const actorPaths = document.querySelectorAll("path." + this.#selectors.actor);
-
-            if (arrowPaths.length < 1) {
-                return;
-            }
-
-            let svg = arrowPaths[0].parentNode;
-            // add a background layer to append gridlines to
-            const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            bkgGroup.setAttribute("id", "background-layer");
-            svg.insertBefore(bkgGroup, svg.firstChild);
-
-            const gridlineWidth = actorPaths[actorPaths.length-1].getPointAtLength(0).x;
-            arrowPaths.forEach((path, index) => {
-                const start = path.getPointAtLength(0);
-
-                const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                ts.setAttribute("x", 0);
-                ts.setAttribute("y", start.y-6);
-                ts.setAttribute("class", SignalRenderer.#TIMESTAMP_CLASSNAME);
-                ts.textContent = this.#cursor.getSignalByIdx(index)?.addinfoHead?.timestamp.split('T')[1] || "";
-                svg.appendChild(ts);
-
-                const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
-                gridline.setAttribute("class", SignalRenderer.#GRIDLINE_CLASSNAME);
-                bkgGroup.appendChild(gridline);
-            });
-        }
-
-        markArrowTexts() {
-            const arrowTexts = document.querySelectorAll("text." + this.#selectors.signal);
-            const seqNumTexts = document.querySelectorAll("text." + SignalRenderer.#SEQNUM_CLASSNAME);
-            const seqNumCircles = document.querySelectorAll("circle." + SignalRenderer.#SEQNUM_CLASSNAME);
-
-            let refIndex = this.#cursor.getIdx();
-            let refSig = this.#cursor.getSignal() || { "addinfoHead": { "srcInstanceId": null,
-                                                                        "dstInstanceId": null } };
-            this.#cursor.getCollection().forEach((s, i) => {
-
-                let text = arrowTexts[i];
-                let circle = seqNumCircles[i];
-                let seqNum = seqNumTexts[i];
-
-                let isOfSameInstance = false;
-                let isRelated = false;
-                let cl = '';
-
-                if(s.addinfoHead.srcInstanceId) {
-
-                    isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
-                                        s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
-                    cl = 'instance';
-                    if (isOfSameInstance && this.#toggles["showInstance"].isOn()) {
-                        text.classList.add(cl);
-                        circle.classList.add(cl);
-                        seqNum.classList.add(cl);
-                    } else {
-                        text.classList.remove(cl);
-                        circle.classList.remove(cl);
-                        seqNum.classList.remove(cl);
-                    }
-
-                    isRelated = refSig.addinfoHead.srcInstanceId &&
-                                (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
-                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
-                    cl = 'related';
-                    if (isRelated && this.#toggles["showRelated"].isOn()) {
-                        text.classList.add(cl);
-                        circle.classList.add(cl);
-                        seqNum.classList.add(cl);
-                    } else {
-                        text.classList.remove(cl);
-                        circle.classList.remove(cl);
-                        seqNum.classList.remove(cl);
-                    }
-                }
-
-                if (s.addinfoHead) {
-                    if (s.addinfoHead.isSpecial || s.addinfoHead.size <= 0) {
-                        text.classList.add("special");
-                    }
-                }
-
-                if (i === refIndex) {
-                    text.classList.add('active');
-                    circle.classList.add('active');
-                    seqNum.classList.add('active');
-                } else {
-                    text.classList.remove('active');
-                    circle.classList.remove('active');
-                    seqNum.classList.remove('active');
-                }
-            });
-        }
-
-        markTimestamps() {
-            const timestamps = document.querySelectorAll("text." + SignalRenderer.#TIMESTAMP_CLASSNAME);
-            timestamps?.forEach(ts => { ts.classList.remove('active'); });
-            if (this.#cursor.isValid()) {
-                timestamps[this.#cursor.getIdx()].classList.add('active');
-            }
-        }
-    }; // SignalRenderer
-
-
     #sendCursorHomeOnInputFileChange() {
         if (this.#isInputFileChange) { this.#signalCursor.home(); this.#isInputFileChange = false; }
     }
@@ -1388,6 +1225,170 @@ class AsdfViewModel  {
             return this.#collection.length;
         }
     }; // SignalCursor
+
+
+    // ---- SignalRenderer ----
+    static SignalRenderer = class SignalRenderer {
+        static #TIMESTAMP_CLASSNAME = "ts";
+        static #GRIDLINE_CLASSNAME = "gridline";
+        static #SEQNUM_CLASSNAME = "seq-num";
+        static #SEQNUM_CIRCLE_RADIUS = 13;
+        #selectors = { signal: "", actor: "" };
+        #arrowPaths = [];  // the lines of the singal arrows in the svg
+        #actorPaths = [];  // the vertical lines of participants
+        #cursor = {};
+        #toggles = [];
+
+        constructor(selectors, signalCursor, toggles) {
+            this.#selectors = selectors;
+            this.#cursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
+            this.#toggles = toggles;
+        }
+
+        render() {
+            this.draw();
+            this.mark();
+        }
+
+        draw() {
+            this.drawSeqNumCircles();
+            this.drawTimestamps();
+        }
+
+        mark() {
+            this.markArrowTexts();
+            this.markTimestamps();
+        }
+
+        drawSeqNumCircles() {
+            const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
+            arrowPaths.forEach((path, index) => {
+                const start = path.getPointAtLength(0);
+
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", start.x);
+                circle.setAttribute("cy", start.y);
+                circle.setAttribute("r", SignalRenderer.#SEQNUM_CIRCLE_RADIUS);
+                circle.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
+                path.parentNode.appendChild(circle);
+
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", start.x);
+                text.setAttribute("y", start.y);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dy", "0.35em");
+                text.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
+                text.textContent = this.#cursor.getCollection()[index].seqNum;
+                path.parentNode.appendChild(text);
+            });
+        }
+
+        drawTimestamps() {
+            const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
+            const actorPaths = document.querySelectorAll("path." + this.#selectors.actor);
+
+            if (arrowPaths.length < 1) {
+                return;
+            }
+
+            let svg = arrowPaths[0].parentNode;
+            // add a background layer to append gridlines to
+            const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            bkgGroup.setAttribute("id", "background-layer");
+            svg.insertBefore(bkgGroup, svg.firstChild);
+
+            const gridlineWidth = actorPaths[actorPaths.length-1].getPointAtLength(0).x;
+            arrowPaths.forEach((path, index) => {
+                const start = path.getPointAtLength(0);
+
+                const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                ts.setAttribute("x", 0);
+                ts.setAttribute("y", start.y-6);
+                ts.setAttribute("class", SignalRenderer.#TIMESTAMP_CLASSNAME);
+                ts.textContent = this.#cursor.getSignalByIdx(index)?.addinfoHead?.timestamp.split('T')[1] || "";
+                svg.appendChild(ts);
+
+                const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
+                gridline.setAttribute("class", SignalRenderer.#GRIDLINE_CLASSNAME);
+                bkgGroup.appendChild(gridline);
+            });
+        }
+
+        markArrowTexts() {
+            const arrowTexts = document.querySelectorAll("text." + this.#selectors.signal);
+            const seqNumTexts = document.querySelectorAll("text." + SignalRenderer.#SEQNUM_CLASSNAME);
+            const seqNumCircles = document.querySelectorAll("circle." + SignalRenderer.#SEQNUM_CLASSNAME);
+
+            let refIndex = this.#cursor.getIdx();
+            let refSig = this.#cursor.getSignal() || { "addinfoHead": { "srcInstanceId": null,
+                                                                        "dstInstanceId": null } };
+            this.#cursor.getCollection().forEach((s, i) => {
+
+                let text = arrowTexts[i];
+                let circle = seqNumCircles[i];
+                let seqNum = seqNumTexts[i];
+
+                let isOfSameInstance = false;
+                let isRelated = false;
+                let cl = '';
+
+                if(s.addinfoHead.srcInstanceId) {
+
+                    isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
+                                        s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
+                    cl = 'instance';
+                    if (isOfSameInstance && this.#toggles["showInstance"].isOn()) {
+                        text.classList.add(cl);
+                        circle.classList.add(cl);
+                        seqNum.classList.add(cl);
+                    } else {
+                        text.classList.remove(cl);
+                        circle.classList.remove(cl);
+                        seqNum.classList.remove(cl);
+                    }
+
+                    isRelated = refSig.addinfoHead.srcInstanceId &&
+                                (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
+                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
+                    cl = 'related';
+                    if (isRelated && this.#toggles["showRelated"].isOn()) {
+                        text.classList.add(cl);
+                        circle.classList.add(cl);
+                        seqNum.classList.add(cl);
+                    } else {
+                        text.classList.remove(cl);
+                        circle.classList.remove(cl);
+                        seqNum.classList.remove(cl);
+                    }
+                }
+
+                if (s.addinfoHead) {
+                    if (s.addinfoHead.isSpecial || s.addinfoHead.size <= 0) {
+                        text.classList.add("special");
+                    }
+                }
+
+                if (i === refIndex) {
+                    text.classList.add('active');
+                    circle.classList.add('active');
+                    seqNum.classList.add('active');
+                } else {
+                    text.classList.remove('active');
+                    circle.classList.remove('active');
+                    seqNum.classList.remove('active');
+                }
+            });
+        }
+
+        markTimestamps() {
+            const timestamps = document.querySelectorAll("text." + SignalRenderer.#TIMESTAMP_CLASSNAME);
+            timestamps?.forEach(ts => { ts.classList.remove('active'); });
+            if (this.#cursor.isValid()) {
+                timestamps[this.#cursor.getIdx()].classList.add('active');
+            }
+        }
+    }; // SignalRenderer
 
 
     // ---- SignalNavigator ----
