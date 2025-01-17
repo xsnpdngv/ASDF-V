@@ -354,6 +354,7 @@ class AsdfModel {
     fileLastMod = new PersistentString("AsdfModel: fileLastMod", "");
     diag = null;
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
+    #diagClone;
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
     #diagSrcPreamble = new PersistentString("AsdfModel: diagSrcPreamble", "");
     #diagSrc = new PersistentString("AsdfModel: diagSrc");
