@@ -555,18 +555,17 @@ class AsdfViewModel  {
     #diagramDiv = document.getElementById("diagram");
     #fileInputLabel = document.getElementById("fileInputLabel");
     #isInputFileChange = false;
-
     #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: signalCursor", this.#diag_signals);
-    #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal-arrow', this.#signalCursor,
+    #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal', this.#signalCursor,
                                                          { diagramContainerId: "diagramContainer" },
                                                          () => this.#applySignalClick());
-
     #toggles = {
         "showTime": new AsdfViewModel.PersistentToggle({toggleId: "showTimeToggle"}, true, this.#showTimeOnChange, this),
         "showIds": new AsdfViewModel.PersistentToggle({toggleId: "showIdsToggle"}, false, this.#showIdsOnChange, this),
         "showInstance": new AsdfViewModel.PersistentToggle({toggleId: "showInstanceToggle"}, false, this.#markSignalsHandler, this),
         "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this)
     }
+    #signalRenderer = new AsdfViewModel.SignalRenderer({signal: 'signal', actor: 'actor'}, this.#signalCursor, this.#toggles);
     #help = new AsdfViewModel.OffCanvas("helpOffcanvas");
     #paginator;
     #search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
@@ -574,7 +573,6 @@ class AsdfViewModel  {
     #searchHitCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: searchHitCursor", []);
     #searchHitCursorDisplay = new AsdfViewModel.CursorDisplay(this.#searchHitCursor, "searchStats");
     #searchHitNavigator = {};
-
     #divider = new AsdfViewModel.Divider({ upperAreaId: "diagramArea",
                                            lowerAreaId: "addinfoDisplay",
                                            dividerId: "divider"});
@@ -714,8 +712,8 @@ class AsdfViewModel  {
     }
 
     #updateHeadSvgElemLists() {
-        this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
-        this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
+        this.head_actor_boxes = document.querySelectorAll('rect.head-actor');
+        this.head_actor_texts = document.querySelectorAll('text.head-actor');
     }
 
     // ---- diagram ----
@@ -733,9 +731,8 @@ class AsdfViewModel  {
     #diagramOnDrawComplete(event) {
         this.#restoreDiagramScrollPosition();
         this.#updateDiagramSvgElemLists();
-        this.#drawSignalSeqNumCircles();
-        this.#drawTimestamps();
-        if (this.#isInputFileChange) { this.#signalCursor.home(); this.#isInputFileChange = false; }
+        this.#signalRenderer.draw();
+        this.#sendCursorHomeOnInputFileChange();
         this.#applySignalClick();
         this.#markActors();
         this.#addActorMoveBtns();
@@ -744,13 +741,13 @@ class AsdfViewModel  {
     }
 
     #updateDiagramSvgElemLists() {
-        this.head_actor_boxes = document.querySelectorAll('rect.head-actor-box');
-        this.head_actor_texts = document.querySelectorAll('text.head-actor-text');
-        this.signal_paths = document.querySelectorAll('path.signal-arrow');
+        this.head_actor_boxes = document.querySelectorAll('rect.head-actor');
+        this.head_actor_texts = document.querySelectorAll('text.head-actor');
+        this.signal_paths = document.querySelectorAll('path.signal');
         this.signal_texts = document.querySelectorAll('text.signal');
-        this.actor_paths = document.querySelectorAll('path.actor-line');
-        this.actor_boxes = document.querySelectorAll('rect.actor-box');
-        this.actor_texts = document.querySelectorAll('text.actor-text');
+        this.actor_paths = document.querySelectorAll('path.actor');
+        this.actor_boxes = document.querySelectorAll('rect.actor');
+        this.actor_texts = document.querySelectorAll('text.actor');
         this.seqNum_circles = document.querySelectorAll('circle.seq-num');
         this.seqNum_texts = document.querySelectorAll('text.seq-num');
         this.timestamps = document.querySelectorAll('text.ts');
@@ -801,7 +798,6 @@ class AsdfViewModel  {
     // ---- toolbar ----
     #updateToolbar() {
         this.#updateFileInputLabel();
-        // this.#updateFileInfo();
     }
 
     navbarBrandOnClick() {
@@ -849,7 +845,7 @@ class AsdfViewModel  {
     }
 
     #markSignalsHandler(vm) {
-        vm.#markSignals(vm.#signalCursor.getIdx());
+        vm.#signalRenderer.mark();
     }
 
     resetToolbarOnClick() {
@@ -863,80 +859,171 @@ class AsdfViewModel  {
     }
 
     // ---- signal ----
-    #drawSignalSeqNumCircles() {
-        this.signal_paths.forEach((path, index) => {
-            // Get the starting point of the path
-            const start = path.getPointAtLength(0);
+    static SignalRenderer = class SignalRenderer {
+        static #TIMESTAMP_CLASSNAME = "ts";
+        static #GRIDLINE_CLASSNAME = "gridline";
+        static #SEQNUM_CLASSNAME = "seq-num";
+        static #SEQNUM_CIRCLE_RADIUS = 13;
+        #selectors = { signal: "", actor: "" };
+        #arrowPaths = [];  // the lines of the singal arrows in the svg
+        #actorPaths = [];  // the vertical lines of participants
+        #cursor = {};
+        #toggles = [];
 
-            // Create a circle element
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", start.x);
-            circle.setAttribute("cy", start.y);
-            circle.setAttribute("r", 13);
-            circle.setAttribute("fill", "white");
-            circle.setAttribute("stroke", "black");
-            circle.setAttribute("stroke-width", 1);
-            circle.setAttribute("class", "seq-num");
-
-            // Create a text element
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", start.x);
-            text.setAttribute("y", start.y);
-            text.setAttribute("text-anchor", "middle");
-            text.setAttribute("dy", "0.35em");
-            text.setAttribute("fill", "black");
-            text.setAttribute("font-size", "11px");
-            text.setAttribute("class", "seq-num");
-            text.textContent = this.#diag_signals[index].seqNum;
-
-            // Append them to the SVG element
-            path.parentNode.appendChild(circle);
-            path.parentNode.appendChild(text);
-        });
-
-        this.seqNum_circles = document.querySelectorAll('circle.seq-num');
-        this.seqNum_texts = document.querySelectorAll('text.seq-num');
-    }
-
-    #drawTimestamps() {
-        if ( ! this.#toggles["showTime"].isOn() ||
-             ! this.signal_paths[0]) {
-            return;
+        constructor(selectors, signalCursor, toggles) {
+            this.#selectors = selectors;
+            this.#cursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
+            this.#toggles = toggles;
         }
 
-        let svg = this.signal_paths[0].parentNode;
-        // add a background layer to append gridlines to
-        const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        bkgGroup.setAttribute("id", "background-layer");
-        svg.insertBefore(bkgGroup, svg.firstChild);
+        render() {
+            this.draw();
+            this.mark();
+        }
 
-        let prevTS = ""; 
-        const gridlineWidth = this.actor_paths[this.actor_paths.length-1].getPointAtLength(0).x;
-        this.signal_paths.forEach((path, index) => {
-            const start = path.getPointAtLength(0);
+        draw() {
+            this.drawSeqNumCircles();
+            this.drawTimestamps();
+        }
 
-            let currTS = ""
-            if (this.#diag_signals[index].addinfoHead.timestamp) {
-                currTS = this.#diag_signals[index].addinfoHead.timestamp.split('T')[1];
+        mark() {
+            this.markArrowTexts();
+            this.markTimestamps();
+        }
+
+        drawSeqNumCircles() {
+            const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
+            arrowPaths.forEach((path, index) => {
+                const start = path.getPointAtLength(0);
+
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", start.x);
+                circle.setAttribute("cy", start.y);
+                circle.setAttribute("r", SignalRenderer.#SEQNUM_CIRCLE_RADIUS);
+                circle.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
+                path.parentNode.appendChild(circle);
+
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", start.x);
+                text.setAttribute("y", start.y);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dy", "0.35em");
+                text.setAttribute("class", SignalRenderer.#SEQNUM_CLASSNAME);
+                text.textContent = this.#cursor.getCollection()[index].seqNum;
+                path.parentNode.appendChild(text);
+            });
+        }
+
+        drawTimestamps() {
+            const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
+            const actorPaths = document.querySelectorAll("path." + this.#selectors.actor);
+
+            if (arrowPaths.length < 1) {
+                return;
             }
 
-            // Create an SVG text element
-            const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            ts.setAttribute("x", 0);
-            ts.setAttribute("y", start.y-6);
-            ts.setAttribute("class", "ts");
-            ts.textContent = currTS;
-            svg.appendChild(ts);
-            prevTS = currTS;
+            let svg = arrowPaths[0].parentNode;
+            // add a background layer to append gridlines to
+            const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            bkgGroup.setAttribute("id", "background-layer");
+            svg.insertBefore(bkgGroup, svg.firstChild);
 
-            const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
-            gridline.setAttribute("class", "gridline");
-            bkgGroup.appendChild(gridline);
-        });
+            const gridlineWidth = actorPaths[actorPaths.length-1].getPointAtLength(0).x;
+            arrowPaths.forEach((path, index) => {
+                const start = path.getPointAtLength(0);
 
-        this.timestamps = document.querySelectorAll('text.ts');
-        this.gridlines = document.querySelectorAll('path.gridline');
+                const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                ts.setAttribute("x", 0);
+                ts.setAttribute("y", start.y-6);
+                ts.setAttribute("class", SignalRenderer.#TIMESTAMP_CLASSNAME);
+                ts.textContent = this.#cursor.getSignalByIdx(index)?.addinfoHead?.timestamp.split('T')[1] || "";
+                svg.appendChild(ts);
+
+                const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
+                gridline.setAttribute("class", SignalRenderer.#GRIDLINE_CLASSNAME);
+                bkgGroup.appendChild(gridline);
+            });
+        }
+
+        markArrowTexts() {
+            const arrowTexts = document.querySelectorAll("text." + this.#selectors.signal);
+            const seqNumTexts = document.querySelectorAll("text." + SignalRenderer.#SEQNUM_CLASSNAME);
+            const seqNumCircles = document.querySelectorAll("circle." + SignalRenderer.#SEQNUM_CLASSNAME);
+
+            let refIndex = this.#cursor.getIdx();
+            let refSig = this.#cursor.getSignal() || { "addinfoHead": { "srcInstanceId": null,
+                                                                        "dstInstanceId": null } };
+            this.#cursor.getCollection().forEach((s, i) => {
+
+                let text = arrowTexts[i];
+                let circle = seqNumCircles[i];
+                let seqNum = seqNumTexts[i];
+
+                let isOfSameInstance = false;
+                let isRelated = false;
+                let cl = '';
+
+                if(s.addinfoHead.srcInstanceId) {
+
+                    isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
+                                        s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
+                    cl = 'instance';
+                    if (isOfSameInstance && this.#toggles["showInstance"].isOn()) {
+                        text.classList.add(cl);
+                        circle.classList.add(cl);
+                        seqNum.classList.add(cl);
+                    } else {
+                        text.classList.remove(cl);
+                        circle.classList.remove(cl);
+                        seqNum.classList.remove(cl);
+                    }
+
+                    isRelated = refSig.addinfoHead.srcInstanceId &&
+                                (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
+                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
+                    cl = 'related';
+                    if (isRelated && this.#toggles["showRelated"].isOn()) {
+                        text.classList.add(cl);
+                        circle.classList.add(cl);
+                        seqNum.classList.add(cl);
+                    } else {
+                        text.classList.remove(cl);
+                        circle.classList.remove(cl);
+                        seqNum.classList.remove(cl);
+                    }
+                }
+
+                if (s.addinfoHead) {
+                    if (s.addinfoHead.isSpecial || s.addinfoHead.size <= 0) {
+                        text.classList.add("special");
+                    }
+                }
+
+                if (i === refIndex) {
+                    text.classList.add('active');
+                    circle.classList.add('active');
+                    seqNum.classList.add('active');
+                } else {
+                    text.classList.remove('active');
+                    circle.classList.remove('active');
+                    seqNum.classList.remove('active');
+                }
+            });
+        }
+
+        markTimestamps() {
+            const timestamps = document.querySelectorAll("text." + SignalRenderer.#TIMESTAMP_CLASSNAME);
+            timestamps?.forEach(ts => { ts.classList.remove('active'); });
+            if (this.#cursor.isValid()) {
+                timestamps[this.#cursor.getIdx()].classList.add('active');
+            }
+        }
+    }; // SignalRenderer
+
+
+    #sendCursorHomeOnInputFileChange() {
+        if (this.#isInputFileChange) { this.#signalCursor.home(); this.#isInputFileChange = false; }
     }
 
     #addSignalEventListeners() {
@@ -958,8 +1045,7 @@ class AsdfViewModel  {
 
     #applySignalClick() {
         this.#showActiveSignalAddinfo();
-        this.#markSignals(this.#signalCursor.getIdx());
-        this.#markTimestamps(this.#signalCursor.getIdx());
+        this.#signalRenderer.mark();
     }
 
     #showAddinfoContent(index) {
@@ -983,76 +1069,6 @@ class AsdfViewModel  {
         this.#showAddinfoContent(this.#signalCursor.getIdx());
     }
 
-    #markSignals(refIndex) {
-        let refSig = 0 <= refIndex && refIndex < this.#diag_signals.length
-                     ? this.#diag_signals[refIndex] : { "addinfoHead": { "srcInstanceId": null,
-                                                                         "dstInstanceId": null } };
-        this.#diag_signals.forEach((s, i) => {
-
-            let text = this.signal_texts[i];
-            let circle = this.seqNum_circles[i];
-            let seqNum = this.seqNum_texts[i];
-
-            let isOfSameInstance = false;
-            let isRelated = false;
-            let cl = '';
-
-            if(s.addinfoHead.srcInstanceId) {
-
-                isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
-                                      s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
-                cl = 'same-id-signal';
-                if(isOfSameInstance && this.#toggles["showInstance"].isOn()) {
-                    text.classList.add(cl);
-                    circle.classList.add(cl);
-                    seqNum.classList.add(cl);
-                } else {
-                    text.classList.remove(cl);
-                    circle.classList.remove(cl);
-                    seqNum.classList.remove(cl);
-                }
-
-                isRelated = refSig.addinfoHead.srcInstanceId &&
-                              (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
-                               s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
-                cl = 'related-signal';
-                if(isRelated && this.#toggles["showRelated"].isOn()) {
-                    text.classList.add(cl);
-                    circle.classList.add(cl);
-                    seqNum.classList.add(cl);
-                } else {
-                    text.classList.remove(cl);
-                    circle.classList.remove(cl);
-                    seqNum.classList.remove(cl);
-                }
-            }
-
-            if (s.addinfoHead) {
-                if (s.addinfoHead.isSpecial || s.addinfoHead.size <= 0) {
-                    text.classList.add("special-signal");
-                }
-            }
-
-            if (i === refIndex) {
-                text.classList.add('active-signal');
-                circle.classList.add('active-signal-circle');
-                seqNum.classList.add('active-signal-seq-num');
-            } else {
-                text.classList.remove('active-signal');
-                circle.classList.remove('active-signal-circle');
-                seqNum.classList.remove('active-signal-seq-num');
-            }
-        });
-    }
-
-    #markTimestamps(refIndex) {
-        this.timestamps?.forEach(g => { g.classList.remove('active-ts'); });
-        if (refIndex < 0 || refIndex > this.timestamps.length - 1) {
-            return;
-        }
-        this.timestamps[refIndex].classList.add('active-ts');
-    }
-
     // ---- actor ----
     #addActorEventListeners() {
         this.#actorOrder.clear();
@@ -1071,9 +1087,9 @@ class AsdfViewModel  {
     }
 
     #addActorMoveBtns() {
-        this.#addMoveBtnsToElemList('.head-actor-box');
-        this.#addMoveBtnsToElemList('.actor-top-box');
-        this.#addMoveBtnsToElemList('.actor-bottom-box');
+        this.#addMoveBtnsToElemList('rect.head-actor');
+        this.#addMoveBtnsToElemList('rect.actor.top');
+        this.#addMoveBtnsToElemList('rect.actor.bottom');
     }
 
     #addMoveBtnsToElemList(uiElemId) {
@@ -1112,12 +1128,12 @@ class AsdfViewModel  {
 
     #markHeadActors() {
         this.#model.diag.actors.forEach((a, i) => {
-            let cl = 'filtered-actor';
+            let cl = 'filtered';
             if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
                 this.head_actor_boxes[i].classList.add(cl);
                 this.head_actor_texts[i].classList.add(cl);
             }
-            cl = 'orphan-actor';
+            cl = 'orphan';
             if (a.signalCount == 0) {
                 this.head_actor_boxes[i].classList.add(cl);
                 this.head_actor_texts[i].classList.add(cl);
@@ -1127,7 +1143,7 @@ class AsdfViewModel  {
 
     #markActors() {
         this.#model.diag.actors.forEach((a, i) => {
-            let cl = 'filtered-actor';
+            let cl = 'filtered';
             if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
                 this.actor_boxes[2*i].classList.add(cl);
                 this.actor_boxes[2*i+1].classList.add(cl);
@@ -1135,7 +1151,7 @@ class AsdfViewModel  {
                 this.actor_texts[2*i+1].classList.add(cl);
                 this.actor_paths[i].classList.add(cl);
             }
-            cl = 'orphan-actor';
+            cl = 'orphan';
             if (a.signalCount == 0) {
                 this.actor_boxes[2*i].classList.add(cl);
                 this.actor_boxes[2*i+1].classList.add(cl);
@@ -1315,7 +1331,10 @@ class AsdfViewModel  {
         }
 
         getSignal() {
-            const idx = this.getIdx();
+            return this.getSignalByIdx(this.getIdx());
+        }
+
+        getSignalByIdx(idx) {
             return this.#isIndexValid(idx) ? this.#collection[idx] : null;
         }
 

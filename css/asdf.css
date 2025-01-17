@@ -202,67 +202,70 @@ figure {
     background-color: inherit;
 }
 
-text.actor-text,
-text.head-actor-text {
+text.actor,
+text.head-actor {
     cursor: pointer;
     font-weight: 100;
 }
-text.actor-text:hover,
-text.head-actor-text:hover {
+text.actor:hover,
+text.head-actor:hover {
     /* stroke: lightgrey; */
     text-decoration: line-through;
     cursor: pointer;
 }
-text.actor-text.orphan-actor,
-text.head-actor-text.orphan-actor {
+text.actor.orphan,
+text.head-actor.orphan {
     fill: lightgrey;
     text-decoration: none;
 }
-text.actor-text.orphan-actor:hover,
-text.head-actor-text.orphan-actor:hover {
+text.actor.orphan:hover,
+text.head-actor.orphan:hover {
     stroke: none;
     cursor: default;
     text-decoration: none;
 }
-text.actor-text.filtered-actor,
+text.actor.filtered,
 text.head-actor-text.filtered-actor {
     fill: lightgrey;
     text-decoration: line-through;
 }
-text.actor-text.filtered-actor:hover,
-text.head-actor-text.filtered-actor:hover {
+text.actor.filtered:hover,
+text.head-actor.filtered:hover {
     fill: black;
     stroke: black;
     cursor: pointer;
     text-decoration: none;
 }
 
-rect.actor-box,
-rect.head-actor-box {
+rect.actor,
+rect.head-actor {
     rx: 5;
     ry: 5;
     stroke-width: 2px;
 }
-rect.actor-box.orphan-actor,
-rect.head-actor-box.orphan-actor {
+rect.actor.orphan,
+rect.head-actor.orphan {
     stroke: none;
 }
-rect.actor-box.filtered-actor,
-rect.head-actor-box.filtered-actor {
+rect.actor.filtered,
+rect.head-actor.filtered {
     stroke: none;
 }
 
-path.filtered-actor.actor-line {
+path.actor.filtered {
     stroke: none;
 }
-path.orphan-actor.actor-line {
+path.actor.orphan {
     stroke: none;
 }
-path.actor-line:not(.filtered-actor) {
-    stroke-width: 1px;
+path.actor:not(.filtered) {
+    stroke-width: 0.4px;
+    stroke-dasharray: 5, 3; /* Dash of 5px, gap of 2px */
 }
-path.signal-arrow {
-    /* stroke-width: 1px; */
+path.signal {
+    fill:grey;
+    /* stroke: red; */
+    stroke-width: 1.7px;
 }
 
 text.signal {
@@ -270,74 +273,77 @@ text.signal {
     stroke: var(--asdf-body-bg-color); stroke-width: 8px; paint-order: stroke fill;
     cursor: pointer;
 }
-text.signal.same-id-signal:not(.instance-highlight-off) {
+text.signal.instance:not(.instance-highlight-off) {
     stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.signal.same-id-signal.special-signal:not(.instance-highlight-off) {
+text.signal.instance.special:not(.instance-highlight-off) {
     stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--asdf-special-color);
 }
-text.signal.related-signal:not(.related-highlight-off) {
+text.signal.related:not(.related-highlight-off) {
     stroke: var(--asdf-highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.signal.related-signal.special-signal:not(.related-highlight-off) {
+text.signal.related.special:not(.related-highlight-off) {
     stroke: var(--asdf-highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--asdf-special-color);
 }
 text.signal:hover {
-    /* stroke: black; */
-    /* stroke: var(--highlight-color); stroke-width: 8px; paint-order: stroke fill; */
     stroke: var(--asdf-highlight-color); stroke-width: 3px; paint-order: stroke fill;
-    /* fill: black; */
     font-style: italic;
 }
-body.no-hover text.signal:hover:not(.active-signal) {
+body.no-hover text.signal:hover:not(.active) {
     stroke: none;
     font-style: normal;
 }
-text.special-signal {
+text.signal.special {
     fill: var(--asdf-special-color);
     color: var(--asdf-special-color);
 }
-text.special-signal:hover {
+text.signal.special:hover {
     /* stroke: orangered; */
     stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--asdf-special-color);
 }
-text.active-signal.special-signal {
+text.signal.special.active {
     font-weight: bold;
     stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--asdf-special-color);
     font-style: italic;
 }
-text.active-signal:not(.special-signal) {
+text.signal.active:not(.special) {
     /* stroke: black; */
     font-weight: bold;
     font-style: italic;
     stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
-text.seq-num.active-signal-seq-num {
+text.seq-num.active {
     font-style: italic;
     /* stroke: black; */
 }
 
-circle.seq-num.active-signal-circle {
+circle.seq-num {
+    fill: white;
+    stroke: black;
+    stroke-width: 1;
+}
+circle.seq-num.active {
     /* stroke-width: 2; */
 }
-circle.seq-num.same-id-signal:not(.instance-highlight-off) {
+circle.seq-num.instance:not(.instance-highlight-off) {
     fill: var(--asdf-highlight-color);
 }
-circle.seq-num.related-signal:not(.related-highlight-off) {
+circle.seq-num.related:not(.related-highlight-off) {
     /* fill: var(--highlight-color2); */
 }
 text.seq-num {
+    fill: black;
     font-family: 'stdfont';
     font-size: 16px;
 }
-text.seq-num.same-id-signal {
+text.seq-num.instance {
     /* fill: white; */
     /* fill: darkkhaki; */
     /* fill: darkgrey; */
@@ -352,10 +358,15 @@ path.gridline {
     stroke: #f0f0f0;
     stroke-width: 1px;
 }
-text.ts.active-ts {
+text.ts.active {
     fill: black;
     stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
     /* font-weight: bold; */
+}
+
+rect.note {
+}
+text.note {
 }
 
 .move {
