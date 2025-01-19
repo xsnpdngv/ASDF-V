@@ -362,7 +362,8 @@ class AsdfModel {
     #isShowIds = false;
     #observers = [];
 
-    constructor() {}
+    constructor() {
+    }
 
     subscribe(observer) {
         this.#observers.push(observer);
@@ -546,18 +547,16 @@ class AsdfModel {
  * ============================== */
 class AsdfViewModel  {
     static #TIMESTAMP_WIDTH = 45;
-
     #model = {}; // direct access to the model
-    #diag_signals = []; // helper array of signals of original diagram (without notes)
+    #diagSignals = []; // helper array of signals of original diagram (without notes)
     #actorOrder = new PersistentArray("AsdfViewModel: actorOrder");
-
     #diagramHeadContainer = document.getElementById("diagramHeadContainer");
     #diagramHeadDiv = document.getElementById("diagramHead");
     #diagramContainer = document.getElementById("diagramContainer");
     #diagramDiv = document.getElementById("diagram");
     #fileInputLabel = document.getElementById("fileInputLabel");
     #isInputFileChange = false;
-    #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: signalCursor", this.#diag_signals);
+    #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: signalCursor", this.#diagSignals);
     #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal', this.#signalCursor,
                                                          { diagramContainerId: "diagramContainer" },
                                                          () => this.#applySignalClick());
@@ -567,7 +566,7 @@ class AsdfViewModel  {
         "showInstance": new AsdfViewModel.PersistentToggle({toggleId: "showInstanceToggle"}, false, this.#markSignalsHandler, this),
         "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this)
     }
-    #signalRenderer = new AsdfViewModel.SignalRenderer({signal: 'signal', actor: 'actor'}, this.#signalCursor, this.#toggles);
+    #signalDecorator = new AsdfViewModel.SignalDecorator({signal: 'signal', actor: 'actor'}, this.#signalCursor, this.#toggles);
     #help = new AsdfViewModel.OffCanvas("helpOffcanvas");
     #paginator;
     #search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
@@ -727,7 +726,7 @@ class AsdfViewModel  {
     #diagramOnDrawComplete(event) {
         this.#restoreDiagramScrollPosition();
         this.#updateDiagSignals();
-        this.#signalRenderer.draw();
+        this.#signalDecorator.draw();
         this.#sendCursorHomeOnInputFileChange();
         this.#applySignalClick();
         this.#markActors();
@@ -738,8 +737,8 @@ class AsdfViewModel  {
 
     #updateDiagSignals() {
 
-        this.#diag_signals = this.#model.diag.signals.filter(item => item.type === 'Signal');
-        this.#signalCursor.setCollection(this.#diag_signals);
+        this.#diagSignals = this.#model.diag.signals.filter(item => item.type === 'Signal');
+        this.#signalCursor.setCollection(this.#diagSignals);
     }
 
     // ---- scroll ----
@@ -828,7 +827,7 @@ class AsdfViewModel  {
     }
 
     #markSignalsHandler(vm) {
-        vm.#signalRenderer.mark();
+        vm.#signalDecorator.mark();
     }
 
     resetToolbarOnClick() {
@@ -866,7 +865,7 @@ class AsdfViewModel  {
 
     #applySignalClick() {
         this.#showActiveSignalAddinfo();
-        this.#signalRenderer.mark();
+        this.#signalDecorator.mark();
     }
 
     #showAddinfoContent(index) {
@@ -878,8 +877,8 @@ class AsdfViewModel  {
         addinfo.textContent = "";
         if (index < 0)
             return;
-        if (index < this.#diag_signals.length) {
-            const s = this.#diag_signals[index];
+        if (index < this.#diagSignals.length) {
+            const s = this.#diagSignals[index];
             notation.textContent = `${s.seqNum}. ${s.actorA.alias} -> ${s.actorB.alias}: ${s.message}`;
             meta.textContent = s.meta;
             addinfo.textContent = s.addinfo;
@@ -1221,15 +1220,13 @@ class AsdfViewModel  {
     }; // SignalCursor
 
 
-    // ---- SignalRenderer ----
-    static SignalRenderer = class SignalRenderer {
+    // ---- SignalDecorator ----
+    static SignalDecorator = class SignalDecorator {
         static #TIMESTAMP_CLASSNAME = "ts";
         static #GRIDLINE_CLASSNAME = "gridline";
         static #SEQNUM_CLASSNAME = "seq-num";
         static #SEQNUM_CIRCLE_RADIUS = 13;
         #selectors = { signal: "", actor: "" };
-        #arrowPaths = [];  // the lines of the singal arrows in the svg
-        #actorPaths = [];  // the vertical lines of participants
         #cursor = {};
         #toggles = [];
 
@@ -1264,8 +1261,8 @@ class AsdfViewModel  {
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttributeNS(null, "cx", start.x);
                 circle.setAttributeNS(null, "cy", start.y);
-                circle.setAttributeNS(null, "r", SignalRenderer.#SEQNUM_CIRCLE_RADIUS);
-                circle.setAttributeNS(null, "class", SignalRenderer.#SEQNUM_CLASSNAME);
+                circle.setAttributeNS(null, "r", SignalDecorator.#SEQNUM_CIRCLE_RADIUS);
+                circle.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
                 path.parentNode.appendChild(circle);
 
                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -1273,7 +1270,7 @@ class AsdfViewModel  {
                 text.setAttributeNS(null, "y", start.y);
                 text.setAttributeNS(null, "text-anchor", "middle");
                 text.setAttributeNS(null, "dy", "0.35em");
-                text.setAttributeNS(null, "class", SignalRenderer.#SEQNUM_CLASSNAME);
+                text.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
                 text.textContent = signals[index].seqNum;
                 path.parentNode.appendChild(text);
             });
@@ -1301,21 +1298,21 @@ class AsdfViewModel  {
                 const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
                 ts.setAttribute("x", 0);
                 ts.setAttribute("y", start.y-6);
-                ts.setAttribute("class", SignalRenderer.#TIMESTAMP_CLASSNAME);
+                ts.setAttribute("class", SignalDecorator.#TIMESTAMP_CLASSNAME);
                 ts.textContent = signals[index]?.addinfoHead?.timestamp.split('T')[1] || "";
                 svg.appendChild(ts);
 
                 const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
-                gridline.setAttribute("class", SignalRenderer.#GRIDLINE_CLASSNAME);
+                gridline.setAttribute("class", SignalDecorator.#GRIDLINE_CLASSNAME);
                 bkgGroup.appendChild(gridline);
             });
         }
 
         markArrowTexts() {
             const arrowTexts = document.querySelectorAll("text." + this.#selectors.signal);
-            const seqNumTexts = document.querySelectorAll("text." + SignalRenderer.#SEQNUM_CLASSNAME);
-            const seqNumCircles = document.querySelectorAll("circle." + SignalRenderer.#SEQNUM_CLASSNAME);
+            const seqNumTexts = document.querySelectorAll("text." + SignalDecorator.#SEQNUM_CLASSNAME);
+            const seqNumCircles = document.querySelectorAll("circle." + SignalDecorator.#SEQNUM_CLASSNAME);
 
             let refIndex = this.#cursor.getIdx();
             let refSig = this.#cursor.getSignal() || { "addinfoHead": { "srcInstanceId": null,
@@ -1365,13 +1362,13 @@ class AsdfViewModel  {
         }
 
         markTimestamps() {
-            const timestamps = document.querySelectorAll("text." + SignalRenderer.#TIMESTAMP_CLASSNAME);
+            const timestamps = document.querySelectorAll("text." + SignalDecorator.#TIMESTAMP_CLASSNAME);
             timestamps?.forEach(ts => { ts.classList.remove('active'); });
             if (this.#cursor.isValid()) {
                 timestamps[this.#cursor.getIdx()].classList.add('active');
             }
         }
-    }; // SignalRenderer
+    }; // SignalDecorator
 
 
     // ---- SignalNavigator ----
