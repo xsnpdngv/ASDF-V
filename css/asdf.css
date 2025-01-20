@@ -207,7 +207,7 @@ text.head-actor {
     cursor: pointer;
     font-weight: 100;
 }
-text.actor:hover,
+/* text.actor:not(.bottom):hover, */
 text.head-actor:hover {
     /* stroke: lightgrey; */
     text-decoration: line-through;
@@ -246,8 +246,8 @@ text.head-actor.filtered:hover {
     100% {
     }
 }
-.flash-once:not(.filtered) {
-  animation: svg-flash 2s ease-in-out;
+.flash-once:not(.filtered):not(.orphan) {
+    animation: svg-flash 2s ease-in-out;
 }
 rect.actor,
 rect.head-actor {
