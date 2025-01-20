@@ -565,7 +565,6 @@ class AsdfViewModel  {
     #diagSignals = []; // helper array of signals of original diagram (without notes)
     #actorOrder = new PersistentArray("AsdfViewModel: actorOrder");
     #diagramHeadContainer = document.getElementById("diagramHeadContainer");
-    #diagramHeadDiv = document.getElementById("diagramHead");
     #diagramContainer = document.getElementById("diagramContainer");
     #diagramDiv = document.getElementById("diagram");
     #fileInputLabel = document.getElementById("fileInputLabel");
@@ -592,6 +591,7 @@ class AsdfViewModel  {
                                            lowerAreaId: "addinfoDisplay",
                                            dividerId: "divider"});
     #hoverGate = new AsdfViewModel.HoverGate();
+    #participantHeader;
 
     constructor(model) {
         this.#model = model;
@@ -611,13 +611,15 @@ class AsdfViewModel  {
                                                                         this.#signalCursor,
                                                                         this.#signalNavigator,
                                                                         () => this.#applySignalClick());
+        this.#participantHeader = new AsdfViewModel.ParticipantHeader(model, { headerContainerId: "diagramHeadContainer",
+                                                                               headerDivId: "diagramHead" });
     }
 
     init() {
+        this.#addDiagramEventListeners();
         this.#model.init(this.#toggles["showIds"].isOn());
         this.#addDocumentEventListeners();
         this.#addScrollEventListeners();
-        this.#addDiagramEventListeners();
         this.#initTooltips();
     }
 
@@ -644,12 +646,12 @@ class AsdfViewModel  {
         this.#paginator.assess();
         this.#updateToolbar();
         this.#initShowTime(this.#toggles["showTime"].isOn());
-        this.#updateHead();
+        this.#participantHeader.update();
         this.#restoreHeadScrollPosition();
-        setTimeout(() => {
+        // setTimeout(() => {
             this.#updateDiagram();
             this.#signalNavigator.toCursor();
-        }, 0); // let head render before
+        // }, 0); // let head render before
     }
 
     #addDocumentEventListeners() {
@@ -717,13 +719,55 @@ class AsdfViewModel  {
     }
 
 
-    // ---- diagram head ----
-    #updateHead() {
-        this.#diagramHeadContainer.style.visibility = "visible";
-        this.#diagramHeadDiv.innerHTML = "";
-        this.#model.diag.drawHeader(this.#diagramHeadDiv);
-        this.#markHeadActors();
-    }
+    // ---- ParticipantHeader ----
+    static ParticipantHeader = class {
+        #model = null;
+        #gui = {};
+
+        constructor(model, guiIds) {
+            this.#model = model;
+            this.#gui.participantHeaderContainer = document.getElementById(guiIds?.headerContainerId);
+            this.#gui.participantHeaderDiv = document.getElementById(guiIds?.headerDivId);
+        }
+
+        update() {
+            this.show();
+            this.#gui.participantHeaderDiv.innerHTML = "";
+            this.#model.diag.drawHeader(this.#gui.participantHeaderDiv);
+            this.#markHeadActors();
+        }
+
+        #markHeadActors() {
+            const headActorBoxes = document.querySelectorAll('rect.head-actor');
+            const headActorTexts = document.querySelectorAll('text.head-actor');
+
+            this.#model.diag.actors.forEach((a, i) => {
+                let cl = 'filtered';
+                if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
+                    headActorBoxes[i].classList.add(cl);
+                    headActorTexts[i].classList.add(cl);
+                }
+                cl = 'orphan';
+                if (a.signalCount == 0) {
+                    headActorBoxes[i].classList.add(cl);
+                    headActorTexts[i].classList.add(cl);
+                }
+            });
+        }
+
+        show() {
+            this.#gui.participantHeaderContainer.style.visibility = "visible";
+        }
+
+        hide() {
+            this.#gui.participantHeaderContainer.style.visibility = "hidden";
+        }
+
+        syncScroll(to) {
+            this.#gui.participantHeaderContainer.scrollLeft = to?.scrollLeft || 0;
+        }
+    }; // ParticipantHeader
+
 
     // ---- diagram ----
     #updateDiagram() {
@@ -960,24 +1004,6 @@ class AsdfViewModel  {
     #actorMoveBtnOnClick(index, dir) {
         this.#actorOrder.move(index, index + (dir == 'left' ? -1 : +1));
         this.#model.setActorOrder(this.#actorOrder.array);
-    }
-
-    #markHeadActors() {
-        const headActorBoxes = document.querySelectorAll('rect.head-actor');
-        const headActorTexts = document.querySelectorAll('text.head-actor');
-
-        this.#model.diag.actors.forEach((a, i) => {
-            let cl = 'filtered';
-            if (this.#model.filteredActors.has(this.#model.diag.actors[i].name)) {
-                headActorBoxes[i].classList.add(cl);
-                headActorTexts[i].classList.add(cl);
-            }
-            cl = 'orphan';
-            if (a.signalCount == 0) {
-                headActorBoxes[i].classList.add(cl);
-                headActorTexts[i].classList.add(cl);
-            }
-        });
     }
 
     #markActors() {

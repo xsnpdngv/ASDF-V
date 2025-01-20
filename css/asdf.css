@@ -38,6 +38,18 @@ a:hover {
     cursor: default;
 }
 
+@keyframes svg-flash {
+  0%, 50% {
+    fill: var(--asdf-highlight-color);
+  }
+  100% {
+  }
+}
+
+.flash-once:not(.filtered) {
+  animation: svg-flash 2s ease-in-out;
+}
+
 figcaption {
     font-size: 16px;
     font-weight: bold;
