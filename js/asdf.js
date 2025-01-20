@@ -899,15 +899,15 @@ class AsdfViewModel  {
     // ---- actor ----
     #addActorEventListeners() {
         const headActorTexts = document.querySelectorAll('text.head-actor');
-        const actorTexts = document.querySelectorAll('text.actor');
+        // const actorTexts = document.querySelectorAll('text.actor');
 
         this.#actorOrder.clear();
         this.#model.diag.actors.forEach((a, i) => {
             this.#actorOrder.add(a.name);
             if (a.signalCount > 0 || this.#model.filteredActors.has(a.name)) {
                 headActorTexts[i].onclick = () => this.#actorTextOnClick(i);
-                actorTexts[2*i].onclick = () => this.#actorTextOnClick(i);
-                actorTexts[2*i+1].onclick = () => this.#actorTextOnClick(i);
+                // actorTexts[2*i].onclick = () => this.#actorTextOnClick(i);
+                // actorTexts[2*i+1].onclick = () => this.#actorTextOnClick(i);
             }
         });
     }
@@ -919,8 +919,8 @@ class AsdfViewModel  {
 
     #addActorMoveBtns() {
         this.#addMoveBtnsToElemList('rect.head-actor');
-        this.#addMoveBtnsToElemList('rect.actor.top');
-        this.#addMoveBtnsToElemList('rect.actor.bottom');
+        // this.#addMoveBtnsToElemList('rect.actor.top');
+        // this.#addMoveBtnsToElemList('rect.actor.bottom');
     }
 
     #addMoveBtnsToElemList(uiElemId) {
@@ -955,8 +955,8 @@ class AsdfViewModel  {
     }
 
     #moveActor(fromIndex, toIndex) {
-        this.#actorOrder.move(fromIndex, toIndex);
         this.#participantHeader.flashActorOnUpdate(toIndex);
+        this.#actorOrder.move(fromIndex, toIndex);
         this.#model.setActorOrder(this.#actorOrder.array);
     }
 
