@@ -1290,6 +1290,10 @@ class AsdfViewModel  {
         }
 
         drawTimestamps() {
+            if ( ! this.#toggles['showTime'].isOn()) {
+                return;
+            }
+
             const arrowPaths = document.querySelectorAll("path." + this.#selectors.signal);
             const actorPaths = document.querySelectorAll("path." + this.#selectors.actor);
             const signals = this.#cursor.getCollection();
