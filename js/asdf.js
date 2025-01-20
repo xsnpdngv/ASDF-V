@@ -351,12 +351,13 @@ class PersistentInt {
 class AsdfModel {
     fileName = new PersistentString("AsdfModel: fileName", "");
     fileSize = new PersistentInt("AsdfModel: fileSize", 0);
-    fileLastMod = new PersistentString("AsdfModel: fileLastMod", "");
     diag = null;
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
+    #diagClone = null; // a shadow copy of the diagram to not re-parse always
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
     #diagSrcPreamble = new PersistentString("AsdfModel: diagSrcPreamble", "");
     #diagSrc = new PersistentString("AsdfModel: diagSrc");
+    #diagSrcToParse = "";
     #relevantSignalStart = new PersistentInt("AsdfModel: signalStart", 0);
     #relevantSignalCount = new PersistentInt("AsdfModel: signalCount", 1000);
     #isShowIds = false;
@@ -387,8 +388,9 @@ class AsdfModel {
     reset() {
         this.#diagSrcPreamble.set("");
         this.filteredActors.clear();
-        this.setRelevantSignals(0, this.#relevantSignalCount.get());
+        this.#actorOrder.clear();
         this.#isShowIds = false;
+        this.initRelevantSignals(0, this.#relevantSignalCount.value);
         this.#loadDiagramFromSrc();
     }
 
@@ -396,16 +398,6 @@ class AsdfModel {
         let model = this;
         model.fileName.set(file.name);
         model.fileSize.set(file.size);
-        const lastMod = new Date(file.lastModified);
-        const shortTime = lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        model.fileLastMod.set(lastMod.getFullYear() +
-                              '-' +
-                              String(lastMod.getMonth()+1).padStart(2, '0') +
-                              '-' +
-                              String(lastMod.getDate()).padStart(2, '0') +
-                              ' ' +
-                              shortTime);
-
         const reader = new FileReader();
         reader.onload = function(e) {
             model.#diagSrc.set(e.target.result);
@@ -422,23 +414,45 @@ class AsdfModel {
 
     #loadDiagramFromSrc() {
         if (this.#diagSrc.length() > 0) {
-            let src = [this.#diagSrcPreamble.value, this.#diagSrc.value].join('\n\n');
-            this.diag = Diagram.parse(src);
+            this.#diagSrcToParse = [this.#diagSrcPreamble.value, this.#diagSrc.value].join('\n\n');
+            this.diag = Diagram.parse(this.#diagSrcToParse);
             if (this.#actorOrder.length() > 0 &&
                  ! this.#arraysHaveSameElements(this.#actorOrder.array, this.diag.actors.map(element => element.name))) {
                 this.#actorOrder.clear();
-                this.diag = Diagram.parse(this.#diagSrc.value);
+                this.#diagSrcToParse = this.#diagSrc;
+                this.diag = Diagram.parse(this.#diagSrcToParse);
             }
-            this.diag.netSignalCount = this.diag.signals.length;
-            this.#removeSignalsOfFilteredActors(this.diag);
-            this.#removeIrrelevantSignals();
-            this.#countActorSignals();
-            if (this.#isShowIds) {
-                this.includeIdsInSignalMsgs(this.#isShowIds, false);
-            }
-            delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
+            this.#postProc();
+            this.#cacheDiagram();
         }
         this.#notify();
+    }
+
+    #reloadDiagramFromCache() {
+        this.diag = this.#diagClone;
+        if ( ! this.diag) {
+            this.#loadDiagramFromSrc();
+            return;
+        }
+        this.#postProc();
+        this.#cacheDiagram();
+        this.#notify();
+    }
+
+    #cacheDiagram() {
+        this.#diagClone = null;
+        setTimeout(() => { this.#diagClone = Diagram.parse(this.#diagSrcToParse); }, 20);
+    }
+
+    #postProc() {
+        this.diag.netSignalCount = this.diag.signals.length;
+        this.#removeSignalsOfFilteredActors(this.diag);
+        this.#removeIrrelevantSignals();
+        this.#countActorSignals();
+        if (this.#isShowIds) {
+            this.includeIdsInSignalMsgs(this.#isShowIds, false);
+        }
+        delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
     }
 
     includeIdsInSignalMsgs(isOn, isToNotify = true) {
@@ -469,7 +483,7 @@ class AsdfModel {
         } else {
             this.filteredActors.add(a.name);
         }
-        this.#loadDiagramFromSrc();
+        this.#reloadDiagramFromCache();
     }
 
     setActorOrder(actorOrder) {
@@ -521,7 +535,7 @@ class AsdfModel {
 
     setRelevantSignals(start, count) {
         this.initRelevantSignals(start, count);
-        this.#loadDiagramFromSrc();
+        this.#reloadDiagramFromCache();
     }
 
     #removeIrrelevantSignals() {
@@ -736,7 +750,6 @@ class AsdfViewModel  {
     }
 
     #updateDiagSignals() {
-
         this.#diagSignals = this.#model.diag.signals.filter(item => item.type === 'Signal');
         this.#signalCursor.setCollection(this.#diagSignals);
     }
