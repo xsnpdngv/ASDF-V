@@ -202,7 +202,7 @@ figure {
     background-color: inherit;
 }
 
-text.actor,
+/* text.actor, */
 text.head-actor {
     cursor: pointer;
     font-weight: 100;
@@ -218,7 +218,7 @@ text.head-actor.orphan {
     fill: lightgrey;
     text-decoration: none;
 }
-text.actor.orphan:hover,
+/* text.actor.orphan:hover, */
 text.head-actor.orphan:hover {
     stroke: none;
     cursor: default;
@@ -229,7 +229,7 @@ text.head-actor.filtered {
     fill: lightgrey;
     text-decoration: line-through;
 }
-text.actor.filtered:hover,
+/* text.actor.filtered:hover, */
 text.head-actor.filtered:hover {
     fill: black;
     stroke: black;
