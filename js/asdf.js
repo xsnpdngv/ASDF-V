@@ -1066,7 +1066,7 @@ class AsdfViewModel  {
                     headActorTexts[i].classList.add(cl);
                 }
             });
-            if (this.#actorToFlash > 0) {
+            if (this.#actorToFlash >= 0) {
                 AsdfViewModel.FlashIndicator.flashOnce(headActorBoxes[this.#actorToFlash]);
                 this.#actorToFlash = -1;
             }
