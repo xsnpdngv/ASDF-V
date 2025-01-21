@@ -646,12 +646,15 @@ class AsdfViewModel  {
         this.#paginator.assess();
         this.#updateToolbar();
         this.#initShowTime(this.#toggles["showTime"].isOn());
+
         this.#participantHeader.update();
+        this.#addActorMoveBtns();
+        this.#addActorEventListeners();
         this.#restoreHeadScrollPosition();
-        setTimeout(() => {
-            this.#updateDiagram();
-            this.#signalNavigator.toCursor();
-        }, 0); // let head render before
+        // setTimeout(() => {
+        this.#updateDiagram();
+        this.#signalNavigator.toCursor();
+        // }, 0); // let head render before
     }
 
     #addDocumentEventListeners() {
@@ -738,9 +741,9 @@ class AsdfViewModel  {
         this.#sendCursorHomeOnInputFileChange();
         this.#applySignalClick();
         this.#markActors();
-        this.#addActorMoveBtns();
+        // this.#addActorMoveBtns();
         this.#addSignalEventListeners();
-        this.#addActorEventListeners();
+        // this.#addActorEventListeners();
     }
 
     #updateDiagSignals() {
@@ -1045,10 +1048,10 @@ class AsdfViewModel  {
         }
 
         update() {
-            this.show();
             this.#gui.participantHeaderDiv.innerHTML = "";
             this.#model.diag.drawHeader(this.#gui.participantHeaderDiv);
             this.#markActors();
+            this.show();
         }
 
         #markActors() {
