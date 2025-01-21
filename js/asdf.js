@@ -758,6 +758,8 @@ class AsdfViewModel  {
 
     #syncScroll() {
         this.#diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
+        // Sync visible widths (excluding scrollbars) for MS Edge
+	    this.#diagramHeadContainer.style.width = `${diagramContainer.clientWidth}px`;
     }
 
     #resetScrollPosition() {
