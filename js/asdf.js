@@ -419,7 +419,7 @@ class AsdfModel {
             if (this.#actorOrder.length() > 0 &&
                  ! this.#arraysHaveSameElements(this.#actorOrder.array, this.diag.actors.map(element => element.name))) {
                 this.#actorOrder.clear();
-                this.#diagSrcToParse = this.#diagSrc;
+                this.#diagSrcToParse = this.#diagSrc.value;
                 this.diag = Diagram.parse(this.#diagSrcToParse);
             }
             this.#postProc();
