@@ -355,9 +355,7 @@ class AsdfModel {
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
     #diagClone = null; // a shadow copy of the diagram to not re-parse always
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
-    #diagSrcPreamble = new PersistentString("AsdfModel: diagSrcPreamble", "");
     #diagSrc = new PersistentString("AsdfModel: diagSrc");
-    #diagSrcToParse = "";
     #relevantSignalStart = new PersistentInt("AsdfModel: signalStart", 0);
     #relevantSignalCount = new PersistentInt("AsdfModel: signalCount", 1000);
     #isShowIds = false;
@@ -386,12 +384,11 @@ class AsdfModel {
     }
 
     reset() {
-        this.#diagSrcPreamble.set("");
         this.filteredActors.clear();
         this.#actorOrder.clear();
         this.#isShowIds = false;
         this.initRelevantSignals(0, this.#relevantSignalCount.value);
-        this.#loadDiagramFromSrc();
+        this.#reloadDiagramFromCache();
     }
 
     loadDiagramFromFile(file) {
@@ -414,15 +411,7 @@ class AsdfModel {
 
     #loadDiagramFromSrc() {
         if (this.#diagSrc.length() > 0) {
-            this.#diagSrcToParse = [this.#diagSrcPreamble.value, this.#diagSrc.value].join('\n\n');
-            this.diag = Diagram.parse(this.#diagSrcToParse);
-            if (this.#actorOrder.length() > 0 &&
-                 ! this.#arraysHaveSameElements(this.#actorOrder.array, this.diag.actors.map(element => element.name))) {
-                this.#actorOrder.clear();
-                this.#diagSrcPreamble.clear();
-                this.#diagSrcToParse = this.#diagSrc.value;
-                this.diag = Diagram.parse(this.#diagSrcToParse);
-            }
+            this.diag = Diagram.parse(this.#diagSrc.value);
             this.#cacheDiagram();
             this.#postProc();
         }
@@ -441,14 +430,28 @@ class AsdfModel {
     }
 
     #postProc() {
-        this.diag.netSignalCount = this.diag.signals.length;
+        this.diag.netSignalCount = this.diag.signals.filter(s => s.type === 'Signal').length;
+        this.#applyActorOrder();
         this.#removeSignalsOfFilteredActors(this.diag);
         this.#removeIrrelevantSignals();
         this.#countActorSignals();
-        if (this.#isShowIds) {
-            this.includeIdsInSignalMsgs(this.#isShowIds, false);
-        }
+        if (this.#isShowIds) { this.includeIdsInSignalMsgs(this.#isShowIds, false); }
         delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
+    }
+
+    #applyActorOrder() {
+        if (this.#actorOrder.length() > 0 && ! this.#arraysHaveSameElements(this.#actorOrder.array,
+                                                                            this.diag.actors.map(element => element.name))) {
+            this.#actorOrder.clear();
+            return;
+        }
+        this.#sortActors();
+    }
+
+    #sortActors() {
+        const orderMap = new Map(this.#actorOrder.array.map((actorName, index) => [actorName, index]));
+        this.diag.actors.sort((a, b) => { return (orderMap.get(a.name) ?? 1000) - (orderMap.get(b.name) ?? 1000); });
+        this.diag.actors.forEach((a, index) => { a.index = index; });
     }
 
     includeIdsInSignalMsgs(isOn, isToNotify = true) {
@@ -484,7 +487,7 @@ class AsdfModel {
 
     setActorOrder(actorOrder) {
         this.#actorOrder.setArray(actorOrder);
-        this.#setPreamble( this.#printArrayElementsAsParticipants(this.#actorOrder.array) );
+        this.#reloadDiagramFromCache();
     }
 
     #countActorSignals() {
@@ -497,15 +500,6 @@ class AsdfModel {
                 s.actor.signalCount++;
             }
         });
-    }
-
-    #printArrayElementsAsParticipants(array) {
-        return array.map(item => `participant ${item}`).join('\n');
-    }
-
-    #setPreamble(preamble) {
-        this.#diagSrcPreamble.set(preamble);
-        this.#loadDiagramFromSrc();
     }
 
     #removeSignalsOfFilteredActors(diag) {
@@ -522,7 +516,7 @@ class AsdfModel {
                          filteredActors.has(signal.actor.name ) ) );
         });
 
-        diag.netSignalCount = diag.signals.length;
+        diag.netSignalCount = diag.signals.filter(s => s.type === 'Signal').length;
     }
 
     initRelevantSignals(start, count) {
