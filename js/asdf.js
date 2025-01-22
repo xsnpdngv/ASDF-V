@@ -404,7 +404,9 @@ class AsdfModel {
     }
 
     sideLoadDiagram() {
-        let diag = Diagram.parse(this.#diagSrc.get());
+        let diag = this.#diagClone;
+        this.diag = this.#diagClone; // this.diag is cached below
+        this.#cacheDiagram();
         this.#removeSignalsOfFilteredActors(diag);
         return diag;
     }
@@ -642,10 +644,10 @@ class AsdfViewModel  {
         this.#addActorMoveBtns();
         this.#addActorEventListeners();
         this.#restoreHeadScrollPosition();
-        // setTimeout(() => {
-        this.#updateDiagram();
-        this.#signalNavigator.toCursor();
-        // }, 0); // let head render before
+        setTimeout(() => {
+            this.#updateDiagram();
+            this.#signalNavigator.toCursor();
+        }, 0); // let head render before
     }
 
     #addDocumentEventListeners() {
@@ -1023,7 +1025,7 @@ class AsdfViewModel  {
 
         reset() {
             this.#value.reset();
-            this.set(this.#value.get());
+            this.set(this.#value.value);
         }
     }; // PersistentToggle
 
