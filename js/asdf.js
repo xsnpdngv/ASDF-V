@@ -644,10 +644,8 @@ class AsdfViewModel  {
         this.#addActorMoveBtns();
         this.#addActorEventListeners();
         this.#restoreHeadScrollPosition();
-        setTimeout(() => {
-            this.#updateDiagram();
-            this.#signalNavigator.toCursor();
-        }, 0); // let head render before
+        this.#updateDiagram();
+        this.#signalNavigator.toCursor();
     }
 
     #addDocumentEventListeners() {
@@ -840,9 +838,9 @@ class AsdfViewModel  {
         this.#resetScrollPosition();
         this.#paginator.init();
         this.#diagramContainer.scrollTop = 0;
+        this.#signalCursor.set(1);
         this.#model.reset();
         if (this.#model.diag) { this.#divider.toDefaultPos(); }
-        this.#signalCursor.set(1);
     }
 
     // ---- signal ----
@@ -1014,7 +1012,7 @@ class AsdfViewModel  {
         }
 
         isOn() {
-            return this.#value.get();
+            return this.#value.value;
         }
 
         set(isOn) {
@@ -1025,7 +1023,8 @@ class AsdfViewModel  {
 
         reset() {
             this.#value.reset();
-            this.set(this.#value.value);
+            // let the handler be invoke on update
+            this.#gui.toggle.checked = this.#value.value;
         }
     }; // PersistentToggle
 
