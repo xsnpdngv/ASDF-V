@@ -1407,26 +1407,26 @@ class AsdfViewModel  {
                 let isOfSameInstance = false;
                 let isRelated = false;
                 let cl = '';
-                let method = '';
+                let method = 'add';
 
-                if(s.addinfoHead.srcInstanceId) {
-                    cl = 'instance';
-                    isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
-                                       s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
-                    method = (isOfSameInstance && isShowInstance) ? 'add' : 'remove';
-                    text.classList[method](cl);
-                    circle.classList[method](cl);
-                    seqNum.classList[method](cl);
+                cl = 'instance';
+                isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
+                                    s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
+                method = (isOfSameInstance && isShowInstance) ? 'add' : 'remove';
+                text.classList[method](cl);
+                circle.classList[method](cl);
+                seqNum.classList[method](cl);
 
-                    cl = 'related';
-                    isRelated = refSig.addinfoHead.srcInstanceId &&
-                                (s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ||
-                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId);
-                    method = (isRelated && isShowRelated) ? 'add' : 'remove';
-                    text.classList[method](cl);
-                    circle.classList[method](cl);
-                    seqNum.classList[method](cl);
-                }
+                cl = 'related';
+                isRelated = isOfSameInstance ||
+                            ( refSig.addinfoHead.srcInstanceId &&
+                                s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ) ||
+                            ( refSig.addinfoHead.dstInstanceId &&
+                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId );
+                method = (isRelated && isShowRelated) ? 'add' : 'remove';
+                text.classList[method](cl);
+                circle.classList[method](cl);
+                seqNum.classList[method](cl);
 
                 if (s?.addinfoHead && (s.addinfoHead?.isSpecial || s.addinfoHead?.size <= 0)) {
                     text.classList.add("special");
