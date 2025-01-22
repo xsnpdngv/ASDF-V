@@ -531,19 +531,20 @@ class AsdfModel {
     }
 
     #removeSignalsOfFilteredActors(diag) {
-        if ( ! diag || ! diag.signals || ! diag.signals.length || ! this.filteredActors.size() ) {
+        if ( ! diag || ! diag.signals || diag.signals.length === 0 || this.filteredActors.size() === 0 ) {
             return;
         }
-        let s;
-        for (let i = diag.signals.length - 1; i >= 0; i--) {
-            s = diag.signals[i];
-            if ((s.type === 'Signal' && (this.filteredActors.has(s.actorA.name) ||
-                                         this.filteredActors.has(s.actorB.name))) ||
-                (s.type === 'Note' && this.filteredActors.has(s.actor.name))) {
-                 diag.signals.splice(i, 1);
-            }
-        }
-        diag.netSignalCount = this.diag.signals.filter(signal => signal.type === 'Signal').length;
+
+        const filteredActors = this.filteredActors.set;
+        diag.signals = diag.signals.filter(signal => {
+            return ! ( ( signal.type === 'Signal' &&
+                         ( filteredActors.has(signal.actorA.name) ||
+                           filteredActors.has(signal.actorB.name) ) ) ||
+                       ( signal.type === 'Note'  &&
+                         filteredActors.has(signal.actor.name ) ) );
+        });
+
+        diag.netSignalCount = diag.signals.length;
     }
 
     initRelevantSignals(start, count) {
