@@ -430,36 +430,14 @@ class AsdfModel {
     }
 
     #reloadDiagramFromCache() {
-        this.#ensureCloneReady()
-            .then(() => {
-                this.diag = this.#diagClone;
-                this.#cacheDiagram();
-                this.#postProc();
-                this.#notify();
-            })
-            .catch(err => console.error("Failed to ensure diagram is ready:", err));
-    }
-
-    #ensureCloneReady() {
-        if (this.#diagClone) {
-            return Promise.resolve();
-        }
-        return new Promise((resolve, reject) => {
-            const check = () => {
-                if (this.#diagClone) {
-                    resolve();
-                } else { // if not ready, it is ongoing
-                    setTimeout(check, 20);
-                }
-            };
-            check();
-        });
+        this.diag = this.#diagClone;
+        this.#cacheDiagram();
+        this.#postProc();
+        this.#notify();
     }
 
     #cacheDiagram() {
-        this.#diagClone = null;
-        setTimeout(() => { this.#diagClone = Diagram.parse(this.#diagSrcToParse); }, 20); // let render happen before
-
+        this.#diagClone = this.diag.clone()
     }
 
     #postProc() {

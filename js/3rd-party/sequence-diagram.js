@@ -23,31 +23,28 @@ function Diagram() {
 }
 
 Diagram.prototype.clone = function() {
-  // Create a new Diagram instance
-  const clonedDiagram = new Diagram();
+  const clone = new Diagram();
 
-  // Copy the primitive properties (title, signalCount)
-  clonedDiagram.title = this.title;
-  clonedDiagram.signalCount = this.signalCount;
+  clone.title = this.title;
+  clone.signalCount = this.signalCount;
 
-  // Deep copy of actors array
-  clonedDiagram.actors = this.actors.map(actor => new Diagram.Actor(actor.alias, actor.name, actor.index));
+  clone.actors = this.actors.map(actor => new Diagram.Actor(actor.alias, actor.name, actor.index));
 
-  // Deep copy of signals array
-  clonedDiagram.signals = this.signals.map(signal => {
+  clone.signals = this.signals.map(signal => {
     let clonedSignal = new Diagram.Signal(
-      signal.actorA, 
+      clone.actors[signal.actorA.index], 
       signal.linetype, 
-      signal.actorB, 
+      clone.actors[signal.actorB.index], 
       signal.message, 
       signal.meta, 
       signal.addinfo
     );
-    clonedSignal.addinfoHead = JSON.parse(JSON.stringify(signal.addinfoHead)); // Deep copy the addinfoHead object
+    clonedSignal.addinfoHead = JSON.parse(JSON.stringify(signal.addinfoHead));
+    clonedSignal.seqNum = signal.seqNum;
     return clonedSignal;
   });
 
-  return clonedDiagram;
+  return clone;
 };
 
 /*
