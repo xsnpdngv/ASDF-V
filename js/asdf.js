@@ -677,6 +677,7 @@ class AsdfViewModel  {
 
     #addDocumentEventListeners() {
         this.#addKeyboardShortcuts();
+        window.addEventListener('resize', () => this.#syncScroll());
     }
 
     #addKeyboardShortcuts() {
@@ -775,9 +776,8 @@ class AsdfViewModel  {
     }
 
     #syncScroll() {
-        this.#diagramHeadContainer.scrollLeft = diagramContainer.scrollLeft;
-        // Sync visible widths (excluding scrollbars) for MS Edge
-	    this.#diagramHeadContainer.style.width = `${diagramContainer.clientWidth}px`;
+        this.#participantHeader.syncScroll(this.#diagramContainer);
+	    this.#diagramHeadContainer.style.width = `${diagramContainer.clientWidth}px`; // for Edge
     }
 
     #resetScrollPosition() {
