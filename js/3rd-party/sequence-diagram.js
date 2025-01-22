@@ -21,6 +21,35 @@ function Diagram() {
   this.signals = [];
   this.signalCount = 0;
 }
+
+Diagram.prototype.clone = function() {
+  // Create a new Diagram instance
+  const clonedDiagram = new Diagram();
+
+  // Copy the primitive properties (title, signalCount)
+  clonedDiagram.title = this.title;
+  clonedDiagram.signalCount = this.signalCount;
+
+  // Deep copy of actors array
+  clonedDiagram.actors = this.actors.map(actor => new Diagram.Actor(actor.alias, actor.name, actor.index));
+
+  // Deep copy of signals array
+  clonedDiagram.signals = this.signals.map(signal => {
+    let clonedSignal = new Diagram.Signal(
+      signal.actorA, 
+      signal.linetype, 
+      signal.actorB, 
+      signal.message, 
+      signal.meta, 
+      signal.addinfo
+    );
+    clonedSignal.addinfoHead = JSON.parse(JSON.stringify(signal.addinfoHead)); // Deep copy the addinfoHead object
+    return clonedSignal;
+  });
+
+  return clonedDiagram;
+};
+
 /*
  * Return an existing actor with this alias, or creates a new one with alias and name.
  */
@@ -886,7 +915,6 @@ Diagram.parse = function(input) {
   delete diagram.parseError;
   return diagram;
 };
-
 
 /** js sequence diagrams
  *  https://bramp.github.io/js-sequence-diagrams/

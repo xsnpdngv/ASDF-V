@@ -423,26 +423,43 @@ class AsdfModel {
                 this.#diagSrcToParse = this.#diagSrc.value;
                 this.diag = Diagram.parse(this.#diagSrcToParse);
             }
-            this.#postProc();
             this.#cacheDiagram();
+            this.#postProc();
         }
         this.#notify();
     }
 
     #reloadDiagramFromCache() {
-        this.diag = this.#diagClone;
-        if ( ! this.diag) {
-            this.#loadDiagramFromSrc();
-            return;
+        this.#ensureCloneReady()
+            .then(() => {
+                this.diag = this.#diagClone;
+                this.#cacheDiagram();
+                this.#postProc();
+                this.#notify();
+            })
+            .catch(err => console.error("Failed to ensure diagram is ready:", err));
+    }
+
+    #ensureCloneReady() {
+        if (this.#diagClone) {
+            return Promise.resolve();
         }
-        this.#postProc();
-        this.#cacheDiagram();
-        this.#notify();
+        return new Promise((resolve, reject) => {
+            const check = () => {
+                if (this.#diagClone) {
+                    resolve();
+                } else { // if not ready, it is ongoing
+                    setTimeout(check, 20);
+                }
+            };
+            check();
+        });
     }
 
     #cacheDiagram() {
         this.#diagClone = null;
-        setTimeout(() => { this.#diagClone = Diagram.parse(this.#diagSrcToParse); }, 20);
+        setTimeout(() => { this.#diagClone = Diagram.parse(this.#diagSrcToParse); }, 20); // let render happen before
+
     }
 
     #postProc() {
@@ -514,7 +531,7 @@ class AsdfModel {
     }
 
     #removeSignalsOfFilteredActors(diag) {
-        if ( ! diag || ! diag.signals || ! diag.signals.length) {
+        if ( ! diag || ! diag.signals || ! diag.signals.length || ! this.filteredActors.size() ) {
             return;
         }
         let s;
