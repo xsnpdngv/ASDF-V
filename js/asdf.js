@@ -1445,7 +1445,7 @@ class AsdfViewModel  {
         markTimestamps() {
             const timestamps = document.querySelectorAll("text." + SignalDecorator.#TIMESTAMP_CLASSNAME);
             timestamps?.forEach(ts => { ts.classList.remove('active'); });
-            if (this.#cursor.isValid()) {
+            if (this.#cursor.isValid() && timestamps.length > 0) {
                 timestamps[this.#cursor.getIdx()].classList.add('active');
             }
         }
