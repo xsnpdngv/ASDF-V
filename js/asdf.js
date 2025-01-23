@@ -1334,10 +1334,11 @@ class AsdfViewModel  {
             arrowPaths.forEach((path, index) => {
                 const start = path.getPointAtLength(0);
 
+                let sn = signals[index].seqNum;
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttributeNS(null, "cx", start.x);
                 circle.setAttributeNS(null, "cy", start.y);
-                circle.setAttributeNS(null, "r", SignalDecorator.#SEQNUM_CIRCLE_RADIUS);
+                circle.setAttributeNS(null, "r", SignalDecorator.#SEQNUM_CIRCLE_RADIUS + ( sn > 99999 ? 4 : ( sn > 9999 ? 2 : 0 ) ) );
                 circle.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
                 path.parentNode.appendChild(circle);
 
@@ -1347,7 +1348,7 @@ class AsdfViewModel  {
                 text.setAttributeNS(null, "text-anchor", "middle");
                 text.setAttributeNS(null, "dy", "0.35em");
                 text.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
-                text.textContent = signals[index].seqNum;
+                text.textContent = sn;
                 path.parentNode.appendChild(text);
             });
         }
