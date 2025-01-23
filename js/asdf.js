@@ -352,6 +352,7 @@ class AsdfModel {
     fileName = new PersistentString("AsdfModel: fileName", "");
     fileSize = new PersistentInt("AsdfModel: fileSize", 0);
     diag = null;
+    actorCount = 0;
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
     #diagClone = null; // a shadow copy of the diagram to not re-parse always
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
@@ -359,6 +360,7 @@ class AsdfModel {
     #relevantSignalStart = new PersistentInt("AsdfModel: signalStart", 0);
     #relevantSignalCount = new PersistentInt("AsdfModel: signalCount", 1000);
     #isShowIds = false;
+    #isKeepOrphans = false;
     #observers = [];
 
     constructor() {
@@ -372,8 +374,9 @@ class AsdfModel {
         this.#observers.forEach(observer => observer.update());
     }
 
-    init(isShowIds = false) {
-        this.#isShowIds = isShowIds;
+    init(dflt = {isShowIds: false, isKeepOrphans: false} ) {
+        this.#isShowIds = dflt?.isShowIds;
+        this.#isKeepOrphans = dflt?.isKeepOrphans;
         this.#loadDiagramFromSrc();
     }
 
@@ -432,11 +435,13 @@ class AsdfModel {
     }
 
     #postProc() {
+        this.actorCount = this.diag.actors.length;
         this.diag.netSignalCount = this.diag.signals.filter(s => s.type === 'Signal').length;
-        this.#applyActorOrder();
         this.#removeSignalsOfFilteredActors(this.diag);
-        this.#removeIrrelevantSignals();
         this.#countActorSignals();
+        this.#removeIrrelevantSignals();
+        if ( ! this.#isKeepOrphans) { this.#removeOrphanActors(); }
+        this.#applyActorOrder();
         if (this.#isShowIds) { this.includeIdsInSignalMsgs(this.#isShowIds, false); }
         delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
     }
@@ -502,6 +507,7 @@ class AsdfModel {
                 s.actor.signalCount++;
             }
         });
+        this.orphanCount = this.diag.actors.filter(a => ( (a?.signalCount || 0) <= 0 && ! this.filteredActors.has(a.name) )).length;
     }
 
     #removeSignalsOfFilteredActors(diag) {
@@ -519,6 +525,16 @@ class AsdfModel {
         });
 
         diag.netSignalCount = diag.signals.filter(s => s.type === 'Signal').length;
+    }
+
+    keepOrphans(isOn) {
+        this.#isKeepOrphans = isOn;
+        if (this.diag) { this.#reloadDiagramFromCache(); }
+    }
+
+    #removeOrphanActors() {
+        this.diag.actors = this.diag.actors.filter(a => ( !((a?.signalCount || 0) <= 0 && ! this.filteredActors.has(a.name)) ));
+        this.diag.actors.forEach((a, index) => { a.index = index; });
     }
 
     initRelevantSignals(start, count) {
@@ -570,7 +586,8 @@ class AsdfViewModel  {
         "showTime": new AsdfViewModel.PersistentToggle({toggleId: "showTimeToggle"}, true, this.#showTimeOnChange, this),
         "showIds": new AsdfViewModel.PersistentToggle({toggleId: "showIdsToggle"}, false, this.#showIdsOnChange, this),
         "showInstance": new AsdfViewModel.PersistentToggle({toggleId: "showInstanceToggle"}, false, this.#markSignalsHandler, this),
-        "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this)
+        "showRelated": new AsdfViewModel.PersistentToggle({toggleId: "showRelatedToggle"}, false, this.#markSignalsHandler, this),
+        "showOrphans": new AsdfViewModel.PersistentToggle({toggleId: "showOrphansToggle"}, false, this.#showOrphansOnChange, this)
     }
     #signalDecorator = new AsdfViewModel.SignalDecorator({signal: 'signal', actor: 'actor'}, this.#signalCursor, this.#toggles);
     #help = new AsdfViewModel.OffCanvas("helpOffcanvas");
@@ -610,7 +627,8 @@ class AsdfViewModel  {
 
     init() {
         this.#addDiagramEventListeners();
-        this.#model.init(this.#toggles["showIds"].isOn());
+        this.#model.init({ isShowIds: this.#toggles.showIds.isOn(),
+                           isKeepOrphans: this.#toggles.showOrphans.isOn()});
         this.#addDocumentEventListeners();
         this.#addScrollEventListeners();
         this.#initTooltips();
@@ -680,6 +698,7 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("tr")) { vm.#toggles['showRelated'].toggle(); }
             else if (keySeq.endsWith("ts")) { vm.#toggles['showIds'].toggle(); }
             else if (keySeq.endsWith("tt")) { vm.#toggles['showTime'].toggle(); }
+            else if (keySeq.endsWith("to")) { vm.#toggles['showOrphans'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
             // movement
             else if (event.key === "j") { vm.#signalNavigator.toNext(); }
@@ -804,9 +823,13 @@ class AsdfViewModel  {
         let fil = this.#fileInputLabel
         const filteredActorCount = this.#model.diag.actors.filter(actor => this.#model.filteredActors.has(actor.name)).length;
         fil.textContent = this.#model.fileName.get() + "\n";
-        fil.textContent += this.#model.diag.actors.length + " participants";
-        if (filteredActorCount > 0) {
-            fil.textContent += " (" + filteredActorCount + " filtered)";
+        fil.textContent += this.#model.actorCount;
+        if (filteredActorCount > 0 || this.#model.orphanCount > 0) {
+            fil.textContent += ` pts (${filteredActorCount} filtered`;
+            fil.textContent += (this.#model.orphanCount > 0 ? `, ${this.#model.orphanCount} orphan` : "");
+            fil.textContent += ")";
+        } else {
+            fil.textContent += " participants";
         }
         fil.textContent += "\n" + this.#model.diag.signalCount + " signals";
         if (this.#model.diag.netSignalCount != this.#model.diag.signalCount) {
@@ -827,6 +850,10 @@ class AsdfViewModel  {
 
     #showIdsOnChange(vm, isOn) {
         vm.#model.includeIdsInSignalMsgs(isOn);
+    }
+
+    #showOrphansOnChange(vm, isOn) {
+        vm.#model.keepOrphans(isOn);
     }
 
     #markSignalsHandler(vm) {
