@@ -978,7 +978,7 @@ class AsdfViewModel  {
     }
 
     #moveActor(fromIndex, toIndex) {
-        this.#participantHeader.flashActorOnUpdate(toIndex);
+        this.#participantHeader.flashActorOnUpdate(fromIndex);
         this.#actorOrder.move(fromIndex, toIndex);
         this.#model.setActorOrder(this.#actorOrder.array);
     }
@@ -1091,9 +1091,10 @@ class AsdfViewModel  {
                     headActorTexts[i].classList.add(cl);
                 }
             });
-            if (this.#actorToFlash >= 0) {
-                AsdfViewModel.FlashIndicator.flashOnce(headActorBoxes[this.#actorToFlash]);
-                this.#actorToFlash = -1;
+            if (this.#actorToFlash) {
+                const a = this.#model.diag.actors.find(a => a.name === this.#actorToFlash);
+                if (a) { AsdfViewModel.FlashIndicator.flashOnce(headActorBoxes[a.index]); }
+                this.#actorToFlash = null;
             }
         }
 
@@ -1110,7 +1111,7 @@ class AsdfViewModel  {
         }
 
         flashActorOnUpdate(index) {
-            this.#actorToFlash = index;
+            this.#actorToFlash = this.#model.diag.actors[index].name;
         }
     }; // ParticipantHeader
 
