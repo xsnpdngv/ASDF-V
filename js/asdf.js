@@ -1012,7 +1012,7 @@ class AsdfViewModel  {
         }
 
         isOn() {
-            return this.#value.value;
+            return this.#value.get();
         }
 
         set(isOn) {
@@ -1023,8 +1023,8 @@ class AsdfViewModel  {
 
         reset() {
             this.#value.reset();
-            // let the handler be invoke on update
-            this.#gui.toggle.checked = this.#value.value;
+            // let the handler be invoked on update
+            this.#gui.toggle.checked = this.#value.get();
         }
     }; // PersistentToggle
 
