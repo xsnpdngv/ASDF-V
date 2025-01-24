@@ -447,11 +447,11 @@ class AsdfModel {
     }
 
     #applyActorOrder() {
-        if (this.#actorOrder.length() > 0 && ! this.#arraysHaveSameElements(this.#actorOrder.array,
-                                                                            this.diag.actors.map(element => element.name))) {
-            this.#actorOrder.clear();
-            return;
-        }
+        // if (this.#actorOrder.length() > 0 && ! this.#arraysHaveSameElements(this.#actorOrder.array,
+        //                                                                     this.diag.actors.map(element => element.name))) {
+        //     this.#actorOrder.clear();
+        //     return;
+        // }
         this.#sortActors();
     }
 
