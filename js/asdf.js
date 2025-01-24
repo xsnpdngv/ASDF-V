@@ -447,11 +447,6 @@ class AsdfModel {
     }
 
     #applyActorOrder() {
-        // if (this.#actorOrder.length() > 0 && ! this.#arraysHaveSameElements(this.#actorOrder.array,
-        //                                                                     this.diag.actors.map(element => element.name))) {
-        //     this.#actorOrder.clear();
-        //     return;
-        // }
         this.#sortActors();
     }
 
@@ -550,17 +545,6 @@ class AsdfModel {
     #removeIrrelevantSignals() {
         this.diag.signals.splice(0, this.#relevantSignalStart.get());
         this.diag.signals.splice(this.#relevantSignalCount.get());
-    }
-
-    #arraysHaveSameElements(arr1, arr2) {
-        if (arr1.length !== arr2.length) return false;
-        const set1 = new Set(arr1);
-        const set2 = new Set(arr2);
-        if (set1.size !== set2.size) return false;
-        for (let elem of set1) {
-            if ( ! set2.has(elem)) return false;
-        }
-        return true;
     }
 }
 
