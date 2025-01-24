@@ -37,7 +37,7 @@ Diagram.prototype.clone = function() {
     if (signal.type === 'Signal') {
       clonedSignal = new Diagram.Signal(
         clone.actors[signal.actorA.index], 
-        signal.linetype, 
+        signal.linetype | (signal.arrowtype << 2),
         clone.actors[signal.actorB.index], 
         signal.message, 
         signal.meta, 
@@ -1309,7 +1309,7 @@ _.extend(BaseTheme.prototype, {
 
   drawSignals: function(offsetY, onComplete) {
     const signals = this.diagram.signals;
-    const chunkSize = 1024;
+    const chunkSize = 256;
     let currentIndex = 0;
     let y = offsetY;
 
