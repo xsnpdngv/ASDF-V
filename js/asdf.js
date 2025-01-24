@@ -1343,10 +1343,12 @@ class AsdfViewModel  {
                 const start = path.getPointAtLength(0);
 
                 let sn = signals[index].seqNum;
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                const widener = ( sn > 99_999 ? 5 : ( sn > 9_999 ? 3 : 0 ) );
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
                 circle.setAttributeNS(null, "cx", start.x);
                 circle.setAttributeNS(null, "cy", start.y);
-                circle.setAttributeNS(null, "r", SignalDecorator.#SEQNUM_CIRCLE_RADIUS + ( sn > 99999 ? 4 : ( sn > 9999 ? 2 : 0 ) ) );
+                circle.setAttributeNS(null, "rx", SignalDecorator.#SEQNUM_CIRCLE_RADIUS + widener);
+                circle.setAttributeNS(null, "ry", SignalDecorator.#SEQNUM_CIRCLE_RADIUS);
                 circle.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
                 path.parentNode.appendChild(circle);
 
@@ -1401,7 +1403,7 @@ class AsdfViewModel  {
         markArrowTexts() {
             const arrowTexts = document.querySelectorAll("text." + this.#selectors.signal);
             const seqNumTexts = document.querySelectorAll("text." + SignalDecorator.#SEQNUM_CLASSNAME);
-            const seqNumCircles = document.querySelectorAll("circle." + SignalDecorator.#SEQNUM_CLASSNAME);
+            const seqNumCircles = document.querySelectorAll("ellipse." + SignalDecorator.#SEQNUM_CLASSNAME);
 
             let refIndex = this.#cursor.getIdx();
             let refSig = this.#cursor.getSignal() || { "addinfoHead": { "srcInstanceId": null,

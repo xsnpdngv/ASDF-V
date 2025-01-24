@@ -347,18 +347,18 @@ text.seq-num.active {
     /* stroke: black; */
 }
 
-circle.seq-num {
+ellipse.seq-num {
     fill: white;
     stroke: black;
     stroke-width: 1;
 }
-circle.seq-num.active {
+ellipse.seq-num.active {
     /* stroke-width: 2; */
 }
-circle.seq-num.instance:not(.instance-highlight-off) {
+ellipse.seq-num.instance:not(.instance-highlight-off) {
     fill: var(--asdf-highlight-color);
 }
-circle.seq-num.related:not(.related-highlight-off) {
+ellipse.seq-num.related:not(.related-highlight-off) {
     /* fill: var(--highlight-color2); */
 }
 text.seq-num {
