@@ -354,7 +354,7 @@ class AsdfModel {
     diag = null;
     actorCount = 0;
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
-    #diagClone = null; // a shadow copy of the diagram to not re-parse always
+    #diagMaster = null;
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
     #diagSrc = new PersistentString("AsdfModel: diagSrc");
     #relevantSignalStart = new PersistentInt("AsdfModel: signalStart", 0);
@@ -391,7 +391,7 @@ class AsdfModel {
         this.#actorOrder.clear();
         this.#isShowIds = false;
         this.initRelevantSignals(0, this.#relevantSignalCount.value);
-        this.#reloadDiagramFromCache();
+        this.#reloadDiagram();
     }
 
     loadDiagramFromFile(file) {
@@ -407,36 +407,37 @@ class AsdfModel {
     }
 
     sideLoadDiagram() {
-        let diag = this.#diagClone;
-        this.diag = this.#diagClone; // this.diag is cached below
-        this.#cacheDiagram();
+        let diag = this.#cloneMaster();
         this.#removeSignalsOfFilteredActors(diag);
         return diag;
     }
 
     #loadDiagramFromSrc() {
         if (this.#diagSrc.length() > 0) {
-            this.diag = Diagram.parse(this.#diagSrc.value);
-            this.#cacheDiagram();
+            this.#loadMaster();
+            this.diag = this.#cloneMaster();
             this.#postProc();
         }
         this.#notify();
     }
 
-    #reloadDiagramFromCache() {
-        this.diag = this.#diagClone;
-        this.#cacheDiagram();
+    #reloadDiagram() {
+        this.diag = this.#cloneMaster();
         this.#postProc();
         this.#notify();
     }
 
-    #cacheDiagram() {
-        this.#diagClone = this.diag.clone()
+    #loadMaster() {
+        this.#diagMaster = Diagram.parse(this.#diagSrc.value);
+    }
+
+    #cloneMaster() {
+        return this.#diagMaster.clone();
     }
 
     #postProc() {
         this.actorCount = this.diag.actors.length;
-        this.diag.netSignalCount = this.diag.signals.filter(s => s.type === 'Signal').length;
+        this.diag.netSignalCount = this.diag.signals.filter(s => s.type[0] === 'S').length;
         this.#removeSignalsOfFilteredActors(this.diag);
         this.#countActorSignals();
         this.#removeIrrelevantSignals();
@@ -484,21 +485,21 @@ class AsdfModel {
         } else {
             this.filteredActors.add(a.name);
         }
-        this.#reloadDiagramFromCache();
+        this.#reloadDiagram();
     }
 
     setActorOrder(actorOrder) {
         this.#actorOrder.setArray(actorOrder);
-        this.#reloadDiagramFromCache();
+        this.#reloadDiagram();
     }
 
     #countActorSignals() {
         this.diag.actors.forEach(a => { a.signalCount = 0; });
         this.diag.signals.forEach(s => {
-            if (s.type === 'Signal') {
+            if (s.type[0] === 'S') {
                 s.actorA.signalCount++;
                 s.actorB.signalCount++;
-            } else if (s.type === 'Note') {
+            } else /* if (s.type[0] === 'N') */ {
                 s.actor.signalCount++;
             }
         });
@@ -512,19 +513,19 @@ class AsdfModel {
 
         const filteredActors = this.filteredActors.set;
         diag.signals = diag.signals.filter(signal => {
-            return ! ( ( signal.type === 'Signal' &&
+            return ! ( ( signal.type[0] === 'S' &&
                          ( filteredActors.has(signal.actorA.name) ||
                            filteredActors.has(signal.actorB.name) ) ) ||
-                       ( signal.type === 'Note'  &&
+                       ( signal.type[0] === 'N'  &&
                          filteredActors.has(signal.actor.name ) ) );
         });
 
-        diag.netSignalCount = diag.signals.filter(s => s.type === 'Signal').length;
+        diag.netSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
     }
 
     keepOrphans(isOn) {
         this.#isKeepOrphans = isOn;
-        if (this.diag) { this.#reloadDiagramFromCache(); }
+        if (this.diag) { this.#reloadDiagram(); }
     }
 
     #removeOrphanActors() {
@@ -539,7 +540,7 @@ class AsdfModel {
 
     setRelevantSignals(start, count) {
         this.initRelevantSignals(start, count);
-        this.#reloadDiagramFromCache();
+        this.#reloadDiagram();
     }
 
     #removeIrrelevantSignals() {
@@ -761,7 +762,7 @@ class AsdfViewModel  {
     }
 
     #updateDiagSignals() {
-        this.#diagSignals = this.#model.diag.signals.filter(item => item.type === 'Signal');
+        this.#diagSignals = this.#model.diag.signals.filter(s => s.type[0] === 'S');
         this.#signalCursor.setCollection(this.#diagSignals);
     }
 
@@ -1420,7 +1421,7 @@ class AsdfViewModel  {
 
                 cl = 'instance';
                 isOfSameInstance = refSig.addinfoHead.srcInstanceId &&
-                                    s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
+                                   s.addinfoHead.srcInstanceId === refSig.addinfoHead.srcInstanceId;
                 method = (isOfSameInstance && isShowInstance) ? 'add' : 'remove';
                 text.classList[method](cl);
                 circle.classList[method](cl);
@@ -1429,9 +1430,9 @@ class AsdfViewModel  {
                 cl = 'related';
                 isRelated = isOfSameInstance ||
                             ( refSig.addinfoHead.srcInstanceId &&
-                                s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ) ||
+                              s.addinfoHead.dstInstanceId === refSig.addinfoHead.srcInstanceId ) ||
                             ( refSig.addinfoHead.dstInstanceId &&
-                                s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId );
+                              s.addinfoHead.srcInstanceId === refSig.addinfoHead.dstInstanceId );
                 method = (isRelated && isShowRelated) ? 'add' : 'remove';
                 text.classList[method](cl);
                 circle.classList[method](cl);
@@ -1694,7 +1695,7 @@ class AsdfViewModel  {
         }
 
         getShownSignals() {
-            return this.#model.diag.signals.filter(item => item.type === 'Signal');
+            return this.#model.diag.signals.filter(s => s.type[0] === 'S');
         }
     }; // Paginator
 
@@ -1761,7 +1762,7 @@ class AsdfViewModel  {
                 return [];
             }
             return searchSet.filter(signal =>
-                                    signal.type === 'Signal' &&
+                                    signal.type[0] === 'S' &&
                                     (signal.message.includes(searchPattern) ||
                                     signal.actorA.name.includes(searchPattern) ||
                                     signal.actorB.name.includes(searchPattern) ||
