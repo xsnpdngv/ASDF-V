@@ -55,6 +55,12 @@ figure {
     margin-bottom: 0;
 }
 
+#times {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--asdf-special-color);
+}
+
 #diagramSearchInput {
     color: var(--bs-secondary);
     font-family: monospace;
@@ -188,6 +194,12 @@ figure {
     height: calc(100vh - var(--asdf-toolbar-height) - 12px);
 }
 
+#helpOffcanvas {
+    width: 640px;
+    padding-left: 30px;
+    padding-left: 30px;
+}
+
 .pagination .page-link {
     color: var(--bs-secondary);
     font-family: monospace;
@@ -245,7 +257,7 @@ text.head-actor.filtered:hover {
     100% {
     }
 }
-.flash-once:not(.filtered):not(.orphan) {
+.flash-once {
     animation: svg-flash 2s ease-in-out;
 }
 rect.actor,

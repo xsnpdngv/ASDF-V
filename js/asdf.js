@@ -578,10 +578,12 @@ class AsdfViewModel  {
     #diagramDiv = document.getElementById("diagram");
     #fileInputLabel = document.getElementById("fileInputLabel");
     #isInputFileChange = false;
+    #times = new AsdfViewModel.Times('times');
     #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: signalCursor", this.#diagSignals);
     #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal', this.#signalCursor,
                                                          { diagramContainerId: "diagramContainer" },
-                                                         () => this.#applySignalClick());
+                                                         () => this.#applySignalClick(),
+                                                         this.#times);
     #toggles = {
         "showTime": new AsdfViewModel.PersistentToggle({toggleId: "showTimeToggle"}, true, this.#showTimeOnChange, this),
         "showIds": new AsdfViewModel.PersistentToggle({toggleId: "showIdsToggle"}, false, this.#showIdsOnChange, this),
@@ -612,7 +614,8 @@ class AsdfViewModel  {
                                                                 pagePrevBtnId: "pagePrev",
                                                                 pageNextBtnId: "pageNext",
                                                                 pageLastBtnId: "pageLast",
-                                                                pageInfoId: "pageInfo" });
+                                                                pageInfoId: "pageInfo" },
+                                                                this.#times);
         this.#searchHitNavigator = new AsdfViewModel.SearchHitNavigator(this.#search,
                                                                         this.#searchHitCursor,
                                                                         this.#searchHitCursorDisplay,
@@ -620,7 +623,8 @@ class AsdfViewModel  {
                                                                         this.#paginator,
                                                                         this.#signalCursor,
                                                                         this.#signalNavigator,
-                                                                        () => this.#applySignalClick());
+                                                                        () => this.#applySignalClick(),
+                                                                        this.#times);
         this.#participantHeader = new AsdfViewModel.ParticipantHeader(model, { headerContainerId: "diagramHeadContainer",
                                                                                headerDivId: "diagramHead" });
     }
@@ -686,12 +690,23 @@ class AsdfViewModel  {
                 if (event.key === "Enter") { vm.#searchHitNavigator.performSearchSignals(); }
                 if (event.key === "Escape") { vm.#search.blur(); }
                 return;
+            } else  {
+                if (event.key === "Escape") {
+                    vm.#times.reset();
+                    return;
+                }
             }
 
             keySeq += event.key;
 
             document.activeElement.blur();
 
+            if ('0' <= event.key && event.key <= '9') {
+                if (vm.#times.n >= 100 || vm.#times.isIntact && event.key === '0') { return; }
+                vm.#times.set(Number(event.key) + (vm.#times.isIntact ? 0 : vm.#times.n * 10));
+            }
+
+            let hit = true;
             if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
             // view
             else if (keySeq.endsWith("ti")) { vm.#toggles['showInstance'].toggle(); }
@@ -728,6 +743,10 @@ class AsdfViewModel  {
             else if (event.shiftKey && event.key === "_") { vm.#divider.toBottom(); }
             else {
                 setTimeout(() => { keySeq = ""; }, 500);
+                hit = false;
+            }
+            if (hit) {
+                if (event.key < '0' || event.key > '9') { vm.#times.reset(); }
             }
         });
     }
@@ -862,6 +881,7 @@ class AsdfViewModel  {
 
     resetToolbarOnClick() {
         Object.entries(this.#toggles).forEach(([key, value]) => { value.reset(); });
+        this.#times.reset();
         this.#resetScrollPosition();
         this.#paginator.init();
         this.#diagramContainer.scrollTop = 0;
@@ -952,11 +972,11 @@ class AsdfViewModel  {
             const rectX = parseFloat(elem.getAttribute('x'));
             const rectY = parseFloat(elem.getAttribute('y'));
             if(index > 0) {
-                elem.parentNode.appendChild( AsdfViewModel.ParticipantMoveBtn.create(rectX-8, rectY+11, 'left', () => this.#moveActor(index, index-1)) );
+                elem.parentNode.appendChild( AsdfViewModel.ParticipantMoveBtn.create(rectX-8, rectY+11, 'left', () => this.#moveActor(index, index - this.#times.n)) );
             }
             if(index < this.#model.diag.actors.length - 1) {
                 const rectWidth = parseFloat(elem.getAttribute('width'));
-                elem.parentNode.appendChild( AsdfViewModel.ParticipantMoveBtn.create(rectX+rectWidth-8, rectY+11, 'right', () => this.#moveActor(index, index+1)) );
+                elem.parentNode.appendChild( AsdfViewModel.ParticipantMoveBtn.create(rectX+rectWidth-8, rectY+11, 'right', () => this.#moveActor(index, index + this.#times.n)) );
             }
         });
     }
@@ -978,6 +998,8 @@ class AsdfViewModel  {
     }
 
     #moveActor(fromIndex, toIndex) {
+        if (toIndex >= this.#actorOrder.length()) { toIndex = this.#actorOrder.length() - 1; }
+        if (toIndex < 0) { toIndex = 0; }
         this.#participantHeader.flashActorOnUpdate(fromIndex);
         this.#actorOrder.move(fromIndex, toIndex);
         this.#model.setActorOrder(this.#actorOrder.array);
@@ -1060,7 +1082,7 @@ class AsdfViewModel  {
     static ParticipantHeader = class {
         #model = null;
         #gui = {};
-        #actorToFlash = -1;
+        #actorToFlash = null;
 
         constructor(model, guiIds) {
             this.#model = model;
@@ -1461,12 +1483,14 @@ class AsdfViewModel  {
         #signalCursor = {};
         #signalSelectAction = () => {};
         #gui = {};
+        #times = { n: 1 };
 
-        constructor(signalPathClassName, signalCursor, guiElemIds, signalSelectAction = () => {}) {
+        constructor(signalPathClassName, signalCursor, guiElemIds, signalSelectAction = () => {}, times = null) {
             this.#signalPathClassName = signalPathClassName;
             this.#signalCursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
             this.#gui.diagramContainer = document.getElementById(guiElemIds?.diagramContainerId);
             this.#signalSelectAction = signalSelectAction;
+            if (times) { this.#times = times; }
         }
 
         #signalPaths() {
@@ -1490,11 +1514,23 @@ class AsdfViewModel  {
 
         toLast() {
             this.#signalCursor.end();
+            if ( ! this.#times.isIntact) {
+                this.#signalCursor.home();
+                for (let i = 0; i < this.#times.n - 1; ++i) {
+                    this.#toNext();
+                }
+            }
             this.toCursor();
             this.#signalSelectAction();
         }
 
         toNext(isShift = false) {
+            for (let i = 0; i < this.#times.n; ++i) {
+                this.#toNext(isShift);
+            }
+        }
+
+        #toNext(isShift = false) {
             if ( ! this.#signalCursor.isValid()) {
                 this.toFirst();
                 return;
@@ -1510,6 +1546,12 @@ class AsdfViewModel  {
         }
 
         toPrev(isShift = false) {
+            for (let i = 0; i < this.#times.n; ++i) {
+                this.#toPrev(isShift);
+            }
+        }
+
+        #toPrev(isShift = false) {
             if ( ! this.#signalCursor.isValid()) {
                 this.toLast();
                 return;
@@ -1568,8 +1610,9 @@ class AsdfViewModel  {
         #model = {};
         #pageSize = 200;
         #currPage = new PersistentInt("AsdfViewModel-Paginator: currPage", 0);
+        #times = { n: 1 };
 
-        constructor(model, guiElemIds = {}) {
+        constructor(model, guiElemIds = {}, times = null) {
             this.#model = model;
             this.#gui.container = document.getElementById(guiElemIds?.containerId) || {};
             this.#gui.pageFirstBtn = document.getElementById(guiElemIds?.pageFirstBtnId) || {};
@@ -1581,6 +1624,7 @@ class AsdfViewModel  {
             this.#gui.pagePrevBtn.addEventListener("click", () => this.prevPage());
             this.#gui.pageNextBtn.addEventListener("click", () => this.nextPage());
             this.#gui.pageLastBtn.addEventListener("click", () => this.lastPage());
+            if (times) { this.#times = times; }
         }
 
         init() {
@@ -1628,6 +1672,8 @@ class AsdfViewModel  {
         }
 
         setCurrPage(pageIdx) {
+            if (pageIdx >= this.length()-1) { pageIdx = this.length()-1; }
+            if (pageIdx < 0) { pageIdx = 0; }
             this.#currPage.set(pageIdx);
             this.#model.setRelevantSignals(pageIdx * this.#pageSize - (pageIdx > 0), this.#pageSize + (pageIdx > 0));
         }
@@ -1637,11 +1683,11 @@ class AsdfViewModel  {
         }
 
         nextPage() {
-            this.setCurrPage(this.#currPage.value + (this.#currPage.value < this.length()-1));
+            this.setCurrPage(this.#currPage.value + (this.#currPage.value < this.length()-1) * this.#times.n);
         }
 
         prevPage() {
-            this.setCurrPage(this.#currPage.value - (this.#currPage.value > 0));
+            this.setCurrPage(this.#currPage.value - (this.#currPage.value > 0) * this.#times.n);
         }
 
         firstPage() {
@@ -1752,8 +1798,9 @@ class AsdfViewModel  {
         #pager;
         #sigNav;
         #sigSelAct = () => {};
+        #times = { n: 1 };
 
-        constructor(search, searchHitCursor, searchHitDisplay, getSearchSet, paginator, signalCursor, signalNavigator, signalSelectAction = () => {}) {
+        constructor(search, searchHitCursor, searchHitDisplay, getSearchSet, paginator, signalCursor, signalNavigator, signalSelectAction = () => {}, times = null) {
             this.#search = search;
             this.#sigCursor = signalCursor instanceof AsdfViewModel.SignalCursor ? signalCursor : null;
             this.#hitCursor = searchHitCursor instanceof AsdfViewModel.SignalCursor ? searchHitCursor : null;
@@ -1762,6 +1809,7 @@ class AsdfViewModel  {
             this.#pager = paginator instanceof AsdfViewModel.Paginator ? paginator : null;
             this.#sigNav = signalNavigator instanceof AsdfViewModel.SignalNavigator ? signalNavigator : null;
             this.#sigSelAct = signalSelectAction;
+            if (times) { this.#times = times };
         }
 
         performSearchSignals(dir = 1) {
@@ -1805,6 +1853,9 @@ class AsdfViewModel  {
                 }
                 this.#hitCursor.next();
             }
+            for (let i = 0; i < this.#times.n - 1; ++i) {
+                this.#hitCursor.next();
+            }
             this.gotoCurrHit();
         }
 
@@ -1820,6 +1871,9 @@ class AsdfViewModel  {
                     this.#hitCursor.end();
                     break;
                 }
+                this.#hitCursor.prev();
+            }
+            for (let i = 0; i < this.#times.n - 1; ++i) {
                 this.#hitCursor.prev();
             }
             this.gotoCurrHit(-1);
@@ -1913,6 +1967,29 @@ class AsdfViewModel  {
             }, 2000);
         }
     }; // FlashIndicator
+
+
+    static Times = class {
+        n = 1;
+        isIntact = true;
+        #guiEl;
+
+        constructor(guiElId) {
+            this.#guiEl = document.getElementById(guiElId);
+        }
+
+        set(n) {
+            this.n = n;
+            this.#guiEl.innerHTML = `${n}x`;
+            this.isIntact = false;
+        }
+
+        reset() {
+            this.n = 1;
+            this.#guiEl.innerHTML = "";
+            this.isIntact = true;
+        }
+    };
 }
 
 

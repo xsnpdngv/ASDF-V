@@ -49,6 +49,7 @@
             <button type="button" class="btn btn-light btn-sm btn-asdf dense" onclick="asdfVM.resetToolbarOnClick()">reset</button>
             <button class="btn btn-sm btn-light btn-asdf dense" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="offcanvasRight">help</button>
         </div>
+        <div id="times" class="ms-3 pt-1 pb-1 fw-bold font-monospace"></div>
         </ul>
 
         <ul class="navbar-nav col-lg-2 col-xl-2 col-xxl-2 justify-content-xxl-center justify-content-xl-start">
@@ -184,11 +185,14 @@
 
     <div class="offcanvas offcanvas-end" tabindex="-1" id="helpOffcanvas" aria-labelledby="offcanvasRightLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasRightLabel">Keyboard Shortcuts</h5>
+            <h5 class="offcanvas-title" id="offcanvasRightLabel">Keyboard Shortcut Reference</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <h6>Movement</h6>
+            <div class="row">
+            <div class="col-6">
+
+            <h6>Move</h6>
             <div class="shortcut-list">
                 <div class="shortcut-item"><span class="shortcut-key">j </span>cursor down</div>
                 <div class="shortcut-item"><span class="shortcut-key">k </span>cursor up</div>
@@ -204,30 +208,48 @@
                 <div class="shortcut-item"><span class="shortcut-key">H </span>home page</div>
                 <div class="shortcut-item"><span class="shortcut-key">L </span>last page</div>
             </div>
+
             <h6>Search</h6>
             <div class="shortcut-list">
-                <div class="shortcut-item"><span class="shortcut-key">/ </span>enter search pattern</div>
+                <div class="shortcut-item"><span class="shortcut-key">/pattern </span>search for pattern</div>
                 <div class="shortcut-item"><span class="shortcut-key">n </span>next match</div>
                 <div class="shortcut-item"><span class="shortcut-key">N </span>previous match</div>
                 <div class="shortcut-item"><span class="shortcut-key">* </span>search next occurrence</div>
                 <div class="shortcut-item"><span class="shortcut-key"># </span>search previous occurrence</div>
             </div>
-            <h6>View</h6>
+
+            <h6>Multiply</h6>
+            <div class="shortcut-list">
+                <div class="shortcut-item"><span class="shortcut-key">{n}{command}</span>or<span class="shortcut=key ms-2">{n}{click}</span></div>
+                <div class="shortcut-item">Prefixing certain commands and visual actions with a number causes them to execute that many times. E.g.,</div>
+                <div class="shortcut-item"><span class="shortcut-key">5j </span>cursor down 5 times</div>
+                <div class="shortcut-item"><span class="shortcut-key">9G </span>cursor to 9th signal on page</div>
+                <div class="shortcut-item"><span class="shortcut-key">7# </span>7th previous occurrence</div>
+                <div class="shortcut-item"><span class="shortcut-key">10&gt; </span>10th next page</div>
+                <div class="shortcut-item">Tip: Apply with a click on a participant's move button to make larger jumps.</div>
+            </div>
+
+            </div><!-- col -->
+            <div class="col-6">
+
+            <h6>Settings</h6>
             <div class="shortcut-list">
                 <div class="shortcut-item"><span class="shortcut-key">ti</span>toggle instance highlighting</div>
                 <div class="shortcut-item"><span class="shortcut-key">tr</span>toggle relation highlighting</div>
                 <div class="shortcut-item"><span class="shortcut-key">ts</span>toggle source id display</div>
                 <div class="shortcut-item"><span class="shortcut-key">tt</span>toggle timestamps</div>
+                <div class="shortcut-item"><span class="shortcut-key">to</span>toggle orphan actors</div>
                 <div class="shortcut-item"><span class="shortcut-key">^ </span>divider to top</div>
                 <div class="shortcut-item"><span class="shortcut-key">= </span>divider to center</div>
                 <div class="shortcut-item"><span class="shortcut-key">- </span>divider to default position</div>
                 <div class="shortcut-item"><span class="shortcut-key">_ </span>divider to bottom</div>
                 <div class="shortcut-item"><span class="shortcut-key">? </span>show/hide this help</div>
-            </div>
-            <h6>Global</h6>
-            <div class="shortcut-list">
                 <div class="shortcut-item"><span class="shortcut-key">re</span>reset visualization to default</div>
             </div>
+
+            </div><!-- col -->
+            </div><!-- row -->
+
         </div>
     </div><!--offcanvas-->
 
