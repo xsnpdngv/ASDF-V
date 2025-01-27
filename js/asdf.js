@@ -698,7 +698,7 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("tr")) { vm.#toggles['showRelated'].toggle(); }
             else if (keySeq.endsWith("ts")) { vm.#toggles['showIds'].toggle(); }
             else if (keySeq.endsWith("tt")) { vm.#toggles['showTime'].toggle(); }
-            else if (keySeq.endsWith("to")) { vm.#toggles['showOrphans'].toggle(); }
+            else if (keySeq.endsWith("tu")) { vm.#toggles['showOrphans'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
             // movement
             else if (event.key === "j") { vm.#signalNavigator.toNext(); }
@@ -830,7 +830,7 @@ class AsdfViewModel  {
         fil.textContent += this.#model.actorCount;
         if (filteredActorCount > 0 || this.#model.orphanCount > 0) {
             fil.textContent += ` pts (${filteredActorCount} filtered`;
-            fil.textContent += (this.#model.orphanCount > 0 ? `, ${this.#model.orphanCount} orphan` : "");
+            fil.textContent += (this.#model.orphanCount > 0 ? `, ${this.#model.orphanCount} unlinked` : "");
             fil.textContent += ")";
         } else {
             fil.textContent += " participants";
