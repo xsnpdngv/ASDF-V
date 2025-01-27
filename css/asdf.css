@@ -365,6 +365,7 @@ text.seq-num {
     fill: black;
     font-family: 'stdfont';
     font-size: 16px;
+    text-anchor: middle;
 }
 text.seq-num.instance {
     /* fill: white; */

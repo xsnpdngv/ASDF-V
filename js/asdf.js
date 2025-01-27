@@ -760,9 +760,7 @@ class AsdfViewModel  {
         this.#sendCursorHomeOnInputFileChange();
         this.#applySignalClick();
         this.#markActors();
-        // this.#addActorMoveBtns();
         this.#addSignalEventListeners();
-        // this.#addActorEventListeners();
     }
 
     #updateDiagSignals() {
@@ -961,12 +959,12 @@ class AsdfViewModel  {
         elemList.forEach((elem, index) => {
             const rectX = parseFloat(elem.getAttribute('x'));
             const rectY = parseFloat(elem.getAttribute('y'));
-            if(index > 0) {
-                elem.parentNode.appendChild( AsdfViewModel.ParticipantMoveBtn.create(rectX-8, rectY+11, 'left', () => this.#moveActor(index, index - this.#times.n)) );
+            if (index > 0) {
+                elem.parentNode.append( AsdfViewModel.ParticipantMoveBtn.create(rectX-8, rectY+11, 'left', () => this.#moveActor(index, index - this.#times.n)) );
             }
-            if(index < this.#model.diag.actors.length - 1) {
+            if (index < this.#model.diag.actors.length - 1) {
                 const rectWidth = parseFloat(elem.getAttribute('width'));
-                elem.parentNode.appendChild( AsdfViewModel.ParticipantMoveBtn.create(rectX+rectWidth-8, rectY+11, 'right', () => this.#moveActor(index, index + this.#times.n)) );
+                elem.parentNode.append( AsdfViewModel.ParticipantMoveBtn.create(rectX+rectWidth-8, rectY+11, 'right', () => this.#moveActor(index, index + this.#times.n)) );
             }
         });
     }
@@ -1350,21 +1348,19 @@ class AsdfViewModel  {
                 let sn = signals[index].seqNum;
                 const widener = ( sn > 99_999 ? 5 : ( sn > 9_999 ? 3 : 0 ) );
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
-                circle.setAttributeNS(null, "cx", start.x);
-                circle.setAttributeNS(null, "cy", start.y);
-                circle.setAttributeNS(null, "rx", SignalDecorator.#SEQNUM_CIRCLE_RADIUS + widener);
-                circle.setAttributeNS(null, "ry", SignalDecorator.#SEQNUM_CIRCLE_RADIUS);
-                circle.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
-                path.parentNode.appendChild(circle);
+                circle.setAttribute("cx", start.x);
+                circle.setAttribute("cy", start.y);
+                circle.setAttribute("rx", SignalDecorator.#SEQNUM_CIRCLE_RADIUS + widener);
+                circle.setAttribute("ry", SignalDecorator.#SEQNUM_CIRCLE_RADIUS);
+                circle.setAttribute("class", SignalDecorator.#SEQNUM_CLASSNAME);
 
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttributeNS(null, "x", start.x);
-                text.setAttributeNS(null, "y", start.y);
-                text.setAttributeNS(null, "text-anchor", "middle");
-                text.setAttributeNS(null, "dy", "0.35em");
-                text.setAttributeNS(null, "class", SignalDecorator.#SEQNUM_CLASSNAME);
-                text.textContent = sn;
-                path.parentNode.appendChild(text);
+                const text = Object.assign(document.createElementNS("http://www.w3.org/2000/svg", "text"), { textContent: sn });
+                text.setAttribute("x", start.x);
+                text.setAttribute("y", start.y);
+                text.setAttribute("dy", "0.35em");
+                text.setAttribute("class", SignalDecorator.#SEQNUM_CLASSNAME);
+
+                path.parentNode.append(circle, text);
             });
         }
 
@@ -1384,7 +1380,6 @@ class AsdfViewModel  {
             let svg = arrowPaths[0].parentNode;
             // add a background layer to append gridlines to
             const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            bkgGroup.setAttribute("id", "background-layer");
             svg.insertBefore(bkgGroup, svg.firstChild);
 
             const gridlineWidth = actorPaths[actorPaths.length-1].getPointAtLength(0).x;
@@ -1396,12 +1391,12 @@ class AsdfViewModel  {
                 ts.setAttribute("y", start.y-6);
                 ts.setAttribute("class", SignalDecorator.#TIMESTAMP_CLASSNAME);
                 ts.textContent = signals[index]?.addinfoHead?.timestamp?.split('T')[1] || "";
-                svg.appendChild(ts);
 
                 const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 gridline.setAttribute("d", `M${0},${start.y} h${gridlineWidth}`);
                 gridline.setAttribute("class", SignalDecorator.#GRIDLINE_CLASSNAME);
-                bkgGroup.appendChild(gridline);
+
+                bkgGroup.append(gridline, ts);
             });
         }
 
