@@ -1454,9 +1454,12 @@ class AsdfViewModel  {
 
         markTimestamps() {
             const timestamps = document.querySelectorAll("text." + SignalDecorator.#TIMESTAMP_CLASSNAME);
+            const gridlines = document.querySelectorAll("path." + SignalDecorator.#GRIDLINE_CLASSNAME);
             timestamps?.forEach(ts => { ts.classList.remove('active'); });
+            gridlines?.forEach(gl => { gl.classList.remove('active'); });
             if (this.#cursor.isValid() && timestamps.length > 0) {
                 timestamps[this.#cursor.getIdx()].classList.add('active');
+                gridlines[this.#cursor.getIdx()].classList.add('active');
             }
         }
     }; // SignalDecorator

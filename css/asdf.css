@@ -283,7 +283,7 @@ path.actor.orphan {
 }
 path.actor:not(.filtered) {
     stroke-width: 0.4px;
-    stroke-dasharray: 5, 3; /* Dash of 5px, gap of 2px */
+    stroke-dasharray: 5, 3;
 }
 path.signal {
     fill:grey;
@@ -297,11 +297,11 @@ text.signal {
     cursor: pointer;
 }
 text.signal.instance:not(.instance-highlight-off) {
-    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: black;
 }
 text.signal.instance.special:not(.instance-highlight-off) {
-    stroke: var(--asdf-highlight-color); stroke-width: 8px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color2); stroke-width: 8px; paint-order: stroke fill;
     fill: var(--asdf-special-color);
 }
 text.signal.related:not(.related-highlight-off) {
@@ -313,7 +313,7 @@ text.signal.related.special:not(.related-highlight-off) {
     fill: var(--asdf-special-color);
 }
 text.signal:hover {
-    stroke: var(--asdf-highlight-color); stroke-width: 3px; paint-order: stroke fill;
+    stroke: var(--asdf-highlight-color2); stroke-width: 3px; paint-order: stroke fill;
     font-style: italic;
 }
 body.no-hover text.signal:hover:not(.active) {
@@ -356,7 +356,7 @@ ellipse.seq-num.active {
     /* stroke-width: 2; */
 }
 ellipse.seq-num.instance:not(.instance-highlight-off) {
-    fill: var(--asdf-highlight-color);
+    fill: var(--asdf-highlight-color2);
 }
 ellipse.seq-num.related:not(.related-highlight-off) {
     /* fill: var(--highlight-color2); */
@@ -380,6 +380,11 @@ text.ts {
 path.gridline {
     stroke: #f0f0f0;
     stroke-width: 1px;
+}
+path.gridline.active {
+    stroke: #adadad;
+    stroke-width: 1.7px;
+    stroke-dasharray: 5, 5;
 }
 text.ts.active {
     fill: black;
