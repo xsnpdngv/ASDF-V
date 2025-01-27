@@ -589,6 +589,7 @@ class AsdfViewModel  {
                                            dividerId: "divider"});
     #hoverGate = new AsdfViewModel.HoverGate();
     #participantHeader;
+    #spinner = new AsdfViewModel.Spinner('spinner');
 
     constructor(model) {
         this.#model = model;
@@ -646,13 +647,13 @@ class AsdfViewModel  {
         this.#paginator.assess();
         this.#updateToolbar();
         this.#initShowTime(this.#toggles["showTime"].isOn());
-
         this.#participantHeader.update();
         this.#addActorMoveBtns();
         this.#addActorEventListeners();
         this.#restoreHeadScrollPosition();
         this.#updateDiagram();
         this.#signalNavigator.toCursor();
+        this.#spinner.done();
     }
 
     #addDocumentEventListeners() {
@@ -817,6 +818,7 @@ class AsdfViewModel  {
     }
 
     fileInputOnChange(event) {
+        this.#spinner.spin();
         this.#paginator.init();
         this.#diagramContainer.scrollTop = 0;
         this.#model.loadDiagramFromFile(event.target.files[0]);
@@ -1978,6 +1980,23 @@ class AsdfViewModel  {
             this.n = 1;
             this.#guiEl.innerHTML = "";
             this.isIntact = true;
+        }
+    };
+
+
+    static Spinner = class {
+        #guiEl;
+
+        constructor(guiElId) {
+            this.#guiEl = document.getElementById(guiElId);
+        }
+
+        spin() {
+            this.#guiEl.style.visibility = 'visible';
+        }
+
+        done() {
+            this.#guiEl.style.visibility = 'hidden';
         }
     };
 }
