@@ -647,11 +647,14 @@ class AsdfViewModel  {
         this.#paginator.assess();
         this.#updateToolbar();
         this.#initShowTime(this.#toggles["showTime"].isOn());
+
+        this.#updateDiagram();
+        // header must come after the diagram
         this.#participantHeader.update();
         this.#addActorMoveBtns();
         this.#addActorEventListeners();
         this.#restoreHeadScrollPosition();
-        this.#updateDiagram();
+
         this.#signalNavigator.toCursor();
         this.#spinner.done();
     }
