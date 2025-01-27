@@ -1395,7 +1395,7 @@ class AsdfViewModel  {
                 ts.setAttribute("x", 0);
                 ts.setAttribute("y", start.y-6);
                 ts.setAttribute("class", SignalDecorator.#TIMESTAMP_CLASSNAME);
-                ts.textContent = signals[index]?.addinfoHead?.timestamp.split('T')[1] || "";
+                ts.textContent = signals[index]?.addinfoHead?.timestamp?.split('T')[1] || "";
                 svg.appendChild(ts);
 
                 const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
