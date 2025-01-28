@@ -418,6 +418,7 @@ class AsdfModel {
         if (this.#diagSrc.length() > 0) {
             this.#loadMaster();
             this.diag = this.#cloneMaster();
+            this.#signalWindow = {};
             this.#postProc();
         }
         this.#notify();
