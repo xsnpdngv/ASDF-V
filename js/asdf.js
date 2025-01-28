@@ -353,6 +353,7 @@ class AsdfModel {
     fileSize = new PersistentInt("AsdfModel: fileSize", 0);
     diag = null;
     actorCount = 0;
+    #signalWindow = {};
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
     #diagMaster = null;
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
@@ -390,6 +391,7 @@ class AsdfModel {
         this.filteredActors.clear();
         this.#actorOrder.clear();
         this.#isShowIds = false;
+        this.#signalWindow = {};
         this.initRelevantSignals(0, this.#relevantSignalCount.value);
         this.#reloadDiagram();
     }
@@ -437,6 +439,7 @@ class AsdfModel {
 
     #postProc() {
         this.actorCount = this.diag.actors.length;
+        this.#removeSignalsOutsideWindow();
         this.diag.netSignalCount = this.diag.signals.filter(s => s.type[0] === 'S').length;
         this.#removeSignalsOfFilteredActors(this.diag);
         this.#countActorSignals();
@@ -547,6 +550,35 @@ class AsdfModel {
         this.diag.signals.splice(0, this.#relevantSignalStart.get());
         this.diag.signals.splice(this.#relevantSignalCount.get());
     }
+
+    #findSignalIndex(predicate) {
+        return this.#diagMaster.signals.findIndex(predicate);
+    }
+
+    setSignalWindow(window = null) {
+        if (! window) {
+            this.#signalWindow = {};
+        }
+        if (window?.startSeqNum) {
+            this.#signalWindow.startIdx = this.#findSignalIndex((s) => s.seqNum === window.startSeqNum);
+        }
+        if (window?.endSeqNum) {
+            this.#signalWindow.endIdx = this.#findSignalIndex((s) => s.seqNum === window.endSeqNum);
+        }
+        this.#reloadDiagram();
+    }
+
+    getSignalWindowActiveIdx() {
+        return this.#signalWindow.activeIdx;
+    }
+
+    #removeSignalsOutsideWindow() {
+        if (this.#signalWindow.endIdx >= 0) {
+            this.diag.signals.splice(this.#signalWindow.endIdx + 1);
+        }
+        this.diag.signals.splice(0, this.#signalWindow.startIdx);
+        this.diag.windowSignalCount = this.diag.signals.filter(s => s.type[0] === 'S').length;
+    }
 }
 
 
@@ -640,6 +672,7 @@ class AsdfViewModel  {
 
     update() {
         this.#positionDivider();
+        this.#updateDiagSignals();
         this.#searchHitNavigator.invalidateLastSearch();
         this.#model.diag ? this.#search.show() : this.#search.hide();
         if ( ! this.#model.diag) { return; }
@@ -705,6 +738,9 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("tu")) { vm.#toggles['showOrphans'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
             // movement
+            else if (keySeq.endsWith("ws")) { vm.#paginator.setWindowStart(vm.#signalCursor.get()); }
+            else if (keySeq.endsWith("we")) { vm.#paginator.setWindowEnd(vm.#signalCursor.get()); }
+            else if (keySeq.endsWith("ww")) { vm.#paginator.resetWindow(); }
             else if (event.key === "j") { vm.#signalNavigator.toNext(); }
             else if (event.key === "k") { vm.#signalNavigator.toPrev(); }
             else if (event.shiftKey && event.key === "J") { vm.#signalNavigator.shiftToNext(); }
@@ -832,15 +868,34 @@ class AsdfViewModel  {
         fil.textContent = this.#model.fileName.get() + "\n";
         fil.textContent += this.#model.actorCount;
         if (filteredActorCount > 0 || this.#model.orphanCount > 0) {
-            fil.textContent += ` pts (${filteredActorCount} filtered`;
-            fil.textContent += (this.#model.orphanCount > 0 ? `, ${this.#model.orphanCount} unlinked` : "");
+            fil.textContent += ` pts (`
+            if (filteredActorCount > 0) {
+                fil.textContent += `${filteredActorCount} filtered`;
+                if (this.#model.orphanCount > 0) {
+                    fil.textContent += ", ";
+                }
+            }
+            fil.textContent += (this.#model.orphanCount > 0 ? `${this.#model.orphanCount} unlinked` : "");
             fil.textContent += ")";
         } else {
             fil.textContent += " participants";
         }
-        fil.textContent += "\n" + this.#model.diag.signalCount + " signals";
-        if (this.#model.diag.netSignalCount != this.#model.diag.signalCount) {
-            fil.textContent += " (" + this.#model.diag.netSignalCount + " shown)";
+        let d = this.#model.diag;
+        fil.textContent += "\n" + d.signalCount;
+        fil.textContent += ' signals';
+        if (d.windowSignalCount < d.signalCount ||
+            d.netSignalCount < d.windowSignalCount) {
+            fil.textContent += " (";
+            if (d.windowSignalCount < d.signalCount) {
+                fil.textContent += `${d.signalCount - d.windowSignalCount} dropped`;
+                if (d.netSignalCount < d.windowSignalCount) {
+                    fil.textContent += ", ";
+                }
+            }
+            if (d.netSignalCount < d.windowSignalCount) {
+                fil.textContent += d.netSignalCount + " shown";
+            }
+            fil.textContent += ")";
         }
     }
 
@@ -1666,6 +1721,20 @@ class AsdfViewModel  {
             if (pageIdx < 0) { pageIdx = 0; }
             this.#currPage.set(pageIdx);
             this.#model.setRelevantSignals(pageIdx * this.#pageSize - (pageIdx > 0), this.#pageSize + (pageIdx > 0));
+        }
+
+        setWindowStart(startSeqNum) {
+            this.#currPage.set(0);
+            this.#model.initRelevantSignals(0, this.#pageSize);
+            this.#model.setSignalWindow({ startSeqNum: startSeqNum });
+        }
+
+        setWindowEnd(endSeqNum) {
+            this.#model.setSignalWindow({ endSeqNum: endSeqNum });
+        }
+
+        resetWindow() {
+            this.#model.setSignalWindow();
         }
 
         length() {
