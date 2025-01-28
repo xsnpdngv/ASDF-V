@@ -672,7 +672,6 @@ class AsdfViewModel  {
 
     update() {
         this.#positionDivider();
-        this.#updateDiagSignals();
         this.#searchHitNavigator.invalidateLastSearch();
         this.#model.diag ? this.#search.show() : this.#search.hide();
         if ( ! this.#model.diag) { return; }
