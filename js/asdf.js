@@ -516,6 +516,10 @@ class AsdfModel {
         }
         diag.signals.splice(0, this.#signalWindow.startIdx);
         diag.windowSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
+        if (this.#signalWindow.activeSeqNum) {
+            // find index inside the signal window
+            this.#signalWindow.activeIdx = diag.signals.findIndex((s) => s.seqNum === this.#signalWindow.activeSeqNum);
+        }
     }
 
     #removeSignalsOfFilteredActors(diag) {
@@ -561,19 +565,22 @@ class AsdfModel {
         this.diag.signals.splice(this.#relevantSignalCount.get());
     }
 
-    #findSignalIndex(predicate) {
+    #findMasterSignalIndex(predicate) {
         return this.#diagMaster.signals.findIndex(predicate);
     }
 
     setSignalWindow(window = null) {
-        if (! window) {
+        if ( ! window?.startSeqNum && ! window.endSeqNum) {
             this.#signalWindow = {};
         }
         if (window?.startSeqNum) {
-            this.#signalWindow.startIdx = this.#findSignalIndex((s) => s.seqNum === window.startSeqNum);
+            this.#signalWindow.startIdx = this.#findMasterSignalIndex((s) => s.seqNum === window.startSeqNum);
         }
         if (window?.endSeqNum) {
-            this.#signalWindow.endIdx = this.#findSignalIndex((s) => s.seqNum === window.endSeqNum);
+            this.#signalWindow.endIdx = this.#findMasterSignalIndex((s) => s.seqNum === window.endSeqNum);
+        }
+        if (window?.activeSeqNum) {
+            this.#signalWindow.activeSeqNum = window.activeSeqNum;
         }
         this.#reloadDiagram();
     }
@@ -744,7 +751,7 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("we")) { vm.#searchHitNavigator.invalidateLastSearch();
                                               vm.#paginator.setWindowEnd(vm.#signalCursor.get()); }
             else if (keySeq.endsWith("ww")) { vm.#searchHitNavigator.invalidateLastSearch();
-                                              vm.#paginator.resetWindow(); }
+                                              vm.#paginator.resetWindow(vm.#signalCursor.get()); }
             else if (event.key === "j") { vm.#signalNavigator.toNext(); }
             else if (event.key === "k") { vm.#signalNavigator.toPrev(); }
             else if (event.shiftKey && event.key === "J") { vm.#signalNavigator.shiftToNext(); }
@@ -1737,8 +1744,9 @@ class AsdfViewModel  {
             this.#model.setSignalWindow({ endSeqNum: endSeqNum });
         }
 
-        resetWindow() {
-            this.#model.setSignalWindow();
+        resetWindow(activeSeqNum) {
+            this.#model.setSignalWindow({ activeSeqNum: activeSeqNum });
+            this.goToPageOfSignal( this.#model.getSignalWindowActiveIdx() );
         }
 
         length() {
