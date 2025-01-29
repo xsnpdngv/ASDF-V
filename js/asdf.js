@@ -410,6 +410,7 @@ class AsdfModel {
 
     sideLoadDiagram() {
         let diag = this.#cloneMaster();
+        this.#removeSignalsOutsideWindow(diag);
         this.#removeSignalsOfFilteredActors(diag);
         return diag;
     }
@@ -440,8 +441,7 @@ class AsdfModel {
 
     #postProc() {
         this.actorCount = this.diag.actors.length;
-        this.#removeSignalsOutsideWindow();
-        this.diag.netSignalCount = this.diag.signals.filter(s => s.type[0] === 'S').length;
+        this.#removeSignalsOutsideWindow(this.diag);
         this.#removeSignalsOfFilteredActors(this.diag);
         this.#countActorSignals();
         this.#removeIrrelevantSignals();
@@ -510,6 +510,14 @@ class AsdfModel {
         this.orphanCount = this.diag.actors.filter(a => ( (a?.signalCount || 0) <= 0 && ! this.filteredActors.has(a.name) )).length;
     }
 
+    #removeSignalsOutsideWindow(diag) {
+        if (this.#signalWindow.endIdx >= 0) {
+            diag.signals.splice(this.#signalWindow.endIdx + 1);
+        }
+        diag.signals.splice(0, this.#signalWindow.startIdx);
+        diag.windowSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
+    }
+
     #removeSignalsOfFilteredActors(diag) {
         if ( ! diag || ! diag.signals || diag.signals.length === 0 || this.filteredActors.size() === 0 ) {
             return;
@@ -571,14 +579,6 @@ class AsdfModel {
 
     getSignalWindowActiveIdx() {
         return this.#signalWindow.activeIdx;
-    }
-
-    #removeSignalsOutsideWindow() {
-        if (this.#signalWindow.endIdx >= 0) {
-            this.diag.signals.splice(this.#signalWindow.endIdx + 1);
-        }
-        this.diag.signals.splice(0, this.#signalWindow.startIdx);
-        this.diag.windowSignalCount = this.diag.signals.filter(s => s.type[0] === 'S').length;
     }
 }
 
@@ -738,9 +738,12 @@ class AsdfViewModel  {
             else if (keySeq.endsWith("tu")) { vm.#toggles['showOrphans'].toggle(); }
             else if (event.shiftKey && event.key === "?") { vm.#help.toggle(); }
             // movement
-            else if (keySeq.endsWith("ws")) { vm.#paginator.setWindowStart(vm.#signalCursor.get()); }
-            else if (keySeq.endsWith("we")) { vm.#paginator.setWindowEnd(vm.#signalCursor.get()); }
-            else if (keySeq.endsWith("ww")) { vm.#paginator.resetWindow(); }
+            else if (keySeq.endsWith("ws")) { vm.#searchHitNavigator.invalidateLastSearch();
+                                              vm.#paginator.setWindowStart(vm.#signalCursor.get()); }
+            else if (keySeq.endsWith("we")) { vm.#searchHitNavigator.invalidateLastSearch();
+                                              vm.#paginator.setWindowEnd(vm.#signalCursor.get()); }
+            else if (keySeq.endsWith("ww")) { vm.#searchHitNavigator.invalidateLastSearch();
+                                              vm.#paginator.resetWindow(); }
             else if (event.key === "j") { vm.#signalNavigator.toNext(); }
             else if (event.key === "k") { vm.#signalNavigator.toPrev(); }
             else if (event.shiftKey && event.key === "J") { vm.#signalNavigator.shiftToNext(); }
