@@ -448,7 +448,6 @@ class AsdfModel {
         if ( ! this.#isKeepOrphans) { this.#removeOrphanActors(); }
         this.#applyActorOrder();
         if (this.#isShowIds) { this.includeIdsInSignalMsgs(this.#isShowIds, false); }
-        delete this.diag.title; // throw title, otherwise the diagram would be misaligned with the floating header
     }
 
     #applyActorOrder() {
@@ -1135,7 +1134,7 @@ class AsdfViewModel  {
 
 
     // ---- ParticipantHeader ----
-    static ParticipantHeader = class {
+    static ParticipantHeader = class ParticipantHeader {
         #model = null;
         #gui = {};
         #actorToFlash = null;
@@ -1149,6 +1148,7 @@ class AsdfViewModel  {
         update() {
             this.#gui.participantHeaderDiv.innerHTML = "";
             this.#model.diag.drawHeader(this.#gui.participantHeaderDiv);
+            this.#gui.participantHeaderContainer.style.setProperty("--asdf-head-height", this.#model.diag.headerHeight + "px");
             this.#markActors();
             this.show();
         }

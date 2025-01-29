@@ -5,7 +5,6 @@
     --asdf-special-color: orangered;
     --asdf-toolbar-height: 65px;
     --asdf-divider-height: 2px;
-    --asdf-head-height: 60px;
 }
 
 @font-face {
@@ -152,9 +151,10 @@ figure {
 }
 
 #diagramHeadContainer {
-    position: sticky; /* Keep it fixed relative to its nearest scrollable ancestor */
+    position: absolute;
     top: 0;
     /* left: 0; */
+    --asdf-head-height: 0px; /* updated from js accordingly */
     height: var(--asdf-head-height);
     overflow-y: hidden;
     overflow-x: hidden;
@@ -164,12 +164,13 @@ figure {
 }
 
 #diagramContainer {
+    position: absolute;
+    top: 0;
+    /* left: 0; */
     overflow-y: auto;
     overflow-x: auto;
     font-weight: 300;
     height: 100%;
-    position: relative;
-    top: calc(0px - var(--asdf-head-height));
 }
 
 #divider {
@@ -211,6 +212,18 @@ figure {
     box-shadow: none;
     color: inherit;
     background-color: inherit;
+}
+
+text.title {
+    fill: darkslategray;
+    font-weight: 100;
+}
+rect.title {
+    fill: #f5f5f5;
+    stroke-width: 0.5px;
+    stroke-dasharray: 5, 2;
+    rx: 5;
+    ry: 5;
 }
 
 /* text.actor, */
