@@ -5,6 +5,7 @@
     --asdf-special-color: orangered;
     --asdf-toolbar-height: 65px;
     --asdf-divider-height: 2px;
+    --asdf-diagram-padding: 20px;
 }
 
 @font-face {
@@ -143,8 +144,7 @@ figure {
 }
 
 #diagramArea {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: var(--asdf-diagram-padding);
     font-weight: 300;
     position: relative;
     height: 85%;
@@ -153,9 +153,9 @@ figure {
 #diagramHeadContainer {
     position: absolute;
     top: 0;
-    /* left: 0; */
     --asdf-head-height: 0px; /* updated from js accordingly */
     height: var(--asdf-head-height);
+    width: calc(100vw - var(--asdf-diagram-padding));
     overflow-y: hidden;
     overflow-x: hidden;
     visibility: hidden;
@@ -166,11 +166,11 @@ figure {
 #diagramContainer {
     position: absolute;
     top: 0;
-    /* left: 0; */
+    height: 100%;
+    width: calc(100vw - var(--asdf-diagram-padding));
     overflow-y: auto;
     overflow-x: auto;
     font-weight: 300;
-    height: 100%;
 }
 
 #divider {
@@ -181,8 +181,8 @@ figure {
 
 #addinfoDisplay {
     height: calc(15vh - var(--asdf-divider-height));
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: var(--asdf-diagram-padding);
+    padding-right: var(--asdf-diagram-padding);
     padding-top: 10px;
     padding-bottom: 0px;
     background: var(--asdf-body-bg-color);
