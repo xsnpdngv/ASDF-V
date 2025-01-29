@@ -519,19 +519,20 @@ class AsdfModel {
     }
 
     #removeSignalsOfFilteredActors(diag) {
-        if ( ! diag || ! diag.signals || diag.signals.length === 0 || this.filteredActors.size() === 0 ) {
+        if ( ! diag?.signals) {
             return;
         }
 
-        const filteredActors = this.filteredActors.set;
-        diag.signals = diag.signals.filter(signal => {
-            return ! ( ( signal.type[0] === 'S' &&
-                         ( filteredActors.has(signal.actorA.name) ||
-                           filteredActors.has(signal.actorB.name) ) ) ||
-                       ( signal.type[0] === 'N'  &&
-                         filteredActors.has(signal.actor.name ) ) );
-        });
-
+        if (diag.signals.length > 0 && this.filteredActors.size() > 0 ) {
+            const filteredActors = this.filteredActors.set;
+            diag.signals = diag.signals.filter(signal => {
+                return ! ( ( signal.type[0] === 'S' &&
+                            ( filteredActors.has(signal.actorA.name) ||
+                            filteredActors.has(signal.actorB.name) ) ) ||
+                        ( signal.type[0] === 'N'  &&
+                            filteredActors.has(signal.actor.name ) ) );
+                });
+        }
         diag.netSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
     }
 
