@@ -516,10 +516,6 @@ class AsdfModel {
         }
         diag.signals.splice(0, this.#signalWindow.startIdx);
         diag.windowSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
-        if (this.#signalWindow.activeSeqNum) {
-            // find index inside the signal window
-            this.#signalWindow.activeIdx = diag.signals.findIndex((s) => s.seqNum === this.#signalWindow.activeSeqNum);
-        }
     }
 
     #removeSignalsOfFilteredActors(diag) {
@@ -537,6 +533,12 @@ class AsdfModel {
                             filteredActors.has(signal.actor.name ) ) );
                 });
         }
+
+        if (this.#signalWindow.activeSeqNum) {
+            // find active's index among the signals to be shown
+            this.#signalWindow.activeIdx = diag.signals.findIndex((s) => s.seqNum === this.#signalWindow.activeSeqNum);
+        }
+
         diag.netSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
     }
 
