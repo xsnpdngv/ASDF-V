@@ -711,11 +711,11 @@ class AsdfViewModel  {
         let keySeq = "";
         document.addEventListener("keydown", function (event) {
 
-            vm.#hoverGate.close();
-
-            if (event.metaKey) {
+            if (event.metaKey || event.ctrlKey) {
                 return;
             }
+
+            vm.#hoverGate.close();
 
             if (vm.#search.isActive()) {
                 if (event.key === "Enter") { vm.#searchHitNavigator.performSearchSignals(); }
