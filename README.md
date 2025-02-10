@@ -1,8 +1,9 @@
 # ASDF-V
 
 ASDF-V is an interactive vector graphics tool for visualizing sequence
-diagrams in the Augmented Sequence Diagram Format (ASDF).  Its design is
-minimalist and responsive.
+diagrams in the Augmented Sequence Diagram Format (ASDF).  Generate
+message-sending traces in an ASDF-compliant file and explore them
+visually with intuitive controls.
 
 
 ## Features
@@ -14,7 +15,7 @@ minimalist and responsive.
 - Emphasize special signals by coloring
 - Keep visualization preferences in the browser's local storage
 - Decorate signals with sequence numbers and timestamps
-- Paginate large diagrams, so they render fastly
+- Paginate large diagrams, so they render promptly
 - Keep participants at the top inside view for tall diagrams
 - Move around and search the diagram with Vim-like keyboard shortcuts
 - Show help page with keyboard shortcut reference
