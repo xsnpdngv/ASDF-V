@@ -351,6 +351,7 @@ class PersistentInt {
 class AsdfModel {
     fileName = new PersistentString("AsdfModel: fileName", "");
     fileSize = new PersistentInt("AsdfModel: fileSize", 0);
+    fileLastMod = new PersistentInt("AsdfModel: fileLastMod", 0);
     diag = null;
     actorCount = 0;
     #signalWindow = {};
@@ -400,6 +401,7 @@ class AsdfModel {
         let model = this;
         model.fileName.set(file.name);
         model.fileSize.set(file.size);
+        model.fileLastMod.set(file.lastModified);
         const reader = new FileReader();
         reader.onload = function(e) {
             model.#diagSrc.set(e.target.result);
@@ -418,21 +420,32 @@ class AsdfModel {
     #loadDiagramFromSrc() {
         if (this.#diagSrc.length() > 0) {
             this.#loadMaster();
-            this.diag = this.#cloneMaster();
-            this.#signalWindow = {};
-            this.#postProc();
+            if(this.#diagMaster instanceof Diagram) {
+                this.diag = this.#cloneMaster();
+                this.#signalWindow = {};
+                this.#postProc();
+            } else {
+                this.diag = this.#diagMaster; // i.e. the error itself
+            }
         }
         this.#notify();
     }
 
     #reloadDiagram() {
-        this.diag = this.#cloneMaster();
-        this.#postProc();
-        this.#notify();
+        if(this.#diagMaster instanceof Diagram) {
+            this.diag = this.#cloneMaster();
+            this.#postProc();
+            this.#notify();
+        }
     }
 
     #loadMaster() {
-        this.#diagMaster = Diagram.parse(this.#diagSrc.value);
+        try {
+            this.#diagMaster = Diagram.parse(this.#diagSrc.value);
+        } catch(e) {
+            this.#diagMaster = e;
+        }
+        return this.#diagMaster;
     }
 
     #cloneMaster() {
@@ -632,6 +645,7 @@ class AsdfViewModel  {
     #hoverGate = new AsdfViewModel.HoverGate();
     #participantHeader;
     #spinner = new AsdfViewModel.Spinner('spinner');
+    #alerter = new AsdfViewModel.Alerter('alertPlaceholder');
 
     constructor(model) {
         this.#model = model;
@@ -681,9 +695,15 @@ class AsdfViewModel  {
     }
 
     update() {
+        if( this.#model.diag &&  ! (this.#model.diag instanceof Diagram)) {
+            this.#handleLoadError();
+            return;
+        }
+        this.#alerter.clear();
+
         this.#positionDivider();
         this.#searchHitNavigator.invalidateLastSearch();
-        this.#model.diag ? this.#search.show() : this.#search.hide();
+        this.#model.diag instanceof Diagram ? this.#search.show() : this.#search.hide();
         if ( ! this.#model.diag) { return; }
         this.#saveScrollPosition();
         this.#paginator.assess();
@@ -701,6 +721,18 @@ class AsdfViewModel  {
         this.#spinner.done();
     }
 
+    #handleLoadError() {
+        console.log(this.#model.diag);
+        const fileLastModStr = this.#timestampToStr(this.#model.fileLastMod.get());
+        this.#alerter.appendAlert(`<h5>${this.#model.fileName.get()}</h5>${fileLastModStr}<br>${this.#model.fileSize.get()} bytes <hr>`
+                                  + this.#model.diag, "danger");
+        this.#spinner.done();
+        this.#model.clear();
+        this.#clearDiagram();
+        this.#searchHitNavigator.invalidateLastSearch();
+        this.#model.diag instanceof Diagram ? this.#search.show() : this.#search.hide();
+    }
+
     #addDocumentEventListeners() {
         this.#addKeyboardShortcuts();
         window.addEventListener('resize', () => this.#syncScroll());
@@ -711,7 +743,7 @@ class AsdfViewModel  {
         let keySeq = "";
         document.addEventListener("keydown", function (event) {
 
-            if (event.metaKey || event.ctrlKey) {
+            if ( ! vm.#model.diag || event.metaKey || event.ctrlKey) {
                 return;
             }
 
@@ -790,6 +822,15 @@ class AsdfViewModel  {
 
 
     // ---- diagram ----
+    #clearDiagram() {
+        this.#diagramDiv.innerHTML = "";
+        this.#participantHeader.hide();
+        this.#showAddinfoContent(-1);
+        this.#paginator.hide();
+        this.#search.hide();
+        this.#resetFileInputLabel();
+    }
+
     #updateDiagram() {
         this.#diagramDiv.innerHTML = "";
         this.#model.diag.drawSVG(this.#diagramDiv, { theme: 'simple' });
@@ -868,6 +909,7 @@ class AsdfViewModel  {
 
     fileInputOnChange(event) {
         this.#spinner.spin();
+        this.#alerter.clear();
         this.#paginator.init();
         this.#diagramContainer.scrollTop = 0;
         this.#model.loadDiagramFromFile(event.target.files[0]);
@@ -911,6 +953,10 @@ class AsdfViewModel  {
         }
     }
 
+    #resetFileInputLabel() {
+        this.#fileInputLabel.innerHTML = "open";
+    }
+
     #showTimeOnChange(vm, isOn) {
         vm.#initShowTime(isOn);
         vm.update();
@@ -935,6 +981,7 @@ class AsdfViewModel  {
     }
 
     resetToolbarOnClick() {
+        this.#alerter.clear();
         Object.entries(this.#toggles).forEach(([key, value]) => { value.reset(); });
         this.#times.reset();
         this.#resetScrollPosition();
@@ -1089,6 +1136,15 @@ class AsdfViewModel  {
         if ( ! this.#model.diag) { this.#divider.toBottom(); }
         else if ( ! this.wasDiag) { this.#divider.toDefaultPos(); }
         this.wasDiag = !! this.#model.diag;
+    }
+
+    #timestampToStr(ts) {
+        const lastMod = new Date(ts);
+        const str = lastMod.getFullYear() + '-' +
+                    String(lastMod.getMonth()+1).padStart(2, '0') + '-' +
+                    String(lastMod.getDate()).padStart(2, '0') + ' ' +
+                    lastMod.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return str;
     }
 
 
@@ -2080,6 +2136,31 @@ class AsdfViewModel  {
             this.#guiEl.style.visibility = 'hidden';
         }
     };
+
+
+    static Alerter = class Alerter {
+        #guiEl;
+
+        constructor(guiElId) {
+            this.#guiEl = document.getElementById(guiElId);
+        }
+
+        appendAlert(message, type) {
+            const wrapper = document.createElement('div')
+            wrapper.innerHTML = [
+                `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+                `   <div><pre>${message}</pre></div>`,
+                // '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                '</div>'
+            ].join('')
+
+            this.#guiEl.append(wrapper)
+        }
+
+        clear() {
+            this.#guiEl.innerHTML = "";
+        }
+    }
 }
 
 

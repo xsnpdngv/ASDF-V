@@ -150,6 +150,12 @@ figure {
     height: 85%;
 }
 
+#alertPlaceholder {
+    position: absolute;
+    top: 0;
+    z-index: 100;
+}
+
 #diagramHeadContainer {
     position: absolute;
     top: 0;
