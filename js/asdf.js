@@ -728,9 +728,6 @@ class AsdfViewModel  {
                                   + this.#model.diag, "danger");
         this.#spinner.done();
         this.#model.clear();
-        this.#clearDiagram();
-        this.#searchHitNavigator.invalidateLastSearch();
-        this.#model.diag instanceof Diagram ? this.#search.show() : this.#search.hide();
     }
 
     #addDocumentEventListeners() {
@@ -829,6 +826,8 @@ class AsdfViewModel  {
         this.#paginator.hide();
         this.#search.hide();
         this.#resetFileInputLabel();
+        this.#searchHitNavigator.invalidateLastSearch();
+        this.#model.diag instanceof Diagram ? this.#search.show() : this.#search.hide();
     }
 
     #updateDiagram() {
@@ -914,6 +913,7 @@ class AsdfViewModel  {
         this.#diagramContainer.scrollTop = 0;
         this.#model.loadDiagramFromFile(event.target.files[0]);
         this.#isInputFileChange = true;
+        this.#clearDiagram();
     }
 
     #updateFileInputLabel() {
