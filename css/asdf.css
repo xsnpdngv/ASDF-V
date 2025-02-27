@@ -403,7 +403,7 @@ path.gridline {
 }
 path.gridline.active {
     stroke: #adadad;
-    stroke-width: 1.7px;
+    stroke-width: 1px;
     stroke-dasharray: 5, 5;
 }
 text.ts.active {
