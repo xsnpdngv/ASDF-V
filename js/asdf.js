@@ -612,6 +612,7 @@ class AsdfViewModel  {
     static #TIMESTAMP_WIDTH = 45;
     #model = {}; // direct access to the model
     #diagSignals = []; // helper array of signals of original diagram (without notes)
+    #diagNotes = []; // helper array of notes of original diagram
     #actorOrder = new PersistentArray("AsdfViewModel: actorOrder");
     #diagramHeadContainer = document.getElementById("diagramHeadContainer");
     #diagramContainer = document.getElementById("diagramContainer");
@@ -620,6 +621,7 @@ class AsdfViewModel  {
     #isInputFileChange = false;
     #times = new AsdfViewModel.Times('times');
     #signalCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: signalCursor", this.#diagSignals);
+    #noteCursor = new AsdfViewModel.SignalCursor("AsdfViewModel-SignalCursor: noteCursor", this.#diagNotes);
     #signalNavigator = new AsdfViewModel.SignalNavigator('path.signal', this.#signalCursor,
                                                          { diagramContainerId: "diagramContainer" },
                                                          () => this.#applySignalClick(),
@@ -632,6 +634,7 @@ class AsdfViewModel  {
         "showOrphans": new AsdfViewModel.PersistentToggle({toggleId: "showOrphansToggle"}, false, this.#showOrphansOnChange, this)
     }
     #signalDecorator = new AsdfViewModel.SignalDecorator({signal: 'signal', actor: 'actor'}, this.#signalCursor, this.#toggles);
+    #noteDecorator = new AsdfViewModel.NoteDecorator({note: 'note', actor: 'actor'}, this.#noteCursor, this.#toggles);
     #help = new AsdfViewModel.OffCanvas("helpOffcanvas");
     #paginator;
     #search = new AsdfViewModel.Search({ searchElId: "diagramSearch",
@@ -849,11 +852,18 @@ class AsdfViewModel  {
         this.#applySignalClick();
         this.#markActors();
         this.#addSignalEventListeners();
+        this.#updateDiagNotes();
+        this.#noteDecorator.render();
     }
 
     #updateDiagSignals() {
         this.#diagSignals = this.#model.diag.signals.filter(s => s.type[0] === 'S');
         this.#signalCursor.setCollection(this.#diagSignals);
+    }
+
+    #updateDiagNotes() {
+        this.#diagNotes = this.#model.diag.signals.filter(s => s.type[0] === 'N');
+        this.#noteCursor.setCollection(this.#diagNotes);
     }
 
     // ---- scroll ----
@@ -1587,6 +1597,97 @@ class AsdfViewModel  {
             }
         }
     }; // SignalDecorator
+
+
+    // ---- NoteDecorator ----
+    static NoteDecorator = class NoteDecorator {
+        static #TIMESTAMP_CLASSNAME = "note-ts";
+        static #GRIDLINE_CLASSNAME = "note-gridline";
+        #selectors = { note: "", actor: "" };
+        #cursor = {};
+        #toggles = [];
+
+        constructor(selectors, noteCursor, toggles) {
+            this.#selectors = selectors;
+            this.#cursor = noteCursor instanceof AsdfViewModel.SignalCursor ? noteCursor : null;
+            this.#toggles = toggles;
+        }
+
+        render() {
+            this.draw();
+            this.mark();
+        }
+
+        draw() {
+            this.drawTimestamps();
+        }
+
+        mark() {
+            this.markNoteBoxes();
+            this.markNoteTexts();
+        }
+
+        drawTimestamps() {
+            if ( ! this.#toggles['showTime'].isOn()) {
+                return;
+            }
+
+            const noteBoxes = document.querySelectorAll("rect." + this.#selectors.note);
+            const actorPaths = document.querySelectorAll("path." + this.#selectors.actor);
+            const notes = this.#cursor.getCollection();
+
+            if (noteBoxes.length < 1) {
+                return;
+            }
+
+            let svg = noteBoxes[0].parentNode;
+            // add a background layer to append gridlines to
+            const bkgGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            svg.insertBefore(bkgGroup, svg.firstChild);
+
+            const gridlineWidth = actorPaths[actorPaths.length-1].getPointAtLength(0).x;
+            noteBoxes.forEach((rect, index) => {
+                const y = parseFloat(rect.getAttribute("y"));
+                const h = parseFloat(rect.getAttribute("height"));
+
+                const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                ts.setAttribute("x", 0);
+                ts.setAttribute("y", y+(h/2)-6);
+                ts.setAttribute("class", NoteDecorator.#TIMESTAMP_CLASSNAME);
+                ts.textContent = notes[index]?.addinfoHead?.timestamp?.split('T')[1] || "";
+
+                const gridline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                gridline.setAttribute("d", `M${0},${y+(h/2)} h${gridlineWidth}`);
+                gridline.setAttribute("class", NoteDecorator.#GRIDLINE_CLASSNAME);
+
+                bkgGroup.append(gridline, ts);
+            });
+        }
+
+        markNoteTexts() {
+            const noteTexts = document.querySelectorAll("text." + this.#selectors.note);
+
+            this.#cursor.getCollection().forEach((s, i) => {
+                let text = noteTexts[i];
+
+                if (s?.addinfoHead && s.addinfoHead?.isSpecial) {
+                    text.classList.add("special");
+                }
+            });
+        }
+
+        markNoteBoxes() {
+            const noteBoxes = document.querySelectorAll("rect." + this.#selectors.note);
+
+            this.#cursor.getCollection().forEach((s, i) => {
+                let text = noteBoxes[i];
+
+                if (s?.addinfoHead && s.addinfoHead?.isSpecial) {
+                    text.classList.add("special");
+                }
+            });
+        }
+    }; // NoteDecorator
 
 
     // ---- SignalNavigator ----

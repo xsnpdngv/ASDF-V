@@ -2,7 +2,8 @@
     --asdf-body-bg-color: #fafafa;
     --asdf-highlight-color: rgb(255, 255, 132);
     --asdf-highlight-color2: rgb(255, 255, 132);
-    --asdf-special-color: orangered;
+    --asdf-special-color: rgb(255, 34, 0);
+    --asdf-special-boxbg: rgb(253, 247, 244);
     --asdf-toolbar-height: 65px;
     --asdf-divider-height: 2px;
     --asdf-diagram-padding: 20px;
@@ -339,9 +340,12 @@ body.no-hover text.signal:hover:not(.active) {
     stroke: none;
     font-style: normal;
 }
-text.signal.special {
+text.signal.special,
+text.note.special {
     fill: var(--asdf-special-color);
     color: var(--asdf-special-color);
+    font-family: monospace;
+    font-size: 10px;
 }
 text.signal.special:hover {
     /* stroke: orangered; */
@@ -392,12 +396,14 @@ text.seq-num.instance {
     /* fill: darkgrey; */
     /* fill: gainsboro; */
 }
-text.ts {
+text.ts,
+text.note-ts {
     font-family: 'stdfont';
     font-size: 20px;
     fill: darkgrey;
 }
-path.gridline {
+path.gridline,
+path.note-gridline {
     stroke: #f0f0f0;
     stroke-width: 1px;
 }
@@ -412,9 +418,15 @@ text.ts.active {
     /* font-weight: bold; */
 }
 
-rect.note {
+text.note.special {
+    fill: var(--asdf-special-color);
 }
-text.note {
+rect.note.special {
+    fill: var(--asdf-special-boxbg);
+}
+rect.note{
+    rx: 5;
+    ry: 5;
 }
 
 .move {
