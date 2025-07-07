@@ -2,7 +2,7 @@
     --asdf-body-bg-color: #fafafa;
     --asdf-highlight-color: rgb(255, 255, 132);
     --asdf-highlight-color2: rgb(255, 255, 132);
-    --asdf-special-color: rgb(255, 34, 0);
+    --asdf-special-color: rgb(238, 32, 0);
     --asdf-special-boxbg: rgb(253, 247, 244);
     --asdf-toolbar-height: 65px;
     --asdf-divider-height: 2px;
@@ -267,6 +267,10 @@ text.head-actor.filtered:hover {
     cursor: pointer;
     text-decoration: none;
 }
+text.head-actor.special,
+text.actor.special {
+    fill: var(--asdf-special-color);
+}
 
 @keyframes svg-flash {
     0% {
@@ -286,6 +290,10 @@ rect.head-actor {
     ry: 5;
     stroke-width: 2px;
 }
+rect.actor.special,
+rect.head-actor.special {
+    /* stroke: var(--asdf-special-color); */
+}
 rect.actor.orphan,
 rect.head-actor.orphan {
     stroke: none;
@@ -300,6 +308,9 @@ path.actor.filtered {
 }
 path.actor.orphan {
     stroke: none;
+}
+path.actor.special {
+    /* stroke: var(--asdf-special-color); */
 }
 path.actor:not(.filtered) {
     stroke-width: 0.4px;
@@ -423,10 +434,14 @@ text.note.special {
 }
 rect.note.special {
     fill: var(--asdf-special-boxbg);
+    /* stroke-dasharray: 3, 3; */
+    stroke: var(--asdf-special-color);
+    stroke-width: 1px;
 }
 rect.note{
     rx: 5;
     ry: 5;
+    stroke-width: 1px;
 }
 
 .move {

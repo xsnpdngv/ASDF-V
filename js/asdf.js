@@ -517,6 +517,9 @@ class AsdfModel {
                 s.actorB.signalCount++;
             } else /* if (s.type[0] === 'N') */ {
                 s.actor.signalCount++;
+                if(s.addinfoHead.isSpecial) {
+                    s.actor.isSpecial = true;
+                }
             }
         });
         this.orphanCount = this.diag.actors.filter(a => ( (a?.signalCount || 0) <= 0 && ! this.filteredActors.has(a.name) )).length;
@@ -1139,6 +1142,14 @@ class AsdfViewModel  {
                 actorTexts[2*i+1].classList.add(cl);
                 actorPaths[i].classList.add(cl);
             }
+            cl = 'special';
+            if (a.isSpecial) {
+                actorBoxes[2*i].classList.add(cl);
+                actorBoxes[2*i+1].classList.add(cl);
+                actorTexts[2*i].classList.add(cl);
+                actorTexts[2*i+1].classList.add(cl);
+                actorPaths[i].classList.add(cl);
+            }
         });
     }
 
@@ -1231,6 +1242,11 @@ class AsdfViewModel  {
                 }
                 cl = 'orphan';
                 if (a.signalCount == 0) {
+                    headActorBoxes[i].classList.add(cl);
+                    headActorTexts[i].classList.add(cl);
+                }
+                cl = 'special';
+                if (a.isSpecial) {
                     headActorBoxes[i].classList.add(cl);
                     headActorTexts[i].classList.add(cl);
                 }
