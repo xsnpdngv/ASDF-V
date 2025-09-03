@@ -555,6 +555,7 @@ class AsdfModel {
         }
 
         diag.netSignalCount = diag.signals.filter(s => s.type[0] === 'S').length;
+        diag.grossSignalCount = diag.signals.length;
     }
 
     keepOrphans(isOn) {
@@ -1925,7 +1926,7 @@ class AsdfViewModel  {
         }
 
         length() {
-            return Math.max(1, Math.ceil((this.#model?.diag?.netSignalCount || 0) / this.#pageSize)) || 0;
+            return Math.max(1, Math.ceil((this.#model?.diag?.grossSignalCount || 0) / this.#pageSize)) || 0;
         }
 
         nextPage() {
