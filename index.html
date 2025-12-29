@@ -13,10 +13,10 @@
     <div class="container-fluid justify-content-start" id="toolbar">
 
         <ul class="navbar-nav col-lg-7 col-xl-6 col-xxl-5 justify-content-start align-items-center">
-        <a class="navbar-brand pt-0 pb-0" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V &rang;&rang;</a>
+        <a class="navbar-brand pt-0 pb-0 browser-only" id="navbarBrand" href="" onclick="asdfVM.navbarBrandOnClick()">ASDF-V &rang;&rang;</a>
 
         <div>
-            <label class="btn btn-sm btn-light btn-asdf multiline dense me-3" for="fileInput" id="fileInputLabel">open</label>
+            <label class="btn btn-sm btn-light btn-asdf multiline dense me-3 browser-only" for="fileInput" id="fileInputLabel">open</label>
             <input class="form-control form-control-sm" id="fileInput" type="file" style="display: none;" accept=".asdf"
              onchange="asdfVM.fileInputOnChange(event)" onclick="asdfVM.fileInputOnClick()">
         </div>

@@ -1,0 +1,51 @@
+{
+  "name": "asdf-v",
+  "displayName": "ASDF-V",
+  "description": "Augmented Sequence Diagram Format (ASDF) Visualizer using HTML/JS/SVG",
+  "version": "1.0.0",
+  "publisher": "voidcsillag",
+  "icon": "img/icon.png",
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/xsnpdngv/ASDF-V"
+  },
+  "categories": [
+      "Visualization",
+      "Debuggers"
+  ],
+  "keywords": [
+    "asdf",
+    "sequence diagram",
+    "protocol analysis",
+    "visualization"
+  ],
+
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+  ],
+  "main": "./ext-out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "asdf.preview",
+        "displayName": "ASDF-V",
+        "selector": [
+          {
+            "filenamePattern": "*.asdf"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -50,20 +50,34 @@ Oh, hi
 
 ### document:
 
-![ASDF syntax](img/asdf-rr.svg)
+![ASDF syntax](img/asdf-rr.png)
 
 ### add-info:
 
-![ASDF addinfo syntax](img/asdf-add-info-rr.svg)
+![ASDF addinfo syntax](img/asdf-add-info-rr.png)
 
 ### name-value:
 
-![ASDF name-value syntax](img/asdf-name-value-rr.svg)
+![ASDF name-value syntax](img/asdf-name-value-rr.png)
+
 
 ## Usage
 
-Open `index.html`, choose a file of the syntax shown above
-and explore the visualization.
+### Browser
+
+The ASDF visualizer can be used as a standalone web application.
+
+1. Open `index.html` in a browser.
+2. Click Open and select an ASDF file that follows the syntax shown above.
+3. The file is parsed and rendered as an interactive sequence diagram.
+
+### Visual Studio Code
+
+The same visualizer is also available as a VS Code extension.
+
+1. Install the ASDF Sequence Diagram Viewer extension.
+2. Open any `.asdf` file in the editor.
+3. The diagram preview opens automatically and updates as the file changes.
 
 
 ## Dependencies

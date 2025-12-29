@@ -1,0 +1,45 @@
+; ABNF (Augmented Backus-Naur Form) syntax definition of
+; ASDF (Augmented Sequence Diagram Format)
+
+document      = *( entry / empty-line )
+empty-line    = (*WSP LF)
+entry         = ( signal / note ) 1*LF
+signal        = participant ARROW participant LET arrow-text [ add-info ]
+note          = "note" BOX-PLACEMENT participant LET box-text [ add-info ]
+
+participant   = safe-string / quoted-string
+arrow-text    = inline-string / quoted-string
+box-text      = inline-string / quoted-string
+
+add-info      = BLOCK-MARKER add-info-head [ add-info-body ] BLOCK-MARKER
+add-info-head = HEAD-START fields HEAD-END
+fields        = field [ FIELD-SEP fields ]
+field         = field-name LET JSON-value
+field-name    = quoted-string
+add-info-body = text-block
+
+; Strings
+quoted-string = DQUOTE *( QCHAR / WSP ) DQUOTE
+inline-string = VCHAR *( VCHAR / WSP )    ; no LF
+safe-string   = VCHAR *( SCHAR / WSP )    ; [^:-"]
+text-block    = LF *( VCHAR / SP / LF )   ; no HTAB
+
+; Tokens
+ARROW         = "->" / "->>" / "-->" / "-->>"
+BOX-PLACEMENT = "left of" / "right of" / "over"
+LET           = ":"
+BLOCK-MARKER  = LF HTAB "~~~"
+HEAD-START    = "{ "
+HEAD-END      = "}"
+FIELD-SEP     = ","
+
+; Characters
+SCHAR         = %x21 / %x23-2C / %x2E-71 / %x73-7E
+                                 ; safe char, QCHAR except ':' and '-'
+QCHAR         = %x21 / %x23-7E   ; quoted char, VCHAR except DQUOTE
+VCHAR         = %x21-7E          ; visible characters
+DQUOTE        = %x22             ; double quote ('"')
+WSP           = SP / HTAB        ; white space
+SP            = %x20             ; space
+HTAB          = %x09             ; horizontal tab
+LF            = %x0A             ; linefeed (Unix newline)

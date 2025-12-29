@@ -397,15 +397,27 @@ class AsdfModel {
         this.#reloadDiagram();
     }
 
+    loadDiagramFromText(text, meta = {}) {
+        const model = this;
+
+        model.fileName.set(meta.name ?? '(VS Code)');
+        model.fileSize.set(meta.size ?? text.length);
+        model.fileLastMod.set(meta.lastModified ?? Date.now());
+
+        model.#diagSrc.set(text);
+        model.#loadDiagramFromSrc();
+    }
+
     loadDiagramFromFile(file) {
-        let model = this;
-        model.fileName.set(file.name);
-        model.fileSize.set(file.size);
-        model.fileLastMod.set(file.lastModified);
+        const model = this;
+
         const reader = new FileReader();
         reader.onload = function(e) {
-            model.#diagSrc.set(e.target.result);
-            model.#loadDiagramFromSrc();
+            model.loadDiagramFromText(e.target.result, {
+                name: file.name,
+                size: file.size,
+                lastModified: file.lastModified
+            });
         };
         reader.readAsText(file);
     }
@@ -679,6 +691,7 @@ class AsdfViewModel  {
     }
 
     init() {
+        this.#addVSCodeIndicator();
         this.#addDiagramEventListeners();
         this.#model.init({ isShowIds: this.#toggles.showIds.isOn(),
                            isKeepOrphans: this.#toggles.showOrphans.isOn()});
@@ -740,6 +753,27 @@ class AsdfViewModel  {
     #addDocumentEventListeners() {
         this.#addKeyboardShortcuts();
         window.addEventListener('resize', () => this.#syncScroll());
+        window.addEventListener('message', event => this.#handleVSCodeMessage(event.data));
+    }
+
+    #handleVSCodeMessage(message) {
+        if (message.type === 'update') {
+            this.#loadFromVSCode(message.text);
+        }
+    }
+
+    #loadFromVSCode(text) {
+        this.#spinner.spin();
+        this.#alerter.clear();
+        this.#paginator.init();
+        this.#diagramContainer.scrollTop = 0;
+
+        this.#isInputFileChange = true;
+        this.#model.loadDiagramFromText(text, {
+            name: '',
+            size: text.length,
+            lastModified: Date.now()
+        });
     }
 
     #addKeyboardShortcuts() {
@@ -848,6 +882,13 @@ class AsdfViewModel  {
         this.#diagramDiv.addEventListener("drawComplete", (event) => this.#diagramOnDrawComplete(event));
     }
 
+    #addVSCodeIndicator() {
+        const IS_VSCODE = typeof acquireVsCodeApi === 'function';
+        if (IS_VSCODE) {
+            document.documentElement.classList.add('vscode');
+        }
+    }
+
     #diagramOnDrawComplete(event) {
         this.#restoreDiagramScrollPosition();
         this.#updateDiagSignals();
@@ -933,7 +974,8 @@ class AsdfViewModel  {
     #updateFileInputLabel() {
         let fil = this.#fileInputLabel
         const filteredActorCount = this.#model.diag.actors.filter(actor => this.#model.filteredActors.has(actor.name)).length;
-        fil.textContent = this.#model.fileName.get() + "\n";
+        fil.textContent = this.#model.fileName.get();
+        fil.textContent = fil.textContent ? fil.textContent + "\n" : "";
         fil.textContent += this.#model.actorCount;
         if (filteredActorCount > 0 || this.#model.orphanCount > 0) {
             fil.textContent += ` pts (`

@@ -456,3 +456,7 @@ rect.note{
     fill: black;
     transition: opacity 0s ease;
 }
+
+.vscode a.browser-only {
+    pointer-events: none;
+}

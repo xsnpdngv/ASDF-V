@@ -1,0 +1,26 @@
+ext-src/
+*.ts
+tsconfig.json
+xtrc*/
+
+# Node / tooling
+node_modules/
+npm-debug.log*
+yarn.lock
+package-lock.json
+
+# Git / meta
+.git/
+.gitignore
+.github/
+
+# VS Code dev files
+.vscode/
+.vscode-test/
+
+# Build / packaging leftovers
+*.vsix
+
+# OS junk
+.DS_Store
+Thumbs.db

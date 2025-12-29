@@ -1,0 +1,36 @@
+xtrc/
+*.asdf
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript build output
+out/
+*.tsbuildinfo
+
+# VS Code extension packaging
+*.vsix
+
+# VS Code local state
+.vscode/
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Coverage / test output (future-proofing)
+coverage/
+
+# Logs
+*.log
+
