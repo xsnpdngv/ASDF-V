@@ -8,10 +8,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # TypeScript build output
-out/
+ext-out/
 *.tsbuildinfo
 
 # VS Code extension packaging
+package-lock.json
 *.vsix
 
 # VS Code local state
