@@ -379,7 +379,11 @@ class AsdfModel {
     init(dflt = {isShowIds: false, isKeepOrphans: false} ) {
         this.#isShowIds = dflt?.isShowIds;
         this.#isKeepOrphans = dflt?.isKeepOrphans;
-        this.#loadDiagramFromSrc();
+
+        // load diagram from stored source only in browser
+        if (typeof acquireVsCodeApi !== 'function') {
+            this.#loadDiagramFromSrc();
+        }
     }
 
     clear() {
