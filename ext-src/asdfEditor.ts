@@ -17,6 +17,12 @@ export class AsdfEditorProvider implements vscode.CustomTextEditorProvider
         webviewPanel: vscode.WebviewPanel
     ): Promise<void>
     {
+        // If VS Code restored this webview on startup, drop it.
+        if (!webviewPanel.active) {
+            webviewPanel.dispose();
+            return;
+        }
+
         // Always drop the previous preview
         if (AsdfEditorProvider.activePanel)
         {
