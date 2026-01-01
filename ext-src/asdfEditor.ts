@@ -1,131 +1,88 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 
-export class AsdfEditorProvider implements vscode.CustomTextEditorProvider
-{
+export class AsdfEditorProvider implements vscode.CustomTextEditorProvider {
+
     public static readonly viewType = 'asdf.preview';
-
-    // Single active preview panel (always replaced, never reused)
     private static activePanel: vscode.WebviewPanel | undefined;
 
-    constructor(private readonly context: vscode.ExtensionContext)
-    {
+    constructor(private readonly context: vscode.ExtensionContext) {}
+
+    public static register(context: vscode.ExtensionContext): vscode.Disposable {
+        return vscode.window.registerCustomEditorProvider(
+            AsdfEditorProvider.viewType,
+            new AsdfEditorProvider(context),
+            {
+                supportsMultipleEditorsPerDocument: false
+            }
+        );
     }
 
     async resolveCustomTextEditor(
         document: vscode.TextDocument,
         webviewPanel: vscode.WebviewPanel
-    ): Promise<void>
-    {
-        // If VS Code restored this webview on startup, drop it.
-        if (!webviewPanel.active) {
-            webviewPanel.dispose();
-            return;
-        }
+    ): Promise<void> {
 
-        // Always drop the previous preview
-        if (AsdfEditorProvider.activePanel)
-        {
+        // If a preview already exists, kill it
+        if (AsdfEditorProvider.activePanel) {
             AsdfEditorProvider.activePanel.dispose();
             AsdfEditorProvider.activePanel = undefined;
         }
 
-        // This panel becomes the active preview
+        // Adopt the newly created panel
         AsdfEditorProvider.activePanel = webviewPanel;
+        webviewPanel.reveal(webviewPanel.viewColumn, true);
 
-        // Configure webview
-        webviewPanel.webview.options =
-        {
+        webviewPanel.onDidDispose(() => {
+            if (AsdfEditorProvider.activePanel === webviewPanel) {
+                AsdfEditorProvider.activePanel = undefined;
+            }
+        });
+
+        webviewPanel.webview.options = {
             enableScripts: true,
-            localResourceRoots:
-            [
-                this.context.extensionUri
+            localResourceRoots: [
+                vscode.Uri.file(this.context.extensionPath)
             ]
         };
 
-        // Set tab title explicitly (prevents stale names)
-        webviewPanel.title =
-            document.uri.path.split('/').pop() ?? 'ASDF Preview';
+        webviewPanel.webview.html = this.getHtml(webviewPanel.webview);
 
-        // Load HTML
-        webviewPanel.webview.html =
-            this.getHtmlForWebview(webviewPanel.webview);
+        const text = document.getText();
 
-        // Push file contents into the webview
-        const updateWebview = () =>
-        {
-            webviewPanel.webview.postMessage({
-                type: 'update',
-                text: document.getText()
-            });
-        };
-
-        // Update on document changes
-        const changeSubscription =
-            vscode.workspace.onDidChangeTextDocument(e =>
-            {
-                if (e.document.uri.toString() === document.uri.toString())
-                {
-                    updateWebview();
-                }
-            });
-
-        // Cleanup
-        webviewPanel.onDidDispose(() =>
-        {
-            if (AsdfEditorProvider.activePanel === webviewPanel)
-            {
-                AsdfEditorProvider.activePanel = undefined;
+        // One-time handshake: new webview, guaranteed fresh
+        webviewPanel.webview.onDidReceiveMessage(msg => {
+            if (msg.type === 'ready') {
+                webviewPanel.webview.postMessage({
+                    type: 'update',
+                    text
+                });
             }
-            changeSubscription.dispose();
         });
-
-        // Initial render
-        updateWebview();
     }
 
-    private getHtmlForWebview(webview: vscode.Webview): string
-    {
-        // Load webview.html from repo root
-        const htmlPath = vscode.Uri.joinPath(
-            this.context.extensionUri,
-            'index.html'
-        );
+    private getHtml(webview: vscode.Webview): string {
+        const htmlPath = path.join(this.context.extensionPath, 'index.html');
+        let html = fs.readFileSync(htmlPath, 'utf8');
 
-        let html = fs.readFileSync(htmlPath.fsPath, 'utf8');
-
-        // Rewrite relative src="" and href="" URLs
         html = html.replace(
             /(src|href)="([^"]+)"/g,
-            (match, attr, value) =>
-            {
+            (_m, attr, rel) => {
                 if (
-                    value.startsWith('http') ||
-                    value.startsWith('data:') ||
-                    value.startsWith('#')
-                )
-                {
-                    return match;
+                    rel.startsWith('http') ||
+                    rel.startsWith('data:') ||
+                    rel.startsWith('vscode-webview:')
+                ) {
+                    return `${attr}="${rel}"`;
                 }
 
-                const resourceUri = webview.asWebviewUri(
-                    vscode.Uri.joinPath(this.context.extensionUri, value)
+                const uri = webview.asWebviewUri(
+                    vscode.Uri.file(path.join(this.context.extensionPath, rel))
                 );
-
-                return `${attr}="${resourceUri}"`;
+                return `${attr}="${uri}"`;
             }
         );
-
-        // Inject Content Security Policy
-        const csp = `
-            <meta http-equiv="Content-Security-Policy"
-                  content="
-                    default-src 'none';
-                    img-src ${webview.cspSource} data:;
-                    style-src ${webview.cspSource};
-                    script-src ${webview.cspSource};
-                  ">
-        `;
 
         return html;
     }

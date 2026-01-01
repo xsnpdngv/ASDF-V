@@ -332,6 +332,11 @@ class PersistentInt {
 }
 
 
+function isVSCode() {
+    return typeof acquireVsCodeApi === 'function';
+}
+
+
 /* ====================================================================
  * ASDF-V implements the Model-View-ViewModel (MVVM) pattern
  *
@@ -381,7 +386,7 @@ class AsdfModel {
         this.#isKeepOrphans = dflt?.isKeepOrphans;
 
         // load diagram from stored source only in browser
-        if (typeof acquireVsCodeApi !== 'function') {
+        if( ! isVSCode()) {
             this.#loadDiagramFromSrc();
         }
     }
@@ -630,6 +635,7 @@ class AsdfModel {
  * ============================== */
 class AsdfViewModel  {
     static #TIMESTAMP_WIDTH = 45;
+    vscode = null;
     #model = {}; // direct access to the model
     #diagSignals = []; // helper array of signals of original diagram (without notes)
     #diagNotes = []; // helper array of notes of original diagram
@@ -692,16 +698,24 @@ class AsdfViewModel  {
                                                                         this.#times);
         this.#participantHeader = new AsdfViewModel.ParticipantHeader(model, { headerContainerId: "diagramHeadContainer",
                                                                                headerDivId: "diagramHead" });
+        this.vscode = isVSCode() ? acquireVsCodeApi() : null;
     }
 
     init() {
-        this.#addVSCodeIndicator();
+        this.#addVSCodeVsBrowserIndClass();
         this.#addDiagramEventListeners();
         this.#model.init({ isShowIds: this.#toggles.showIds.isOn(),
                            isKeepOrphans: this.#toggles.showOrphans.isOn()});
         this.#addDocumentEventListeners();
         this.#addScrollEventListeners();
         this.#initTooltips();
+        this.#optIndVSCodeReady();
+    }
+
+    #optIndVSCodeReady() {
+        if (asdfVM.vscode) {
+            asdfVM.vscode.postMessage({ type: 'ready' });
+        }
     }
 
     #initTooltips() {
@@ -886,10 +900,13 @@ class AsdfViewModel  {
         this.#diagramDiv.addEventListener("drawComplete", (event) => this.#diagramOnDrawComplete(event));
     }
 
-    #addVSCodeIndicator() {
-        const IS_VSCODE = typeof acquireVsCodeApi === 'function';
-        if (IS_VSCODE) {
-            document.documentElement.classList.add('vscode');
+    #addVSCodeVsBrowserIndClass() {
+        if(this.vscode) {
+            document.documentElement.classList.add('in-vscode');
+        }
+        else
+        {
+            document.documentElement.classList.add('in-browser');
         }
     }
 

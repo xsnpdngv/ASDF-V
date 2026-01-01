@@ -2,6 +2,11 @@ ext-src/
 *.ts
 tsconfig.json
 xtrc*/
+img/*
+!img/icon.png
+!img/*.svg
+sample/
+asdf.?bnf
 
 # Node / tooling
 node_modules/

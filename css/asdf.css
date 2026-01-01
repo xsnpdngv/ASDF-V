@@ -457,6 +457,13 @@ rect.note{
     transition: opacity 0s ease;
 }
 
-.vscode a.browser-only {
+.in-vscode a.browser-only {
     pointer-events: none;
+}
+
+.in-browser-only {
+    visibility: hidden
+}
+.in-browser .in-browser-only {
+    visibility: visible;
 }
