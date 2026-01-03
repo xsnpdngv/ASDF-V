@@ -3,8 +3,9 @@
 ASDF-V is an interactive vector graphics tool for visualizing sequence
 diagrams in the Augmented Sequence Diagram Format (ASDF).  Generate
 message-sending traces in an ASDF-compliant file and explore them
-visually with intuitive controls.
-
+visually with intuitive controls.  It works both as a Visual Studio Code
+extension and as a standalone web application, including fully local use
+without a server.
 
 ## Features
 
@@ -75,26 +76,47 @@ The ASDF visualizer can be used as a standalone web application.
 
 The same visualizer is also available as a VS Code extension.
 
-1. Install the ASDF Sequence Diagram Viewer extension.
+1. Install the [ASDF-V extension](https://marketplace.visualstudio.com/items?itemName=voidcsillag.asdf-v) from the VS Code Marketplace.
 2. Open any `.asdf` file in the editor.
 3. The diagram preview opens automatically and updates as the file changes.
+
+As an alternative to installing the package from the marketplace (step
+1), the extension can be built as a `.vsix` package and then be debugged
+or installed manually:
+
+```bash
+git clone https://github.com/xsnpdngv/ASDF-V.git
+cd ASDF-V
+
+npm install
+npm run compile
+
+npm install -g @vscode/vsce # if not installed yet
+vsce package
+
+code --install-extension asdf-v-<version>.vsix
+```
 
 
 ## Dependencies
 
-### `js/sequence-diagrams.js`
+This project uses the following 3rd party javascript files residing
+in the `js/3rd-party` directory.
 
-taken from https://github.com/xsnpdngv/seqdiag-js which is a
+### `sequence-diagrams.js`
+
+This one is taken from https://github.com/xsnpdngv/seqdiag-js which is a
 modification of https://github.com/bramp/js-sequence-diagrams to handle
-the extra syntax for additional information between tilde-triplets
-(`~~~`).
+the extra syntax that makes ASDF _augmented_ in comparison to the well
+known sequence diagram format, that is the additional information
+between tilde-triplets (`~~~`).
 
 
-### `js/raphael.js`
+### `raphael.js`
 
 https://github.com/DmitryBaranovskiy/raphael
 
 
-### `js/underscore.js`
+### `underscore.js`
 
 https://github.com/jashkenas/underscore

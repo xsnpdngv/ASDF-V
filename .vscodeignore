@@ -1,12 +1,13 @@
-ext-src/
+vsce-src/
 *.ts
 tsconfig.json
 xtrc*/
-img/*
+img/
 !img/icon.png
 !img/*.svg
 sample/
-asdf.?bnf
+syntax/
+CNAME
 
 # Node / tooling
 node_modules/

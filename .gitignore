@@ -8,7 +8,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # TypeScript build output
-ext-out/
+vsce-out/
 *.tsbuildinfo
 
 # VS Code extension packaging

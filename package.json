@@ -2,7 +2,7 @@
   "name": "asdf-v",
   "displayName": "ASDF-V",
   "description": "Augmented Sequence Diagram Format (ASDF) Visualizer using HTML/JS/SVG",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "voidcsillag",
   "icon": "img/icon.png",
   "repository": {
@@ -26,7 +26,7 @@
   },
   "activationEvents": [
   ],
-  "main": "./ext-out/extension.js",
+  "main": "./vsce-out/extension.js",
   "contributes": {
     "customEditors": [
       {
