@@ -7,6 +7,7 @@ visually with intuitive controls.  It works both as a Visual Studio Code
 extension and as a standalone web application, including fully local use
 without a server.
 
+
 ## Features
 
 - View/peek additional signal information on click/hover
@@ -66,7 +67,7 @@ Oh, hi
 
 ### Browser
 
-The ASDF visualizer can be used as a standalone web application.
+The ASDF Visualizer can be used as a standalone web application.
 
 1. Open `index.html` in a browser.
 2. Click Open and select an ASDF file that follows the syntax shown above.
@@ -102,6 +103,7 @@ code --install-extension asdf-v-<version>.vsix
 
 This project uses the following 3rd party javascript files residing
 in the `js/3rd-party` directory.
+
 
 ### `sequence-diagrams.js`
 
