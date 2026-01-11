@@ -1345,7 +1345,7 @@ class AsdfViewModel  {
         #gui = {};
         #isResizing = false;
         #startY = 0;
-        #startUpperAreaHeight = 0;
+        #startLowerAreaHeight = 0;
 
         constructor(guiIds) {
             this.#gui.upperArea = document.getElementById(guiIds?.upperAreaId) || {};
@@ -1363,7 +1363,7 @@ class AsdfViewModel  {
         #dividerOnMouseDown(e) {
             this.#isResizing = true;
             this.#startY = e.clientY; 
-            this.#startUpperAreaHeight = document.getElementById("diagramArea").offsetHeight;
+            this.#startLowerAreaHeight = this.#gui.lowerArea.offsetHeight;
             document.body.style.userSelect = "none";
             document.body.style.cursor = 'row-resize';
         }
@@ -1372,12 +1372,9 @@ class AsdfViewModel  {
             if (this.#isResizing) {
                 const deltaY = e.clientY - this.#startY;
                 const totalHeight = document.body.offsetHeight;
-                const upperAreaHeight = (this.#startUpperAreaHeight + deltaY) / totalHeight * 100;
-                const lowerAreaHeight = 100 - upperAreaHeight;
-
-                if (upperAreaHeight > 5 && lowerAreaHeight > 5) {
-                    this.#gui.upperArea.style.height = `${upperAreaHeight}%`;
-                    this.#gui.lowerArea.style.height = `${lowerAreaHeight}%`;
+                const lowerAreaHeight = (this.#startLowerAreaHeight - deltaY) / totalHeight * 100;
+                if (lowerAreaHeight < 95 && lowerAreaHeight > 5) {
+                    this.#setDividerPos(lowerAreaHeight)
                 }
             }
         }
