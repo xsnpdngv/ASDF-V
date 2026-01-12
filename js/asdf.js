@@ -1218,7 +1218,7 @@ class AsdfViewModel  {
 
     #positionDivider() {
         if ( ! this.#model.diag) { this.#divider.toBottom(); }
-        else if ( ! this.wasDiag) { this.#divider.toDefaultPos(); }
+        else if ( ! this.wasDiag) { this.#divider.toStoredPos(); }
         this.wasDiag = !! this.#model.diag;
     }
 
@@ -1345,6 +1345,7 @@ class AsdfViewModel  {
         #isResizing = false;
         #startY = 0;
         #startLowerAreaHeight = 0;
+        #currLowerAreaHeight = new PersistentNum("AsdfViewModel-Divider: currLowerAreaHeight", 15);
 
         constructor(guiIds) {
             this.#gui.upperArea = document.getElementById(guiIds?.upperAreaId) || {};
@@ -1388,6 +1389,11 @@ class AsdfViewModel  {
             const upperAreaHeight = 100 - lowerAreaHeight;
             this.#gui.upperArea.style.height = `${upperAreaHeight}%`;
             this.#gui.lowerArea.style.height = `${lowerAreaHeight}%`;
+            this.#currLowerAreaHeight.set(lowerAreaHeight);
+        }
+
+        toStoredPos() {
+            this.#setDividerPos(this.#currLowerAreaHeight.value);
         }
 
         toDefaultPos() {
@@ -1416,7 +1422,7 @@ class AsdfViewModel  {
 
         constructor(name, collection = []) {
             this.setCollection(collection);
-            this.#cursorSeqNum = new PersistentInt(name, -1);
+            this.#cursorSeqNum = new PersistentNum(name, -1);
             this.seqNum = this.#cursorSeqNum.value;
         }
 
