@@ -272,13 +272,12 @@ class PersistentString {
 }
 
 
-class PersistentInt {
+class PersistentNum {
     constructor(key, defaultValue = 0) {
         this.key = key;
         // Initialize with default value if not present in localStorage
         if (localStorage.getItem(this.key) === null) {
-            this.value = defaultValue;
-            this.#save();
+            this.set(defaultValue);
         } else {
             this.value = this.#load();
         }
@@ -289,31 +288,31 @@ class PersistentInt {
     }
 
     #load() {
-        return parseInt(localStorage.getItem(this.key), 10);
+        return Number(JSON.parse(localStorage.getItem(this.key)));
     }
 
     get() {
-        return this.#load();
+        return this.value;
     }
 
     set(newValue = 0) {
-        if ( ! Number.isInteger(newValue)) {
-            throw new Error("PersistentInt can only store integer values.");
+        if ( ! Number.isFinite(newValue)) {
+            throw new Error("PersistentNum can only store numeric values.");
         }
         this.value = newValue;
         this.#save();
     }
 
     increment(amount = 1) {
-        if ( ! Number.isInteger(amount)) {
-            throw new Error("Can only increment with integer values.");
+        if ( ! Number.isFinite(amount)) {
+            throw new Error("Can only increment with numeric values.");
         }
         this.set(this.value + amount);
     }
 
     decrement(amount = 1) {
-        if ( ! Number.isInteger(amount)) {
-            throw new Error("Can only decrement with integer values.");
+        if ( ! Number.isFinite(amount)) {
+            throw new Error("Can only decrement with numeric values.");
         }
         this.set(this.value - amount);
     }
@@ -355,8 +354,8 @@ function isVSCode() {
  * ================================ */
 class AsdfModel {
     fileName = new PersistentString("AsdfModel: fileName", "");
-    fileSize = new PersistentInt("AsdfModel: fileSize", 0);
-    fileLastMod = new PersistentInt("AsdfModel: fileLastMod", 0);
+    fileSize = new PersistentNum("AsdfModel: fileSize", 0);
+    fileLastMod = new PersistentNum("AsdfModel: fileLastMod", 0);
     diag = null;
     actorCount = 0;
     #signalWindow = {};
@@ -364,8 +363,8 @@ class AsdfModel {
     #diagMaster = null;
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
     #diagSrc = new PersistentString("AsdfModel: diagSrc");
-    #relevantSignalStart = new PersistentInt("AsdfModel: signalStart", 0);
-    #relevantSignalCount = new PersistentInt("AsdfModel: signalCount", 1000);
+    #relevantSignalStart = new PersistentNum("AsdfModel: signalStart", 0);
+    #relevantSignalCount = new PersistentNum("AsdfModel: signalCount", 1000);
     #isShowIds = false;
     #isKeepOrphans = false;
     #observers = [];
@@ -1901,7 +1900,7 @@ class AsdfViewModel  {
         #gui = {};
         #model = {};
         #pageSize = 200;
-        #currPage = new PersistentInt("AsdfViewModel-Paginator: currPage", 0);
+        #currPage = new PersistentNum("AsdfViewModel-Paginator: currPage", 0);
         #times = { n: 1 };
 
         constructor(model, guiElemIds = {}, times = null) {
