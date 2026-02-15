@@ -438,15 +438,13 @@ class AsdfModel {
     }
 
     #loadDiagramFromSrc() {
-        if (this.#diagSrc.length() > 0) {
-            this.#loadMaster();
-            if(this.#diagMaster instanceof Diagram) {
-                this.diag = this.#cloneMaster();
-                this.#signalWindow = {};
-                this.#postProc();
-            } else {
-                this.diag = this.#diagMaster; // i.e. the error itself
-            }
+        this.#loadMaster();
+        if(this.#diagMaster instanceof Diagram) {
+            this.diag = this.#cloneMaster();
+            this.#signalWindow = {};
+            this.#postProc();
+        } else {
+            this.diag = this.#diagMaster; // i.e. the error itself
         }
         this.#notify();
     }
