@@ -775,9 +775,13 @@ class AsdfViewModel  {
         if (message.type === 'update') {
             this.#loadFromVSCode(message.text);
         }
+        else if (message.type === 'out-of-sync') {
+            this.#showResyncButton();
+        }
     }
 
     #loadFromVSCode(text) {
+        this.#hideResyncButton();
         this.#spinner.spin();
         this.#alerter.clear();
         this.#paginator.init();
@@ -789,6 +793,26 @@ class AsdfViewModel  {
             size: text.length,
             lastModified: Date.now()
         });
+    }
+
+    resyncBtnOnClick() {
+        if (this.vscode) {
+            this.vscode.postMessage({ type: 'resync' });
+        }
+    }
+
+    #showResyncButton() {
+        const btn = document.getElementById('resyncBtn');
+        if (btn) {
+            btn.style.display = 'inline-block';
+        }
+    }
+
+    #hideResyncButton() {
+        const btn = document.getElementById('resyncBtn');
+        if (btn) {
+            btn.style.display = 'none';
+        }
     }
 
     #addKeyboardShortcuts() {

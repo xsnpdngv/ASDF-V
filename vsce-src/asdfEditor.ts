@@ -34,7 +34,20 @@ export class AsdfEditorProvider implements vscode.CustomTextEditorProvider {
         AsdfEditorProvider.activePanel = webviewPanel;
         webviewPanel.reveal(webviewPanel.viewColumn, true);
 
+        // Listen for changes in the document
+        const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
+            if (e.document.uri.toString() === document.uri.toString()) {
+                // Notify webview that the content is out of sync
+                webviewPanel.webview.postMessage({
+                    type: 'out-of-sync'
+                });
+            }
+        });
+
         webviewPanel.onDidDispose(() => {
+            // Clean up the listener when the panel closes
+            changeDocumentSubscription.dispose();
+
             if (AsdfEditorProvider.activePanel === webviewPanel) {
                 AsdfEditorProvider.activePanel = undefined;
             }
@@ -49,16 +62,22 @@ export class AsdfEditorProvider implements vscode.CustomTextEditorProvider {
 
         webviewPanel.webview.html = this.getHtml(webviewPanel.webview);
 
-        const text = document.getText();
-
-        // One-time handshake: new webview, guaranteed fresh
+        // Message Handling
         webviewPanel.webview.onDidReceiveMessage(msg => {
-            if (msg.type === 'ready') {
-                webviewPanel.webview.postMessage({
-                    type: 'update',
-                    text
-                });
+            switch (msg.type) {
+                case 'ready': // Send initial content
+                case 'resync': // Handle manual resync request from the UI
+                    this.postUpdate(webviewPanel, document);
+                    break;
             }
+        });
+    }
+
+    // Helper to send the update message with current text
+    private postUpdate(panel: vscode.WebviewPanel, document: vscode.TextDocument) {
+        panel.webview.postMessage({
+            type: 'update',
+            text: document.getText()
         });
     }
 
