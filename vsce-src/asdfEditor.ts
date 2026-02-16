@@ -39,7 +39,8 @@ export class AsdfEditorProvider implements vscode.CustomTextEditorProvider {
             if (e.document.uri.toString() === document.uri.toString()) {
                 // Notify webview that the content is out of sync
                 webviewPanel.webview.postMessage({
-                    type: 'out-of-sync'
+                    type: 'out-of-sync',
+                    size: e.document.getText().length
                 });
             }
         });

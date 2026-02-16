@@ -776,7 +776,7 @@ class AsdfViewModel  {
             this.#loadFromVSCode(message.text);
         }
         else if (message.type === 'out-of-sync') {
-            this.#showResyncButton();
+            this.#showResyncButton(message.size);
         }
     }
 
@@ -801,9 +801,11 @@ class AsdfViewModel  {
         }
     }
 
-    #showResyncButton() {
+    #showResyncButton(size) {
         const btn = document.getElementById('resyncBtn');
-        if (btn) {
+        const sizeSpan = document.getElementById('syncSize');
+        if (btn && sizeSpan) {
+            sizeSpan.innerText = size.toLocaleString(); // Format with commas
             btn.style.display = 'inline-block';
         }
     }
