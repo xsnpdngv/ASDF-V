@@ -392,7 +392,7 @@ class AsdfModel {
 
     clear() {
         this.file = null;
-        this.#diagSrc.set("");
+        this.#diagSrc.set("empty");
         this.diag = null;
     }
 
@@ -438,13 +438,15 @@ class AsdfModel {
     }
 
     #loadDiagramFromSrc() {
-        this.#loadMaster();
-        if(this.#diagMaster instanceof Diagram) {
-            this.diag = this.#cloneMaster();
-            this.#signalWindow = {};
-            this.#postProc();
-        } else {
-            this.diag = this.#diagMaster; // i.e. the error itself
+        if (this.#diagSrc.value !== "empty") {
+            this.#loadMaster();
+            if(this.#diagMaster instanceof Diagram) {
+                this.diag = this.#cloneMaster();
+                this.#signalWindow = {};
+                this.#postProc();
+            } else {
+                this.diag = this.#diagMaster; // i.e. the error itself
+            }
         }
         this.#notify();
     }
