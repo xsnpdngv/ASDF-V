@@ -362,7 +362,7 @@ class AsdfModel {
     filteredActors = new PersistentSet("AsdfModel: filteredActors");
     #diagMaster = null;
     #actorOrder = new PersistentArray("AsdfModel: actorOrder");
-    #diagSrc = new PersistentString("AsdfModel: diagSrc");
+    #diagSrc = new PersistentString("AsdfModel: diagSrc", "empty");
     #relevantSignalStart = new PersistentNum("AsdfModel: signalStart", 0);
     #relevantSignalCount = new PersistentNum("AsdfModel: signalCount", 1000);
     #isShowIds = false;
