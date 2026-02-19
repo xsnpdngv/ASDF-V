@@ -633,7 +633,7 @@ class AsdfModel {
  * View Model: UI and Rendering
  * ============================== */
 class AsdfViewModel  {
-    static #TIMESTAMP_WIDTH = 45;
+    static #TIMESTAMP_WIDTH = 65;
     vscode = null;
     #model = {}; // direct access to the model
     #diagSignals = []; // helper array of signals of original diagram (without notes)
@@ -674,6 +674,7 @@ class AsdfViewModel  {
     #participantHeader;
     #spinner = new AsdfViewModel.Spinner('spinner');
     #alerter = new AsdfViewModel.Alerter('alertPlaceholder');
+    #outOfSyncDocSize = 0;
 
     constructor(model) {
         this.#model = model;
@@ -774,49 +775,33 @@ class AsdfViewModel  {
     }
 
     #handleVSCodeMessage(message) {
-        if (message.type === 'update') {
-            this.#loadFromVSCode(message.text);
+        if (message.type === 'initial' ||
+            message.type === 'update') {
+            this.#loadFromVSCode(message);
         }
         else if (message.type === 'out-of-sync') {
-            this.#showResyncButton(message.size);
+            this.#outOfSyncDocSize = message.size;
+            this.#updateFileInputLabel();
         }
     }
 
-    #loadFromVSCode(text) {
-        this.#hideResyncButton();
+    #loadFromVSCode(message) {
         this.#spinner.spin();
         this.#alerter.clear();
-        this.#paginator.init();
-        this.#diagramContainer.scrollTop = 0;
+        if(message.type == 'initial') {
+            this.#paginator.init();
+            this.#diagramContainer.scrollTop = 0;
+            this.#isInputFileChange = true;
+            this.#outOfSyncDocSize = message.text.length;
+        }
 
-        this.#isInputFileChange = true;
-        this.#model.loadDiagramFromText(text, {
-            name: '',
-            size: text.length,
-            lastModified: Date.now()
+        setTimeout(() => {
+            this.#model.loadDiagramFromText(message.text, {
+                name: '',
+                size: message.text.length,
+                lastModified: Date.now()
         });
-    }
-
-    resyncBtnOnClick() {
-        if (this.vscode) {
-            this.vscode.postMessage({ type: 'resync' });
-        }
-    }
-
-    #showResyncButton(size) {
-        const btn = document.getElementById('resyncBtn');
-        const sizeSpan = document.getElementById('syncSize');
-        if (btn && sizeSpan) {
-            sizeSpan.innerText = size.toLocaleString(); // Format with commas
-            btn.style.display = 'inline-block';
-        }
-    }
-
-    #hideResyncButton() {
-        const btn = document.getElementById('resyncBtn');
-        if (btn) {
-            btn.style.display = 'none';
-        }
+        }, 10);
     }
 
     #addKeyboardShortcuts() {
@@ -1003,8 +988,15 @@ class AsdfViewModel  {
         this.clear();
     }
 
-    fileInputOnClick() {
-        fileInput.value = "";  // so same file can be selected again
+    fileInputOnClick(event) {
+        if(isVSCode()) {
+            event.preventDefault();
+            if (this.vscode) {
+                this.vscode.postMessage({ type: 'resync' });
+            }
+        } else {
+            fileInput.value = "";  // so same file can be selected again
+        }
     }
 
     fileInputOnChange(event) {
@@ -1021,6 +1013,19 @@ class AsdfViewModel  {
         let fil = this.#fileInputLabel
         const filteredActorCount = this.#model.diag.actors.filter(actor => this.#model.filteredActors.has(actor.name)).length;
         fil.textContent = this.#model.fileName.get();
+        const currSize = this.#model.fileSize.value;
+        if(isVSCode()) {
+            const sizeChg = this.#outOfSyncDocSize - currSize;
+
+            fil.textContent += this.#formatSize(currSize);
+            fil.classList.remove("text-danger");
+            if (sizeChg !== 0) {
+                fil.textContent += " (" + (sizeChg > 0 ? "+" : "") + this.#formatSize(sizeChg) + ")";
+                fil.classList.add("text-danger");
+            }
+        } else {
+            fil.textContent += " (" + this.#formatSize(currSize) + ")";
+        }
         fil.textContent = fil.textContent ? fil.textContent + "\n" : "";
         fil.textContent += this.#model.actorCount;
         if (filteredActorCount > 0 || this.#model.orphanCount > 0) {
@@ -1052,6 +1057,20 @@ class AsdfViewModel  {
                 fil.textContent += d.netSignalCount + " shown";
             }
             fil.textContent += ")";
+        }
+    }
+
+    #formatSize(bytes) {
+        const abs = Math.abs(bytes);
+
+        if (abs >= 1024 * 1024) {
+            return (bytes / (1024 * 1024)).toFixed(2).replace(/\.00$/, "") + " MB";
+        }
+        else if (abs >= 1024) {
+            return (bytes / 1024).toFixed(2).replace(/\.00$/, "") + " kB";
+        }
+        else {
+            return bytes.toLocaleString() + " B";
         }
     }
 
@@ -1629,7 +1648,7 @@ class AsdfViewModel  {
                 const start = path.getPointAtLength(0);
 
                 const ts = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                ts.setAttribute("x", 0);
+                ts.setAttribute("x", 4);
                 ts.setAttribute("y", start.y-6);
                 ts.setAttribute("class", SignalDecorator.#TIMESTAMP_CLASSNAME);
                 ts.textContent = signals[index]?.addinfoHead?.timestamp?.split('T')[1] || "";

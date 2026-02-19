@@ -67,17 +67,19 @@ export class AsdfEditorProvider implements vscode.CustomTextEditorProvider {
         webviewPanel.webview.onDidReceiveMessage(msg => {
             switch (msg.type) {
                 case 'ready': // Send initial content
+                    this.postUpdate('initial', webviewPanel, document);
+                    break;
                 case 'resync': // Handle manual resync request from the UI
-                    this.postUpdate(webviewPanel, document);
+                    this.postUpdate('update', webviewPanel, document);
                     break;
             }
         });
     }
 
     // Helper to send the update message with current text
-    private postUpdate(panel: vscode.WebviewPanel, document: vscode.TextDocument) {
+    private postUpdate(type: string, panel: vscode.WebviewPanel, document: vscode.TextDocument) {
         panel.webview.postMessage({
-            type: 'update',
+            type: type,
             text: document.getText()
         });
     }
