@@ -837,6 +837,7 @@ class AsdfViewModel  {
 
             let hit = true;
             if (keySeq.endsWith("re")) { vm.resetToolbarOnClick(); }
+            else if (keySeq.endsWith("rr")) {  vm.#fileInputLabel.click(); }
             // view
             else if (keySeq.endsWith("ti")) { vm.#toggles['showInstance'].toggle(); }
             else if (keySeq.endsWith("tr")) { vm.#toggles['showRelated'].toggle(); }
@@ -990,7 +991,9 @@ class AsdfViewModel  {
 
     fileInputOnClick(event) {
         if(isVSCode()) {
-            event.preventDefault();
+            if(event) {
+                event.preventDefault();
+            }
             if (this.vscode) {
                 this.vscode.postMessage({ type: 'resync' });
             }
